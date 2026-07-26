@@ -1,0 +1,172 @@
+import { useState, useEffect } from "react";
+import { Pencil, X, LayoutGrid, List, Plus, Archive } from "lucide-react";
+import { FIRMS, STATUS_META } from "../constants";
+import { money, formatDateUK } from "../utils";
+import { KpiTile } from "../components/KpiTile";
+import { StatusPill } from "../components/StatusPill";
+import { ConfirmModal } from "../components/ConfirmModal";
+import { Select } from "../components/Select";
+import { AccountForm } from "./AccountForm";
+import { TicketCard } from "./TicketCard";
+
+export function AccountsView({ derived, templates, onRowClick, onOpen, setAccounts, editingAccount, setEditingAccount, filterFirm, setFilterFirm, filterStatus, setFilterStatus, archiveAccount, unarchiveAccount }) {
+  const [showForm, setShowForm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [viewMode, setViewMode] = useState("card");
+  const [showArchived, setShowArchived] = useState(false);
+
+  const filtered = derived.accounts.filter((a) => {
+    if (filterFirm !== "All" && a.firm !== filterFirm) return false;
+    if (showArchived) return a.archived;
+    if (filterStatus !== "All" && a.status !== filterStatus) return false;
+    return !a.archived;
+  }).sort((a, b) => (a.creationDate < b.creationDate ? 1 : -1));
+
+  useEffect(() => { if (editingAccount) setShowForm(true); }, [editingAccount]);
+
+  function openAdd() { setEditingAccount(null); setShowForm(true); }
+  function openEdit(acc) {
+    const a = typeof acc === "string" ? derived.accounts.find((x) => x.id === acc) : acc;
+    if (!a) return;
+    setEditingAccount(a);
+    setShowForm(true);
+  }
+  function handleSave(data) {
+    if (editingAccount) {
+      setAccounts((prev) => prev.map((a) => a.id === editingAccount.id ? { ...a, ...data } : a));
+    } else {
+      setAccounts((prev) => [...prev, { ...data, id: "a" + Date.now() }]);
+    }
+    setShowForm(false);
+    setEditingAccount(null);
+  }
+  function handleDelete(id) { setDeleteTarget(id); }
+
+  return (
+    <div>
+      {/* KPI Tiles */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <KpiTile label="Total Invested" value={money(derived.totals.invested)} sub={`${derived.accounts.length} accounts`} />
+        <KpiTile label="Total Received" value={money(derived.totals.received)} accent="var(--sage)" sub="from paid payouts" />
+        <KpiTile
+          label="Net Position"
+          value={money(derived.totals.received - derived.totals.invested)}
+          accent={derived.totals.received - derived.totals.invested >= 0 ? "var(--sage)" : "var(--brick)"}
+          sub="lifetime, all firms"
+        />
+        <KpiTile label="Pass Rate" value={`${derived.passRate}%`} accent="var(--brass)" sub="of decided evaluations" />
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <Select value={filterFirm} onChange={(e) => setFilterFirm(e.target.value)} style={{ width: "auto", minWidth: 120 }}>
+            <option value="All">All firms</option>
+            {FIRMS.map((f) => <option key={f} value={f}>{f}</option>)}
+          </Select>
+          <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ width: "auto", minWidth: 120 }} disabled={showArchived}>
+            <option value="All">All statuses</option>
+            {Object.keys(STATUS_META).map((s) => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+          </Select>
+          <button
+            className="pd-btn flex items-center gap-1.5"
+            style={showArchived ? { borderColor: "var(--brass)", color: "var(--brass)" } : {}}
+            onClick={() => { setShowArchived((v) => !v); setFilterStatus("All"); }}
+          >
+            <Archive size={14} /> Archived
+          </button>
+          {(filterFirm !== "All" || filterStatus !== "All" || showArchived) && (
+            <button className="pd-btn" onClick={() => { setFilterFirm("All"); setFilterStatus("All"); setShowArchived(false); }}>
+              Clear
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-0.5 rounded-lg" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
+            <button
+              onClick={() => setViewMode("card")}
+              className="flex items-center justify-center rounded-md transition-colors"
+              style={{
+                padding: "8px 10px",
+                background: viewMode === "card" ? "var(--ink-2)" : "transparent",
+                color: viewMode === "card" ? "var(--brass)" : "var(--slate)",
+                border: "none", cursor: "pointer",
+              }}
+              title="Card view"
+            >
+              <LayoutGrid size={15} />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className="flex items-center justify-center rounded-md transition-colors"
+              style={{
+                padding: "8px 10px",
+                background: viewMode === "list" ? "var(--ink-2)" : "transparent",
+                color: viewMode === "list" ? "var(--brass)" : "var(--slate)",
+                border: "none", cursor: "pointer",
+              }}
+              title="List view"
+            >
+              <List size={15} />
+            </button>
+          </div>
+          <button className="pd-btn pd-btn-primary flex items-center gap-1.5" onClick={openAdd}>
+            <Plus size={14} /> Add account
+          </button>
+        </div>
+      </div>
+
+      {showForm && (
+        <AccountForm initial={editingAccount} templates={templates} onSave={handleSave}
+          onCancel={() => { setShowForm(false); setEditingAccount(null); }} />
+      )}
+
+      {/* Card View */}
+      {viewMode === "card" && (
+        <>
+          {filtered.length === 0 ? (
+            <div className="rounded-lg p-10 text-center" style={{ border: "1px dashed var(--line)", color: "var(--slate)" }}>
+              No accounts match this filter. Adjust the filters above or buy a new challenge to fill this space.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filtered.map((a, i) => <TicketCard key={a.id} account={a} onOpen={onOpen} onEdit={openEdit} onArchive={archiveAccount} onUnarchive={unarchiveAccount} index={i} />)}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* List View */}
+      {viewMode === "list" && (
+        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)" }}>
+          <div className="grid pd-label items-center" style={{ gridTemplateColumns: "1fr 1.2fr 80px 100px 100px 80px 90px 28px 28px", gap: "0 12px", background: "var(--ledger)", borderBottom: "1px solid var(--line)", padding: "10px 16px" }}>
+            <span>Firm</span><span>Template</span><span>Size</span><span>Status</span><span>Platform</span><span>Fee</span><span>Date</span><span></span><span></span>
+          </div>
+          {filtered.length === 0 && <div className="p-6 text-sm text-center" style={{ color: "var(--slate)" }}>No accounts match this filter.</div>}
+          {filtered.map((a) => (
+            <div key={a.id} className="pd-row grid items-center text-sm pd-mono" style={{ gridTemplateColumns: "1fr 1.2fr 80px 100px 100px 80px 90px 28px 28px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)", cursor: "pointer" }} onClick={() => onRowClick(a.id)}>
+              <span className="whitespace-nowrap" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{a.firm}</span>
+              <span className="whitespace-nowrap" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{a.template}</span>
+              <span className="whitespace-nowrap">${(a.size / 1000).toFixed(0)}K</span>
+              <span className="whitespace-nowrap"><StatusPill status={a.status} /></span>
+              <span className="whitespace-nowrap" style={{ color: "var(--sand-dim)" }}>{a.platform}</span>
+              <span className="whitespace-nowrap" style={{ color: "var(--sand-dim)" }}>{money(a.cost)}</span>
+              <span className="whitespace-nowrap" style={{ color: "var(--slate)" }}>{formatDateUK(a.creationDate)}</span>
+              <button className="flex items-center justify-center" style={{ color: "var(--slate)", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={(e) => { e.stopPropagation(); openEdit(a); }} title="Edit account"><Pencil size={13} /></button>
+              <button className="flex items-center justify-center" style={{ color: "var(--slate)", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={(e) => { e.stopPropagation(); handleDelete(a.id); }} title="Delete account"><X size={13} /></button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="Delete account"
+          message="Delete this account? All trades, payouts, and certificates linked to it will remain orphaned."
+          onConfirm={() => { setAccounts((prev) => prev.filter((a) => a.id !== deleteTarget)); setDeleteTarget(null); }}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+    </div>
+  );
+}
