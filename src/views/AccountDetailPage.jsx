@@ -64,9 +64,9 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const giveback = avgMfeR !== null && avgRealizedOfMfe !== null
     ? (avgMfeR - avgRealizedOfMfe).toFixed(2) : "—";
 
-  const deepDips = maeTrades.filter((t) => avgMaeR !== null && t.maeR > avgMaeR);
-  const deepRecovered = deepDips.filter((t) => t.outcome === "W" || t.outcome === "BE");
-  const deepRecovery = deepDips.length ? `${Math.round((deepRecovered.length / deepDips.length) * 100)}%` : "—";
+  const winsWithMfe = mfeTrades.filter((t) => t.outcome === "W");
+  const winsRetracedPastMae = winsWithMfe.filter((t) => avgMaeR !== null && t.mfeR >= avgMaeR);
+  const winsRetrace = winsWithMfe.length ? `${Math.round((winsRetracedPastMae.length / winsWithMfe.length) * 100)}%` : "—";
 
   const dipRecoveredTrades = mfeTrades.filter((t) => t.maeR != null);
   const recoveredPastAvgMae = dipRecoveredTrades.filter((t) => avgMaeR !== null && t.mfeR >= avgMaeR);
@@ -208,7 +208,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <KpiTile label="Avg MFE" value={avgMfeR != null ? avgMfeR.toFixed(2) : "—"} accent="var(--sage)" sub="R" />
                 <KpiTile label="Avg MAE" value={avgMae} accent="var(--brick)" sub="R" />
                 <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
-                <KpiTile label="Deep-dip recovery" value={deepRecovery} accent="var(--sand)" sub="dips > avg MAE that recovered" />
+                <KpiTile label="Wins past avg MAE" value={winsRetrace} accent="var(--sand)" sub="winners that retraced ≥ avg MAE" />
                 <KpiTile label="Retraced past avg MAE" value={retraceToMae} accent="var(--sage)" sub="MFE ≥ avg MAE" />
                 <KpiTile label="WR @ avg MFE" value={wrAtAvgMfe} accent="var(--brass)" sub="TP at avg MFE" />
               </div>
@@ -217,11 +217,11 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <p style={{ color: "var(--sand-dim)", lineHeight: 1.7 }}>
                   MFE is how far a trade went <em>for</em> you (in R); MAE is how far it went <em>against</em> you before
                   retracing. <strong>Capture</strong> shows how much of your peak R you actually banked.{" "}
-                  <strong>Retraced past avg MAE</strong> shows how often price comes back past your average dip. Compare
-                  the two: if price retraces ~75-80%+ of the time but you only capture ~50%, a limit order would likely
-                  have filled on the retrace and earned a bigger RR. If it retraces only ~50-60%, market entry is a
-                  coin flip and the edge is smaller. These numbers only mean something with enough trades (20-30+) -
-                  a handful of trades is just noise.
+                  <strong>Wins past avg MAE</strong> shows, of your winning trades, how many retraced past your average
+                  dip. Compare it with Capture: if most winners retrace past your average MAE but you only capture
+                  ~50%, a limit order would likely have filled on the retrace and earned a bigger RR. If winners rarely
+                  retrace, market entry is a coin flip and the edge is smaller. These numbers only mean something with
+                  enough trades (20-30+) - a handful of trades is just noise.
                 </p>
               </div>
             </>
