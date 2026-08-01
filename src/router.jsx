@@ -52,6 +52,12 @@ function Layout() {
   const pathname = router.location.pathname;
   const [showLogout, setShowLogout] = useState(false);
 
+  useEffect(() => {
+    if (!session && pathname !== "/") {
+      navigate({ to: "/", search: (prev) => prev });
+    }
+  }, [session, pathname, navigate]);
+
   if (isLoading) {
     return (
       <div className="pd-root">
