@@ -49,19 +49,30 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const ratings = { green: 0, amber: 0, red: 0 };
   enrichedTrades.forEach((t) => { if (ratings[t.rating] !== undefined) ratings[t.rating]++; });
 
-  const mfeTrades = enrichedTrades.filter((t) => t.mfeR != null);
   const maeTrades = enrichedTrades.filter((t) => t.maeR != null);
-  const avgMfe = mfeTrades.length ? (mfeTrades.reduce((s, t) => s + t.mfeR, 0) / mfeTrades.length).toFixed(2) : "—";
   const avgMae = maeTrades.length ? (maeTrades.reduce((s, t) => s + t.maeR, 0) / maeTrades.length).toFixed(2) : "—";
-  const mfeR = parseFloat(avgMfe);
-  const mfeWithRealized = mfeTrades.filter((t) => t.risk > 0);
-  const avgRealizedOfMfe = mfeWithRealized.length
-    ? mfeWithRealized.reduce((s, t) => s + (t.pnl / t.risk), 0) / mfeWithRealized.length
+  const avgMaeR = maeTrades.length ? maeTrades.reduce((s, t) => s + t.maeR, 0) / maeTrades.length : null;
+
+  const mfeSet = mfeTrades.filter((t) => t.risk > 0);
+  const avgMfeR = mfeSet.length ? mfeSet.reduce((s, t) => s + t.mfeR, 0) / mfeSet.length : null;
+  const avgRealizedOfMfe = mfeSet.length
+    ? mfeSet.reduce((s, t) => s + (t.pnl / t.risk), 0) / mfeSet.length
     : null;
-  const capture = avgMfe !== "—" && avgRealizedOfMfe !== null && mfeR > 0
-    ? `${Math.round((avgRealizedOfMfe / mfeR) * 100)}%` : "—";
-  const giveback = avgMfe !== "—" && avgRealizedOfMfe !== null
-    ? (mfeR - avgRealizedOfMfe).toFixed(2) : "—";
+  const capture = avgMfeR !== null && avgRealizedOfMfe !== null && avgMfeR > 0
+    ? `${Math.round((avgRealizedOfMfe / avgMfeR) * 100)}%` : "—";
+  const giveback = avgMfeR !== null && avgRealizedOfMfe !== null
+    ? (avgMfeR - avgRealizedOfMfe).toFixed(2) : "—";
+
+  const deepDips = maeTrades.filter((t) => avgMaeR !== null && t.maeR > avgMaeR);
+  const deepRecovered = deepDips.filter((t) => t.outcome === "W" || t.outcome === "BE");
+  const deepRecovery = deepDips.length ? `${Math.round((deepRecovered.length / deepDips.length) * 100)}%` : "—";
+
+  const dipRecoveredTrades = mfeTrades.filter((t) => t.maeR != null);
+  const recoveredPastAvgMae = dipRecoveredTrades.filter((t) => avgMaeR !== null && t.mfeR >= avgMaeR);
+  const retraceToMae = dipRecoveredTrades.length ? `${Math.round((recoveredPastAvgMae.length / dipRecoveredTrades.length) * 100)}%` : "—";
+
+  const wrAtAvgMfe = avgMfeR !== null && mfeTrades.length
+    ? `${Math.round((mfeTrades.filter((t) => t.mfeR >= avgMfeR).length / mfeTrades.length) * 100)}%` : "—";
 
   let running = 0;
   const sortedTrades = enrichedTrades.slice().reverse();
@@ -195,6 +206,9 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
               <KpiTile label="Avg MFE" value={avgMfe} accent="var(--sage)" sub="R" />
               <KpiTile label="Avg MAE" value={avgMae} accent="var(--brick)" sub="R" />
               <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
+              <KpiTile label="Deep-dip recovery" value={deepRecovery} accent="var(--sand)" sub="dips > avg MAE that recovered" />
+              <KpiTile label="Retraced past avg MAE" value={retraceToMae} accent="var(--sage)" sub="MFE ≥ avg MAE" />
+              <KpiTile label="WR @ avg MFE" value={wrAtAvgMfe} accent="var(--brass)" sub="TP at avg MFE" />
             </div>
           )}
 
