@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createRouter, createRoute, createRootRoute, Link, Outlet, useRouterState, useNavigate, useSearch, useParams } from "@tanstack/react-router";
-import { LayoutGrid, NotebookPen, Award, SlidersHorizontal, List, Wallet, Settings, Copy, BarChart3, LogOut } from "lucide-react";
+import { LayoutGrid, NotebookPen, Award, SlidersHorizontal, List, Wallet, Settings, Copy, BarChart3, LogOut, Users } from "lucide-react";
 
 import { useApp } from "./context";
 import { BrandMark } from "./components/BrandMark";
@@ -17,6 +17,7 @@ import { TemplatesView } from "./views/TemplatesView";
 import { CopytradingView } from "./views/CopytradingView";
 import { SettingsView } from "./views/SettingsView";
 import { ReportView } from "./views/ReportView";
+import { AdminView } from "./views/AdminView";
 
 const NAV = [
   { path: "/", label: "Overview", icon: LayoutGrid },
@@ -29,6 +30,8 @@ const NAV = [
   { path: "/templates", label: "Firms & Rules", icon: SlidersHorizontal },
 ];
 
+const ADMIN_NAV = [{ path: "/people", label: "People", icon: Users }];
+
 const PAGE_META = {
   "/": ["Overview", "Your prop trading performance, at a glance."],
   "/accounts": ["Accounts", "Every challenge and funded account — card or list view."],
@@ -39,6 +42,7 @@ const PAGE_META = {
   "/copytrading": ["Copytrading", "Cluster accounts, set risk multipliers, simulate copy trades."],
   "/report": ["Performance Report", "Monthly fees, refunds, payouts, and net position."],
   "/settings": ["Settings", "How risk and P&L display in the journal."],
+  "/people": ["People", "Invites and admin access for your workspace."],
 };
 
 function Layout() {
@@ -82,7 +86,7 @@ function Layout() {
             <BrandMark style={{ width: 140, height: 40 }} />
           </Link>
           <nav className="flex flex-col gap-1">
-            {NAV.map((n) => {
+            {[...NAV, ...(session.isAdmin ? ADMIN_NAV : [])].map((n) => {
               const Icon = n.icon;
               const isActive = n.path === "/" ? pathname === "/" : pathname.startsWith(n.path);
               return (
@@ -131,7 +135,7 @@ function Layout() {
             <BrandMark style={{ width: 120, height: 34 }} />
           </div>
           <div className="flex md:hidden gap-1 mb-5 overflow-x-auto pd-scrollbar">
-            {NAV.map((n) => {
+            {[...NAV, ...(session.isAdmin ? ADMIN_NAV : [])].map((n) => {
               const isActive = n.path === "/" ? pathname === "/" : pathname.startsWith(n.path);
               return (
                 <Link key={n.path} to={n.path} className="pd-btn shrink-0 no-underline"
@@ -252,6 +256,16 @@ function ReportPage() {
   return <ReportView accounts={derived.accounts} trades={trades} payouts={payouts} settings={settings} />;
 }
 
+function PeoplePage() {
+  const { session, users, invites, generateInvite, revokeInvite, setUserRole } = useApp();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!session?.isAdmin) navigate({ to: "/" });
+  }, [session, navigate]);
+  if (!session?.isAdmin) return null;
+  return <AdminView users={users} invites={invites} generateInvite={generateInvite} revokeInvite={revokeInvite} setUserRole={setUserRole} currentUserId={session?.userId} />;
+}
+
 const rootRoute = createRootRoute({ component: Layout });
 
 const indexRoute = createRoute({
@@ -317,6 +331,12 @@ const reportRoute = createRoute({
   component: ReportPage,
 });
 
+const peopleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/people",
+  component: PeoplePage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   accountsRoute,
@@ -328,6 +348,7 @@ const routeTree = rootRoute.addChildren([
   copytradingRoute,
   settingsRoute,
   reportRoute,
+  peopleRoute,
 ]);
 
 export const router = createRouter({ routeTree });

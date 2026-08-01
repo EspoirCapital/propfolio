@@ -27,6 +27,8 @@ export function AppProvider({ children }) {
   const templates = useQuery(api.templates.list);
   const clusters = useQuery(api.clusters.list);
   const settingsRow = useQuery(api.settings.get);
+  const users = useQuery(api.users.list);
+  const invites = useQuery(api.invites.list);
 
   const createAccountFn = useMutation(api.accounts.create);
   const updateAccountFn = useMutation(api.accounts.update);
@@ -58,6 +60,10 @@ export function AppProvider({ children }) {
 
   const updateSettingsFn = useMutation(api.settings.update);
   const updateProfileFn = useMutation(api.users.updateProfile);
+  const setRoleFn = useMutation(api.users.setRole);
+
+  const generateInviteFn = useMutation(api.invites.generate);
+  const revokeInviteFn = useMutation(api.invites.revoke);
 
   const [selectedId, setSelectedId] = useState(null);
   const [editingAccount, setEditingAccount] = useState(null);
@@ -121,6 +127,10 @@ export function AppProvider({ children }) {
       createTemplate, updateTemplate, deleteTemplate,
       createCluster, updateCluster, deleteCluster,
       updateProfile: (data) => updateProfileFn(data),
+      setUserRole: (id, isAdmin) => setRoleFn({ id, isAdmin }),
+      users: users || [], invites: invites || [],
+      generateInvite: () => generateInviteFn(),
+      revokeInvite: (id) => revokeInviteFn({ id }),
       selectedId, setSelectedId,
       selectedAccount,
       editingAccount, setEditingAccount,
