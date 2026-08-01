@@ -60,37 +60,50 @@ export function computeMfeMaeStats(trades) {
 
   const limitPool = trades.filter((t) => t.maeR != null && t.risk > 0 && t.outcome !== "BE" && avgMaeR !== null);
   const limitFills = limitPool.filter((t) => t.maeR >= avgMaeR);
-  const limitMissed = limitPool.length - limitFills.length;
-  const missedPct = limitPool.length ? Math.round((limitMissed / limitPool.length) * 100) : null;
+  const limitMissedTrades = limitPool.filter((t) => t.maeR < avgMaeR);
+  const missedPct = limitPool.length ? Math.round((limitMissedTrades.length / limitPool.length) * 100) : null;
+  const missedW = limitMissedTrades.filter((t) => t.outcome === "W").length;
+  const missedL = limitMissedTrades.filter((t) => t.outcome === "L").length;
+  const missedWPct = limitMissedTrades.length ? Math.round((missedW / limitMissedTrades.length) * 100) : null;
+  const missedLPct = limitMissedTrades.length ? Math.round((missedL / limitMissedTrades.length) * 100) : null;
   const limitWr = limitFills.length
     ? `${Math.round((limitFills.filter((t) => t.outcome === "W").length / limitFills.length) * 100)}%` : "—";
-  const limitSub = avgMaeR !== null && limitPool.length && missedPct !== null
-    ? `+${avgMaeR.toFixed(2)}R per trade · ${missedPct}% missed` : "—";
+  const limitSub = avgMaeR !== null && limitPool.length && missedPct !== null && missedWPct !== null && missedLPct !== null
+    ? `+${avgMaeR.toFixed(2)}R per trade · ${missedPct}% missed (${missedWPct}%W · ${missedLPct}%L)` : "—";
 
   const comboPool = trades.filter((t) => t.mfeR != null && t.maeR != null && t.risk > 0 && t.outcome !== "BE" && avgMaeR !== null && avgMfeR !== null);
   const comboFills = comboPool.filter((t) => t.maeR >= avgMaeR);
   const comboWinners = comboFills.filter((t) => t.mfeR >= avgMfeR);
-  const comboMissed = comboPool.length - comboFills.length;
-  const comboMissedPct = comboPool.length ? Math.round((comboMissed / comboPool.length) * 100) : null;
+  const comboMissedTrades = comboPool.filter((t) => t.maeR < avgMaeR);
+  const comboMissedPct = comboPool.length ? Math.round((comboMissedTrades.length / comboPool.length) * 100) : null;
+  const comboMissedW = comboMissedTrades.filter((t) => t.outcome === "W").length;
+  const comboMissedL = comboMissedTrades.filter((t) => t.outcome === "L").length;
+  const comboMissedWPct = comboMissedTrades.length ? Math.round((comboMissedW / comboMissedTrades.length) * 100) : null;
+  const comboMissedLPct = comboMissedTrades.length ? Math.round((comboMissedL / comboMissedTrades.length) * 100) : null;
   const comboWr = comboFills.length
     ? `${Math.round((comboWinners.length / comboFills.length) * 100)}%` : "—";
   const comboRrGained = comboWinners.length && avgMfeR !== null
     ? (avgMfeR - comboWinners.reduce((s, t) => s + (t.pnl / t.risk), 0) / comboWinners.length).toFixed(2)
     : null;
-  const comboSub = comboRrGained !== null && comboMissedPct !== null
-    ? `+${comboRrGained}R/win · ${comboMissedPct}% missed` : "—";
+  const comboSub = comboRrGained !== null && comboMissedPct !== null && comboMissedWPct !== null && comboMissedLPct !== null
+    ? `+${comboRrGained}R per trade · ${comboMissedPct}% missed (${comboMissedWPct}%W · ${comboMissedLPct}%L)` : "—";
 
   const mfeDecisions = mfeTrades.filter((t) => t.risk > 0 && t.outcome !== "BE");
   const mfeWinners = mfeDecisions.filter((t) => avgMfeR !== null && t.mfeR >= avgMfeR);
   const wrAtAvgMfe = mfeDecisions.length
     ? `${Math.round((mfeWinners.length / mfeDecisions.length) * 100)}%` : "—";
+  const mfeMissedTrades = mfeDecisions.filter((t) => avgMfeR === null || t.mfeR < avgMfeR);
   const mfeMissedPct = mfeDecisions.length
-    ? Math.round(((mfeDecisions.length - mfeWinners.length) / mfeDecisions.length) * 100) : null;
+    ? Math.round((mfeMissedTrades.length / mfeDecisions.length) * 100) : null;
+  const mfeMissedW = mfeMissedTrades.filter((t) => t.outcome === "W").length;
+  const mfeMissedL = mfeMissedTrades.filter((t) => t.outcome === "L").length;
+  const mfeMissedWPct = mfeMissedTrades.length ? Math.round((mfeMissedW / mfeMissedTrades.length) * 100) : null;
+  const mfeMissedLPct = mfeMissedTrades.length ? Math.round((mfeMissedL / mfeMissedTrades.length) * 100) : null;
   const rrGained = mfeWinners.length && avgMfeR !== null
     ? (avgMfeR - mfeWinners.reduce((s, t) => s + (t.pnl / t.risk), 0) / mfeWinners.length).toFixed(2)
     : null;
-  const wrSub = rrGained !== null && mfeMissedPct !== null
-    ? `+${rrGained}R per trade · ${mfeMissedPct}% missed` : "TP at avg MFE";
+  const wrSub = rrGained !== null && mfeMissedPct !== null && mfeMissedWPct !== null && mfeMissedLPct !== null
+    ? `+${rrGained}R per trade · ${mfeMissedPct}% missed (${mfeMissedWPct}%W · ${mfeMissedLPct}%L)` : "TP at avg MFE";
 
   return { avgMfe, avgMae, capture, giveback, limitWr, limitSub, comboWr, comboSub, wrAtAvgMfe, wrSub };
 }
