@@ -64,7 +64,7 @@ export function ReportView({ accounts, trades, payouts, settings }) {
     const accTrades = trades.filter((t) => t.accountId === selectedAcc.id && !t.archived);
     const accSize = selectedAcc.size || 1;
     const monthly = {};
-    MONTHS.forEach((m, i) => { monthly[i] = { pnl: 0, trades: 0, rrSum: 0, rrCount: 0, refund: 0, hasData: false }; });
+    MONTHS.forEach((m, i) => { monthly[i] = { pnl: 0, trades: 0, rrSum: 0, rrCount: 0, refund: 0, mfeSum: 0, mfeCount: 0, maeSum: 0, maeCount: 0, hasData: false }; });
 
     accTrades.forEach((t) => {
       const d = new Date(t.date);
@@ -73,6 +73,8 @@ export function ReportView({ accounts, trades, payouts, settings }) {
         m.pnl += t.pnl;
         m.trades++;
         if (t.risk > 0) { m.rrSum += t.pnl / t.risk; m.rrCount++; }
+        if (t.mfeR != null) { m.mfeSum += t.mfeR; m.mfeCount++; }
+        if (t.maeR != null) { m.maeSum += t.maeR; m.maeCount++; }
         m.hasData = true;
       }
     });
@@ -86,20 +88,29 @@ export function ReportView({ accounts, trades, payouts, settings }) {
     }
 
     let yearPnl = 0, yearRefund = 0, yearRrSum = 0, yearRrCount = 0;
+    let yearMfeSum = 0, yearMfeCount = 0, yearMaeSum = 0, yearMaeCount = 0;
     const rows = MONTHS.map((name, i) => {
-      const { pnl, rrSum, rrCount, refund: r, hasData } = monthly[i];
+      const { pnl, rrSum, rrCount, refund: r, hasData, mfeSum, mfeCount, maeSum, maeCount } = monthly[i];
       yearPnl += pnl;
       yearRefund += r;
       yearRrSum += rrSum;
       yearRrCount += rrCount;
+      yearMfeSum += mfeSum;
+      yearMfeCount += mfeCount;
+      yearMaeSum += maeSum;
+      yearMaeCount += maeCount;
       const avgRr = rrCount > 0 ? (rrSum / rrCount).toFixed(1) : null;
-      return { name, pnl, refund: r, hasData, avgRr };
+      const avgMfe = mfeCount > 0 ? (mfeSum / mfeCount).toFixed(2) : null;
+      const avgMae = maeCount > 0 ? (maeSum / maeCount).toFixed(2) : null;
+      return { name, pnl, refund: r, hasData, avgRr, avgMfe, avgMae };
     }).filter((r) => r.hasData);
 
     const yearAvgRr = yearRrCount > 0 ? (yearRrSum / yearRrCount).toFixed(1) : null;
+    const yearAvgMfe = yearMfeCount > 0 ? (yearMfeSum / yearMfeCount).toFixed(2) : null;
+    const yearAvgMae = yearMaeCount > 0 ? (yearMaeSum / yearMaeCount).toFixed(2) : null;
     const yearNetPnl = yearPnl + yearRefund;
 
-    return { rows, yearPnl, yearRefund, yearAvgRr, yearNetPnl, accSize };
+    return { rows, yearPnl, yearRefund, yearAvgRr, yearNetPnl, accSize, yearAvgMfe, yearAvgMae };
   }, [trades, selectedAcc, year]);
 
   const s = { fontSize: 11, color: "var(--slate)" };
@@ -182,9 +193,11 @@ export function ReportView({ accounts, trades, payouts, settings }) {
       {/* Account-level table */}
       {filterAccount !== "All" && accData && (
         <div className="rounded-lg p-4" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
-          <div className="grid items-center" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr", borderBottom: "1px solid var(--line)", paddingBottom: 6 }}>
+          <div className="grid items-center" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr 1fr 1fr", borderBottom: "1px solid var(--line)", paddingBottom: 6 }}>
             <span style={s}>MONTH</span>
             <span className="pd-mono" style={s}>P&L</span>
+            <span className="pd-mono" style={s}>MFE</span>
+            <span className="pd-mono" style={s}>MAE</span>
             <span className="pd-mono" style={s}>REFUND</span>
             <span className="pd-mono" style={{ ...s, textAlign: "right" }}>%</span>
             <span className="pd-mono" style={{ ...s, textAlign: "right" }}>RR</span>
@@ -193,9 +206,11 @@ export function ReportView({ accounts, trades, payouts, settings }) {
             const netPnl = r.pnl + r.refund;
             const pnlPct = ((netPnl / accData.accSize) * 100).toFixed(1);
             return (
-              <div key={r.name} className="grid items-center pd-mono" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr", padding: "5px 0", borderBottom: "1px solid var(--line-soft)" }}>
+              <div key={r.name} className="grid items-center pd-mono" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr 1fr 1fr", padding: "5px 0", borderBottom: "1px solid var(--line-soft)" }}>
                 <span className="pd-label" style={{ fontSize: 11 }}>{r.name}</span>
                 <span style={{ ...cell, color: r.pnl >= 0 ? "var(--sage)" : "var(--brick)" }}>{r.pnl !== 0 ? money(r.pnl) : "—"}</span>
+                <span style={{ ...cell, color: r.avgMfe != null ? "var(--sage)" : "var(--slate)" }}>{r.avgMfe != null ? `${r.avgMfe}R` : "—"}</span>
+                <span style={{ ...cell, color: r.avgMae != null ? "var(--brick)" : "var(--slate)" }}>{r.avgMae != null ? `${r.avgMae}R` : "—"}</span>
                 <span style={{ ...cell, color: r.refund > 0 ? "var(--sage)" : "var(--slate)" }}>{r.refund > 0 ? money(r.refund) : "—"}</span>
                 <span style={{ ...cell, textAlign: "right", color: netPnl >= 0 ? "var(--sage)" : "var(--brick)" }}>{netPnl !== 0 ? `${netPnl >= 0 ? "+" : ""}${pnlPct}%` : "—"}</span>
                 <span style={{ ...cell, textAlign: "right", color: "var(--sand-dim)" }}>{r.avgRr !== null ? `${r.avgRr}R` : "—"}</span>
@@ -203,9 +218,11 @@ export function ReportView({ accounts, trades, payouts, settings }) {
             );
           })}
           {accData.rows.length > 0 && (
-            <div className="grid items-center pd-mono" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr", padding: "8px 0", borderTop: "1px solid var(--line)", fontWeight: 700 }}>
+            <div className="grid items-center pd-mono" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr 1fr 1fr", padding: "8px 0", borderTop: "1px solid var(--line)", fontWeight: 700 }}>
               <span className="pd-label" style={{ fontSize: 11, color: "var(--brass)" }}>TOTAL</span>
               <span style={{ ...cell, color: accData.yearPnl >= 0 ? "var(--sage)" : "var(--brick)" }}>{money(accData.yearPnl)}</span>
+              <span style={{ ...cell, color: accData.yearAvgMfe != null ? "var(--sage)" : "var(--slate)" }}>{accData.yearAvgMfe != null ? `${accData.yearAvgMfe}R` : "—"}</span>
+              <span style={{ ...cell, color: accData.yearAvgMae != null ? "var(--brick)" : "var(--slate)" }}>{accData.yearAvgMae != null ? `${accData.yearAvgMae}R` : "—"}</span>
               <span style={{ ...cell, color: accData.yearRefund > 0 ? "var(--sage)" : "var(--slate)" }}>{accData.yearRefund > 0 ? money(accData.yearRefund) : "—"}</span>
               <span style={{ ...cell, textAlign: "right", color: accData.yearNetPnl >= 0 ? "var(--sage)" : "var(--brick)" }}>{`${accData.yearNetPnl >= 0 ? "+" : ""}${((accData.yearNetPnl / accData.accSize) * 100).toFixed(1)}%`}</span>
               <span style={{ ...cell, textAlign: "right", color: "var(--sand-dim)" }}>{accData.yearAvgRr !== null ? `${accData.yearAvgRr}R` : "—"}</span>

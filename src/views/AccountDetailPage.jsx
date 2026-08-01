@@ -42,6 +42,20 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const ratings = { green: 0, amber: 0, red: 0 };
   enrichedTrades.forEach((t) => { if (ratings[t.rating] !== undefined) ratings[t.rating]++; });
 
+  const mfeTrades = enrichedTrades.filter((t) => t.mfeR != null);
+  const maeTrades = enrichedTrades.filter((t) => t.maeR != null);
+  const avgMfe = mfeTrades.length ? (mfeTrades.reduce((s, t) => s + t.mfeR, 0) / mfeTrades.length).toFixed(2) : "—";
+  const avgMae = maeTrades.length ? (maeTrades.reduce((s, t) => s + t.maeR, 0) / maeTrades.length).toFixed(2) : "—";
+  const mfeR = parseFloat(avgMfe);
+  const mfeWithRealized = mfeTrades.filter((t) => t.risk > 0);
+  const avgRealizedOfMfe = mfeWithRealized.length
+    ? mfeWithRealized.reduce((s, t) => s + (t.pnl / t.risk), 0) / mfeWithRealized.length
+    : null;
+  const capture = avgMfe !== "—" && avgRealizedOfMfe !== null && mfeR > 0
+    ? `${Math.round((avgRealizedOfMfe / mfeR) * 100)}%` : "—";
+  const giveback = avgMfe !== "—" && avgRealizedOfMfe !== null
+    ? (mfeR - avgRealizedOfMfe).toFixed(2) : "—";
+
   let running = 0;
   const sortedTrades = enrichedTrades.slice().reverse();
   const refundEvent = account.refund > 0 && account.refundDate
@@ -177,6 +191,9 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
               <KpiTile label="Win Rate" value={`${winRate}%`} accent="var(--sage)" sub={`${wins}W / ${losses}L`} />
               <KpiTile label="Avg R:R" value={avgRR} accent="var(--brass)" />
               <KpiTile label="Ratings" value={`${ratings.green}·${ratings.amber}·${ratings.red}`} accent="var(--sand)" sub="green · amber · red" />
+              <KpiTile label="Avg MFE" value={avgMfe} accent="var(--sage)" sub="R" />
+              <KpiTile label="Avg MAE" value={avgMae} accent="var(--brick)" sub="R" />
+              <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
             </div>
           )}
 
@@ -210,13 +227,13 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
               </div>
             ) : (
               <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)" }}>
-                <div className="grid pd-label items-center" style={{ gridTemplateColumns: "30px 90px 80px 38px 50px 80px 80px 36px 70px 100px 1fr 28px", gap: "0 12px", background: "var(--ledger)", borderBottom: "1px solid var(--line)", padding: "8px 14px" }}>
-                  <span></span><span>Date</span><span>Symbol</span><span>Side</span><span>Lots</span><span>Risk</span><span>P&L</span><span>Out</span><span>Session</span><span>Tag</span><span>Notes</span><span></span>
+                <div className="grid pd-label items-center" style={{ gridTemplateColumns: "30px 90px 80px 38px 50px 80px 80px 58px 58px 36px 70px 100px 1fr 28px", gap: "0 12px", background: "var(--ledger)", borderBottom: "1px solid var(--line)", padding: "8px 14px" }}>
+                  <span></span><span>Date</span><span>Symbol</span><span>Side</span><span>Lots</span><span>Risk</span><span>P&L</span><span>MFE</span><span>MAE</span><span>Out</span><span>Session</span><span>Tag</span><span>Notes</span><span></span>
                 </div>
                 {enrichedTrades.map((t) => (
                   <Link key={t.id} to="/journal" search={{ account: account.id }}
                     className="pd-row grid items-center text-sm pd-mono no-underline"
-                    style={{ gridTemplateColumns: "30px 90px 80px 38px 50px 80px 80px 36px 70px 100px 1fr 28px", gap: "0 12px", padding: "8px 14px", borderBottom: "1px solid var(--line)", color: "var(--sand)", textDecoration: "none" }}>
+                    style={{ gridTemplateColumns: "30px 90px 80px 38px 50px 80px 80px 58px 58px 36px 70px 100px 1fr 28px", gap: "0 12px", padding: "8px 14px", borderBottom: "1px solid var(--line)", color: "var(--sand)", textDecoration: "none" }}>
                     <span className="flex items-center justify-center"><span style={{ width: 10, height: 10, borderRadius: "50%", background: RATING_META[t.rating]?.color || "var(--slate)", flexShrink: 0 }} /></span>
                     <span className="whitespace-nowrap" style={{ color: "var(--slate)" }}>{formatDateUK(t.date)}</span>
                     <span className="whitespace-nowrap">{t.symbol}</span>
@@ -224,6 +241,8 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                     <span className="whitespace-nowrap">{t.lots}</span>
                     <span className="whitespace-nowrap" style={{ color: "var(--sand-dim)" }}>{formatDisplay(t.risk, settings.displayFormat, account.size, t.risk)}</span>
                     <span className="whitespace-nowrap" style={{ color: t.pnl >= 0 ? "var(--sage)" : "var(--brick)" }}>{formatDisplay(t.pnl, settings.displayFormat, account.size, t.risk)}</span>
+                    <span className="whitespace-nowrap" style={{ color: t.mfeR != null ? "var(--sage)" : "var(--slate)" }}>{t.mfeR != null ? `${t.mfeR}R` : "—"}</span>
+                    <span className="whitespace-nowrap" style={{ color: t.maeR != null ? "var(--brick)" : "var(--slate)" }}>{t.maeR != null ? `${t.maeR}R` : "—"}</span>
                     <span className="whitespace-nowrap">
                       <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 5px", borderRadius: 3, color: OUTCOME_META[t.outcome].color, background: OUTCOME_META[t.outcome].bg }}>{t.outcome}</span>
                     </span>

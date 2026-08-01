@@ -82,6 +82,8 @@ export default defineSchema({
     tvLink: v.string(),
     rating: v.string(),
     notes: v.string(),
+    mfeR: v.optional(v.union(v.number(), v.null())),
+    maeR: v.optional(v.union(v.number(), v.null())),
     archived: v.boolean(),
   })
     .index("by_userId", ["userId"])

@@ -28,6 +28,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
   const defaultForm = {
     accountId: accounts[0]?.id || "", date: "", symbol: "", side: "Long", lots: "",
     risk: "", pnl: "", session: "London", tag: "", tvLink: "", rating: "green", notes: "",
+    mfeR: "", maeR: "",
   };
   const [form, setForm] = useState(defaultForm);
 
@@ -48,6 +49,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
       accountId: t.accountId, date: t.date, symbol: t.symbol, side: t.side,
       lots: String(t.lots), risk: String(t.risk), pnl: String(t.pnl),
       session: t.session, tag: t.tag, tvLink: t.tvLink, rating: t.rating, notes: t.notes,
+      mfeR: t.mfeR != null ? String(t.mfeR) : "", maeR: t.maeR != null ? String(t.maeR) : "",
     });
     setShowForm(true);
     setNotesMode("edit");
@@ -62,6 +64,8 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
       risk: parseFloat(form.risk) || 0,
       pnl: parseFloat(form.pnl) || 0,
       lots: parseFloat(form.lots) || 0,
+      mfeR: form.mfeR !== "" ? parseFloat(form.mfeR) || 0 : null,
+      maeR: form.maeR !== "" ? parseFloat(form.maeR) || 0 : null,
     };
     setSaving(true);
     setFormError("");
@@ -138,6 +142,8 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
             <div><div className="pd-label mb-1">Lots</div><input className="pd-input" placeholder="0.5" value={form.lots} onChange={(e) => setForm({ ...form, lots: e.target.value })} /></div>
             <div><div className="pd-label mb-1">Risk ($)</div><input className="pd-input" placeholder="250" value={form.risk} onChange={(e) => setForm({ ...form, risk: e.target.value })} /></div>
             <div><div className="pd-label mb-1">P&L ($)</div><input className="pd-input" placeholder="412" value={form.pnl} onChange={(e) => setForm({ ...form, pnl: e.target.value })} /></div>
+            <div><div className="pd-label mb-1">MFE (R)</div><input className="pd-input" placeholder="2.3" value={form.mfeR} onChange={(e) => setForm({ ...form, mfeR: e.target.value })} /></div>
+            <div><div className="pd-label mb-1">MAE (R)</div><input className="pd-input" placeholder="0.5" value={form.maeR} onChange={(e) => setForm({ ...form, maeR: e.target.value })} /></div>
             <div>
               <div className="pd-label mb-1">Session</div>
               <Select value={form.session} onChange={(e) => setForm({ ...form, session: e.target.value })}>
@@ -178,12 +184,12 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
       )}
 
       <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)" }}>
-        <div className="grid pd-label items-center" style={{ gridTemplateColumns: "30px 100px 88px 42px 52px 82px 82px 38px 72px 110px 1fr 28px 28px", gap: "0 12px", background: "var(--ledger)", borderBottom: "1px solid var(--line)", padding: "10px 16px" }}>
-          <span></span><span>Date</span><span>Symbol</span><span>Side</span><span>Lots</span><span>Risk</span><span>P&L</span><span>Out</span><span>Session</span><span>Tag</span><span>Notes</span><span></span><span></span>
+        <div className="grid pd-label items-center" style={{ gridTemplateColumns: "30px 100px 88px 42px 52px 82px 82px 62px 62px 38px 72px 110px 1fr 28px 28px", gap: "0 12px", background: "var(--ledger)", borderBottom: "1px solid var(--line)", padding: "10px 16px" }}>
+          <span></span><span>Date</span><span>Symbol</span><span>Side</span><span>Lots</span><span>Risk</span><span>P&L</span><span>MFE</span><span>MAE</span><span>Out</span><span>Session</span><span>Tag</span><span>Notes</span><span></span><span></span>
         </div>
         {enrichedFiltered.length === 0 && <div className="p-6 text-sm text-center" style={{ color: "var(--slate)" }}>No trades logged for this filter yet.</div>}
         {enrichedFiltered.map((t) => (
-          <div key={t.id} className="pd-row grid items-center text-sm pd-mono" style={{ gridTemplateColumns: "30px 100px 88px 42px 52px 82px 82px 38px 72px 110px 1fr 28px 28px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)", cursor: "pointer" }} onClick={() => openEdit(t)}>
+          <div key={t.id} className="pd-row grid items-center text-sm pd-mono" style={{ gridTemplateColumns: "30px 100px 88px 42px 52px 82px 82px 62px 62px 38px 72px 110px 1fr 28px 28px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)", cursor: "pointer" }} onClick={() => openEdit(t)}>
             <span className="flex items-center justify-center"><span style={{ width: 12, height: 12, borderRadius: "50%", background: RATING_META[t.rating]?.color || "var(--slate)", flexShrink: 0 }} title={RATING_META[t.rating]?.label} /></span>
             <span className="whitespace-nowrap" style={{ color: "var(--slate)" }}>{formatDateUK(t.date)}</span>
             <span className="whitespace-nowrap">{t.symbol}</span>
@@ -191,6 +197,8 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
             <span className="whitespace-nowrap">{t.lots}</span>
             <span className="whitespace-nowrap" style={{ color: "var(--sand-dim)" }}>{formatDisplay(t.risk, settings.displayFormat, t.accountSize, t.risk)}</span>
             <span className="whitespace-nowrap" style={{ color: t.pnl >= 0 ? "var(--sage)" : "var(--brick)" }}>{formatDisplay(t.pnl, settings.displayFormat, t.accountSize, t.risk)}</span>
+            <span className="whitespace-nowrap" style={{ color: t.mfeR != null ? "var(--sage)" : "var(--slate)" }}>{t.mfeR != null ? `${t.mfeR}R` : "—"}</span>
+            <span className="whitespace-nowrap" style={{ color: t.maeR != null ? "var(--brick)" : "var(--slate)" }}>{t.maeR != null ? `${t.maeR}R` : "—"}</span>
             <span className="whitespace-nowrap">
               <span style={{
                 fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4,

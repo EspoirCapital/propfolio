@@ -8,12 +8,12 @@ import { DEFAULT_SETTINGS } from "./utils";
 const AppContext = createContext(null);
 
 const ACCOUNT_FIELDS = ["firm", "template", "size", "platform", "creationDate", "terminationDate", "status", "drawdown", "maxLoss", "dailyLoss", "costs", "platformLogin", "platformPassword", "platformInvestorPassword", "platformLink"];
-const TRADE_FIELDS = ["accountId", "date", "symbol", "side", "lots", "risk", "pnl", "session", "tag", "tvLink", "rating", "notes"];
+const TRADE_FIELDS = ["accountId", "date", "symbol", "side", "lots", "risk", "pnl", "session", "tag", "tvLink", "rating", "notes", "mfeR", "maeR"];
 const PAYOUT_FIELDS = ["accountId", "requestedDate", "amount", "split", "method", "proofLink"];
 const CERT_FIELDS = ["accountId", "type", "date", "link", "label"];
 const TEMPLATE_FIELDS = ["firm", "name", "phases", "target", "dailyLoss", "maxLoss", "drawdown", "consistency", "feeRefund", "platforms"];
 
-const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k]]));
+const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k]]).filter(([, v]) => v !== undefined));
 
 export function AppProvider({ children }) {
   const { isLoading, isAuthenticated } = useConvexAuth();

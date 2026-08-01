@@ -15,6 +15,8 @@ export const tradeFields = v.object({
   tvLink: v.string(),
   rating: v.string(),
   notes: v.string(),
+  mfeR: v.optional(v.union(v.number(), v.null())),
+  maeR: v.optional(v.union(v.number(), v.null())),
 });
 
 export const list = query({
