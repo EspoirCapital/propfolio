@@ -16,6 +16,13 @@ import { AccountPerformanceSummary } from "../components/AccountPerformanceSumma
 export function AccountDetailPage({ accountId, derived, trades, payouts, certificates, settings, templates, updateAccount, onBack, onEdit, onDelete, archiveAccount, unarchiveAccount }) {
   const { proceed: proceedFn, breach: breachFn } = useApp();
   const navigate = useNavigate();
+
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showProceedConfirm, setShowProceedConfirm] = useState(false);
+  const [showBreachConfirm, setShowBreachConfirm] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [busy, setBusy] = useState(false);
+
   const account = derived.accounts.find((a) => a.id === accountId);
   if (!account) return null;
 
@@ -65,12 +72,6 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
     running += t.pnl;
     return { date: formatDateUK(t.date), pnl: Math.round(running) };
   });
-
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [showProceedConfirm, setShowProceedConfirm] = useState(false);
-  const [showBreachConfirm, setShowBreachConfirm] = useState(false);
-  const [actionError, setActionError] = useState("");
-  const [busy, setBusy] = useState(false);
 
   const canProceed = (account.targetPct ?? 0) >= 100 && nextStatus(account.status, phaseCount);
   const nextDest = nextStatusLabel(account.status, phaseCount);

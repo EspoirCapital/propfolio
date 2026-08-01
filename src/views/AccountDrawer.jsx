@@ -12,6 +12,12 @@ import { ErrorBanner } from "../components/ErrorBanner";
 export function AccountDrawer({ account, trades, payouts, certificates, settings, templates, onViewDetails, onLogTrade, onClose, archiveAccount, unarchiveAccount }) {
   const { proceed: proceedFn, breach: breachFn } = useApp();
   const navigate = useNavigate();
+
+  const [showProceedConfirm, setShowProceedConfirm] = useState(false);
+  const [showBreachConfirm, setShowBreachConfirm] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [busy, setBusy] = useState(false);
+
   if (!account) return null;
 
   const accTrades = trades.filter((t) => t.accountId === account.id && !t.archived);
@@ -53,11 +59,6 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
     running += t.pnl;
     return { date: formatDateUK(t.date), pnl: Math.round(running) };
   });
-
-  const [showProceedConfirm, setShowProceedConfirm] = useState(false);
-  const [showBreachConfirm, setShowBreachConfirm] = useState(false);
-  const [actionError, setActionError] = useState("");
-  const [busy, setBusy] = useState(false);
 
   const canProceed = (account.targetPct ?? 0) >= 100 && nextStatus(account.status, phaseCount);
   const nextDest = nextStatusLabel(account.status, phaseCount);
