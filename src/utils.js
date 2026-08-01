@@ -71,3 +71,71 @@ export function nextStatusLabel(status, phaseCount) {
   if (next === "funded") return "Funded";
   return next.replace("phase_", "Phase ");
 }
+
+const FRIENDLY_ERRORS = {
+  "Invalid invite code.": "That invite code isn't valid. Check the link you were sent and try again.",
+  "Invite code is required.": "An invite code is required. Use the link from your invitation.",
+  "This invite has already been used.": "That invite link has already been used. Ask the admin for a new one.",
+  "This invite has expired.": "That invite link has expired. Ask the admin for a new one.",
+  "InvalidAccountId": "No account is linked to that email. Check the address and try again.",
+  "InvalidSecret": "Incorrect email or password. Check your details and try again.",
+  "Invalid credentials": "Incorrect email or password. Check your details and try again.",
+  "Invalid password": "Password must be at least 8 characters.",
+  "TooManyFailedAttempts": "Too many failed attempts. Wait a few minutes and try again.",
+  "Not signed in.": "Your session has expired. Please sign in again.",
+  "Only admins can create invites.": "Only admins can create invite links.",
+  "Only admins can revoke invites.": "Only admins can revoke invite links.",
+  "Invite not found.": "That invite couldn't be found. It may have been removed.",
+  "Account not found.": "That account no longer exists. It may have been deleted.",
+  "Cluster not found.": "That cluster no longer exists. It may have been deleted.",
+  "Template not found.": "That template no longer exists. It may have been deleted.",
+  "Trade not found.": "That trade no longer exists. It may have been deleted.",
+  "Payout not found.": "That payout record no longer exists. It may have been deleted.",
+  "Certificate not found.": "That certificate no longer exists. It may have been deleted.",
+};
+
+function lookupFriendly(message) {
+  const key = Object.keys(FRIENDLY_ERRORS).find((k) => message.includes(k));
+  return key ? FRIENDLY_ERRORS[key] : null;
+}
+
+// Turn a raw error (from a Convex mutation, query, or auth action) into a
+// short, human-readable message. Never leak request IDs, stack traces, or
+// internal Convex prefixes to the end user.
+export function friendlyError(err, fallback = "Something went wrong. Please try again.") {
+  if (!err) return fallback;
+
+  // ConvexError carries the thrown payload in `data`.
+  if (err.data !== undefined) {
+    const data = typeof err.data === "string" ? err.data : err.data?.message;
+    if (data) {
+      const mapped = lookupFriendly(data);
+      return mapped || data;
+    }
+  }
+
+  let raw = err.message ? err.message : typeof err === "string" ? err : "";
+  if (!raw) return fallback;
+
+  const clean = raw
+    .replace(/^\[CONVEX [A-Z]\([^)]*\)\]\s*/g, "")
+    .replace(/\[Request ID: [^\]]*\]\s*/g, "")
+    .replace(/^Server Error Called by client\s+(?:-|—)\s*/g, "")
+    .replace(/\s*Called by client\s*$/g, "")
+    .replace(/^Uncaught Error:\s*/g, "")
+    .trim()
+    .split("\n")[0]
+    .replace(/^Uncaught Error:\s*/g, "")
+    .trim();
+
+  if (!clean) return fallback;
+
+  const mapped = lookupFriendly(clean);
+  if (mapped) return mapped;
+
+  if (/\[CONVEX|Request ID|\.ts:\d|\.js:\d|node_modules| at \w+ \(/.test(clean)) {
+    return fallback;
+  }
+
+  return clean;
+}

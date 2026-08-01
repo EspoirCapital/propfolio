@@ -79,7 +79,7 @@ export function AppProvider({ children }) {
     signOut().catch(() => {});
   }
   function setSettings(next) {
-    updateSettingsFn({ displayFormat: next.displayFormat, beThreshold: next.beThreshold }).catch(() => {});
+    return updateSettingsFn({ displayFormat: next.displayFormat, beThreshold: next.beThreshold });
   }
 
   const createAccount = (data) => createAccountFn(pick(data, ACCOUNT_FIELDS));

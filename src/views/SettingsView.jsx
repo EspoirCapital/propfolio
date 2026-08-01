@@ -1,21 +1,33 @@
 import { useState } from "react";
 import { FormatToggle } from "../components/FormatToggle";
+import { ErrorBanner } from "../components/ErrorBanner";
+import { friendlyError } from "../utils";
 
 export function SettingsView({ settings, setSettings, session, updateProfile }) {
   const [name, setName] = useState(session?.name || "");
   const [email, setEmail] = useState(session?.email || "");
   const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [settingsError, setSettingsError] = useState("");
 
   function update(key, value) {
     const next = { ...settings, [key]: value };
-    setSettings(next);
+    setSettingsError("");
+    setSettings(next).catch((err) => setSettingsError(friendlyError(err)));
   }
-  function handleProfileSave(e) {
+  async function handleProfileSave(e) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
     setProfileSaving(true);
-    updateProfile({ name: trimmed, email: email.trim() }).finally(() => setProfileSaving(false));
+    setProfileError("");
+    try {
+      await updateProfile({ name: trimmed, email: email.trim() });
+    } catch (err) {
+      setProfileError(friendlyError(err));
+    } finally {
+      setProfileSaving(false);
+    }
   }
 
   const initials = (session.name || "EC").split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
@@ -36,6 +48,7 @@ export function SettingsView({ settings, setSettings, session, updateProfile }) 
           </div>
         </div>
         <form onSubmit={handleProfileSave} className="flex flex-col gap-3">
+          {profileError && <ErrorBanner message={profileError} onDismiss={() => setProfileError("")} />}
           <div>
             <div className="pd-label mb-1">Name</div>
             <input className="pd-input" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -51,6 +64,7 @@ export function SettingsView({ settings, setSettings, session, updateProfile }) 
       {/* Display */}
       <div className="rounded-lg p-5" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
         <div className="pd-label mb-3">Display</div>
+        {settingsError && <div className="mb-3"><ErrorBanner message={settingsError} onDismiss={() => setSettingsError("")} /></div>}
         <div className="mb-5">
           <div className="pd-label mb-2">Format</div>
           <FormatToggle value={settings.displayFormat} onChange={(v) => update("displayFormat", v)} options={["dollar", "percent", "rr"]} />

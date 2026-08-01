@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { FIRMS } from "../constants";
+import { friendlyError } from "../utils";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { Select } from "../components/Select";
+import { ErrorBanner } from "../components/ErrorBanner";
 
 const PHASE_OPTIONS = [
   { label: "Instant", value: 0 },
@@ -29,6 +31,8 @@ export function TemplatesView({ templates, createTemplate, updateTemplate, delet
   const [showForm, setShowForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
   const defaultForm = { firm: FIRMS[0], name: "", phases: 2, target: "", dailyLoss: "", maxLoss: "", drawdown: "Static", consistency: "", feeRefund: false, platforms: "" };
   const [form, setForm] = useState(defaultForm);
   const [targets, setTargets] = useState([8, 5]);
@@ -39,6 +43,7 @@ export function TemplatesView({ templates, createTemplate, updateTemplate, delet
     setForm({ ...t, phases: phaseCount });
     setTargets(parseTargets(t.target, phaseCount));
     setShowForm(true);
+    setFormError("");
   }
 
   function handlePhaseChange(phaseCount) {
@@ -51,23 +56,41 @@ export function TemplatesView({ templates, createTemplate, updateTemplate, delet
     setTargets((prev) => { const next = [...prev]; next[idx] = num; return next; });
   }
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
     if (!form.name) return;
     const parsed = { ...form, phases: parseInt(form.phases) || 0, target: buildTargetStr(targets) };
-    if (editingTemplate) {
-      updateTemplate(editingTemplate.id, parsed);
-    } else {
-      createTemplate(parsed);
+    setSaving(true);
+    setFormError("");
+    try {
+      if (editingTemplate) {
+        await updateTemplate(editingTemplate.id, parsed);
+      } else {
+        await createTemplate(parsed);
+      }
+      setShowForm(false);
+      setEditingTemplate(null);
+      setForm(defaultForm);
+      setTargets([8, 5]);
+    } catch (err) {
+      setFormError(friendlyError(err));
+    } finally {
+      setSaving(false);
     }
-    setShowForm(false);
-    setEditingTemplate(null);
-    setForm(defaultForm);
-    setTargets([8, 5]);
   }
 
-  function deleteTemplate(id) {
+  function askDelete(id) {
     setDeleteTarget(id);
+  }
+
+  async function confirmDelete() {
+    try {
+      await deleteTemplate(deleteTarget);
+      setDeleteTarget(null);
+    } catch (err) {
+      setDeleteTarget(null);
+      setFormError(friendlyError(err));
+    }
   }
 
   const phaseCount = form.phases;
@@ -79,12 +102,13 @@ export function TemplatesView({ templates, createTemplate, updateTemplate, delet
           Firm rules are data, not hardcoded — add or adjust a template here whenever a firm changes terms, and it
           flows through account snapshots automatically.
         </p>
-        <button className="pd-btn pd-btn-primary flex items-center gap-1.5 shrink-0" onClick={() => { setEditingTemplate(null); setShowForm(true); setForm(defaultForm); setTargets([8, 5]); }}><Plus size={14} /> Add template</button>
+        <button className="pd-btn pd-btn-primary flex items-center gap-1.5 shrink-0" onClick={() => { setEditingTemplate(null); setShowForm(true); setFormError(""); setForm(defaultForm); setTargets([8, 5]); }}><Plus size={14} /> Add template</button>
       </div>
 
       {showForm && (
         <form onSubmit={submit} className="rounded-lg p-4 mb-5" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
           <div className="pd-label mb-2">{editingTemplate ? "Edit template" : "New template"}</div>
+          {formError && <div className="mb-3"><ErrorBanner message={formError} onDismiss={() => setFormError("")} /></div>}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
             <div>
               <div className="pd-label mb-1">Firm</div>
@@ -156,7 +180,7 @@ export function TemplatesView({ templates, createTemplate, updateTemplate, delet
 
           <div className="flex gap-2 justify-end">
             <button type="button" className="pd-btn" onClick={() => { setShowForm(false); setEditingTemplate(null); }}>Cancel</button>
-            <button type="submit" className="pd-btn pd-btn-primary">{editingTemplate ? "Update template" : "Save template"}</button>
+            <button type="submit" className="pd-btn pd-btn-primary" disabled={saving}>{saving ? "Saving…" : (editingTemplate ? "Update template" : "Save template")}</button>
           </div>
         </form>
       )}
@@ -179,7 +203,7 @@ export function TemplatesView({ templates, createTemplate, updateTemplate, delet
                 <span className="whitespace-nowrap" style={{ color: t.feeRefund ? "var(--sage)" : "var(--slate)" }}>{t.feeRefund ? "Yes" : "No"}</span>
                 <span className="truncate min-w-0" style={{ color: "var(--sand-dim)", fontFamily: "'IBM Plex Sans', sans-serif" }}>{t.platforms}</span>
                 <span />
-                <button className="flex items-center justify-center" style={{ color: "var(--slate)", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={(e) => { e.stopPropagation(); deleteTemplate(t.id); }} title="Delete template"><X size={13} /></button>
+                <button className="flex items-center justify-center" style={{ color: "var(--slate)", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={(e) => { e.stopPropagation(); askDelete(t.id); }} title="Delete template"><X size={13} /></button>
               </div>
             ))}
           </div>
@@ -189,7 +213,7 @@ export function TemplatesView({ templates, createTemplate, updateTemplate, delet
         <ConfirmModal
           title="Delete template"
           message="Delete this template? Any accounts using it will keep their data."
-          onConfirm={() => { deleteTemplate(deleteTarget); setDeleteTarget(null); }}
+          onConfirm={confirmDelete}
           onCancel={() => setDeleteTarget(null)}
         />
       )}

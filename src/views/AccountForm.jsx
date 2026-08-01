@@ -3,7 +3,7 @@ import { FIRMS, STATUS_META } from "../constants";
 import { DatePicker } from "../components/DatePicker";
 import { Select } from "../components/Select";
 
-export function AccountForm({ initial, templates, onSave, onCancel }) {
+export function AccountForm({ initial, templates, onSave, onCancel, saving }) {
   const blank = {
     firm: FIRMS[0], template: "", size: "", platform: "MatchTrader",
     creationDate: "", terminationDate: "", status: "phase_1", drawdown: "Static", maxLoss: "", dailyLoss: "",
@@ -83,7 +83,7 @@ export function AccountForm({ initial, templates, onSave, onCancel }) {
 
       <div className="flex gap-2 justify-end">
         <button type="button" className="pd-btn" onClick={onCancel}>Cancel</button>
-        <button type="submit" className="pd-btn pd-btn-primary">{initial ? "Update account" : "Add account"}</button>
+        <button type="submit" className="pd-btn pd-btn-primary" disabled={saving}>{saving ? "Saving…" : (initial ? "Update account" : "Add account")}</button>
       </div>
     </form>
   );

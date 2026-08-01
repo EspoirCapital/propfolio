@@ -2,11 +2,12 @@ import { useState, useEffect, useMemo } from "react";
 import { Plus, X, ExternalLink, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { marked } from "marked";
-import { computeOutcome, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META } from "../utils";
+import { computeOutcome, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, friendlyError } from "../utils";
 import { RatingPicker } from "../components/RatingPicker";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { DatePicker } from "../components/DatePicker";
 import { Select } from "../components/Select";
+import { ErrorBanner } from "../components/ErrorBanner";
 
 export function JournalView({ accounts, trades, createTrade, updateTrade, deleteTrade, settings, initialAccountId, onClearInitialAccount }) {
   const [filterAcc, setFilterAcc] = useState(initialAccountId || "All");
@@ -14,6 +15,8 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
   const [editingTrade, setEditingTrade] = useState(null);
   const [notesMode, setNotesMode] = useState("edit");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (initialAccountId) {
@@ -48,9 +51,10 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
     });
     setShowForm(true);
     setNotesMode("edit");
+    setFormError("");
   }
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
     if (!form.accountId || !form.date || !form.symbol) return;
     const parsed = {
@@ -59,19 +63,37 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
       pnl: parseFloat(form.pnl) || 0,
       lots: parseFloat(form.lots) || 0,
     };
-    if (editingTrade) {
-      updateTrade(editingTrade.id, parsed);
-    } else {
-      createTrade(parsed);
+    setSaving(true);
+    setFormError("");
+    try {
+      if (editingTrade) {
+        await updateTrade(editingTrade.id, parsed);
+      } else {
+        await createTrade(parsed);
+      }
+      setShowForm(false);
+      setEditingTrade(null);
+      setNotesMode("edit");
+      setForm(defaultForm);
+    } catch (err) {
+      setFormError(friendlyError(err));
+    } finally {
+      setSaving(false);
     }
-    setShowForm(false);
-    setEditingTrade(null);
-    setNotesMode("edit");
-    setForm(defaultForm);
   }
 
   function askDelete(id) {
     setDeleteTarget(id);
+  }
+
+  async function confirmDelete() {
+    try {
+      await deleteTrade(deleteTarget);
+      setDeleteTarget(null);
+    } catch (err) {
+      setDeleteTarget(null);
+      setFormError(friendlyError(err));
+    }
   }
 
   return (
@@ -89,7 +111,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
             </Link>
           )}
         </div>
-        <button className="pd-btn pd-btn-primary flex items-center gap-1.5" onClick={() => { setEditingTrade(null); setShowForm(true); setForm({ ...defaultForm, accountId: filterAcc !== "All" ? filterAcc : accounts[0]?.id || "" }); setNotesMode("edit"); }}><Plus size={14} /> Log trade</button>
+        <button className="pd-btn pd-btn-primary flex items-center gap-1.5" onClick={() => { setEditingTrade(null); setShowForm(true); setFormError(""); setForm({ ...defaultForm, accountId: filterAcc !== "All" ? filterAcc : accounts[0]?.id || "" }); setNotesMode("edit"); }}><Plus size={14} /> Log trade</button>
       </div>
 
       {showForm && (
@@ -97,6 +119,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
           <div className="flex items-center justify-between mb-3">
             <span className="pd-label">{editingTrade ? "Edit trade" : "New trade"}</span>
           </div>
+          {formError && <div className="mb-3"><ErrorBanner message={formError} onDismiss={() => setFormError("")} /></div>}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
             <div className="col-span-2 md:col-span-1">
               <div className="pd-label mb-1">Account</div>
@@ -149,7 +172,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
 
           <div className="flex gap-2 justify-end">
             <button type="button" className="pd-btn" onClick={() => { setShowForm(false); setEditingTrade(null); setNotesMode("edit"); }}>Cancel</button>
-            <button type="submit" className="pd-btn pd-btn-primary">{editingTrade ? "Update trade" : "Save trade"}</button>
+            <button type="submit" className="pd-btn pd-btn-primary" disabled={saving}>{saving ? "Saving…" : (editingTrade ? "Update trade" : "Save trade")}</button>
           </div>
         </form>
       )}
@@ -186,7 +209,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
         <ConfirmModal
           title="Delete trade"
           message="Delete this trade? This cannot be undone."
-          onConfirm={() => { deleteTrade(deleteTarget); setDeleteTarget(null); }}
+          onConfirm={confirmDelete}
           onCancel={() => setDeleteTarget(null)}
         />
       )}

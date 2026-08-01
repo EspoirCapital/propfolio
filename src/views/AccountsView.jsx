@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Pencil, X, LayoutGrid, List, Plus, Archive } from "lucide-react";
 import { FIRMS, STATUS_META } from "../constants";
-import { money, formatDateUK } from "../utils";
+import { money, formatDateUK, friendlyError } from "../utils";
 import { KpiTile } from "../components/KpiTile";
 import { StatusPill } from "../components/StatusPill";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { Select } from "../components/Select";
+import { ErrorBanner } from "../components/ErrorBanner";
 import { AccountForm } from "./AccountForm";
 import { TicketCard } from "./TicketCard";
 
@@ -14,6 +15,8 @@ export function AccountsView({ derived, templates, onRowClick, onOpen, createAcc
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [viewMode, setViewMode] = useState("card");
   const [showArchived, setShowArchived] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const filtered = derived.accounts.filter((a) => {
     if (filterFirm !== "All" && a.firm !== filterFirm) return false;
@@ -24,23 +27,55 @@ export function AccountsView({ derived, templates, onRowClick, onOpen, createAcc
 
   useEffect(() => { if (editingAccount) setShowForm(true); }, [editingAccount]);
 
-  function openAdd() { setEditingAccount(null); setShowForm(true); }
+  function openAdd() { setEditingAccount(null); setShowForm(true); setFormError(""); }
   function openEdit(acc) {
     const a = typeof acc === "string" ? derived.accounts.find((x) => x.id === acc) : acc;
     if (!a) return;
     setEditingAccount(a);
     setShowForm(true);
+    setFormError("");
   }
-  function handleSave(data) {
-    if (editingAccount) {
-      updateAccount(editingAccount.id, data);
-    } else {
-      createAccount(data);
+  async function handleSave(data) {
+    setSaving(true);
+    setFormError("");
+    try {
+      if (editingAccount) {
+        await updateAccount(editingAccount.id, data);
+      } else {
+        await createAccount(data);
+      }
+      setShowForm(false);
+      setEditingAccount(null);
+    } catch (err) {
+      setFormError(friendlyError(err));
+    } finally {
+      setSaving(false);
     }
-    setShowForm(false);
-    setEditingAccount(null);
   }
   function handleDelete(id) { setDeleteTarget(id); }
+  async function confirmDelete() {
+    try {
+      await deleteAccount(deleteTarget);
+      setDeleteTarget(null);
+    } catch (err) {
+      setDeleteTarget(null);
+      setFormError(friendlyError(err));
+    }
+  }
+  async function handleArchive(id) {
+    try {
+      await archiveAccount(id);
+    } catch (err) {
+      setFormError(friendlyError(err));
+    }
+  }
+  async function handleUnarchive(id) {
+    try {
+      await unarchiveAccount(id);
+    } catch (err) {
+      setFormError(friendlyError(err));
+    }
+  }
 
   return (
     <div>
@@ -116,9 +151,14 @@ export function AccountsView({ derived, templates, onRowClick, onOpen, createAcc
         </div>
       </div>
 
+      {formError && !showForm && <div className="mb-4"><ErrorBanner message={formError} onDismiss={() => setFormError("")} /></div>}
+
       {showForm && (
-        <AccountForm initial={editingAccount} templates={templates} onSave={handleSave}
-          onCancel={() => { setShowForm(false); setEditingAccount(null); }} />
+        <div className="mb-5">
+          {formError && <div className="mb-3"><ErrorBanner message={formError} onDismiss={() => setFormError("")} /></div>}
+          <AccountForm initial={editingAccount} templates={templates} onSave={handleSave} saving={saving}
+            onCancel={() => { setShowForm(false); setEditingAccount(null); setFormError(""); }} />
+        </div>
       )}
 
       {/* Card View */}
@@ -130,7 +170,7 @@ export function AccountsView({ derived, templates, onRowClick, onOpen, createAcc
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filtered.map((a, i) => <TicketCard key={a.id} account={a} onOpen={onOpen} onEdit={openEdit} onArchive={archiveAccount} onUnarchive={unarchiveAccount} index={i} />)}
+              {filtered.map((a, i) => <TicketCard key={a.id} account={a} onOpen={onOpen} onEdit={openEdit} onArchive={handleArchive} onUnarchive={handleUnarchive} index={i} />)}
             </div>
           )}
         </>
@@ -163,7 +203,7 @@ export function AccountsView({ derived, templates, onRowClick, onOpen, createAcc
         <ConfirmModal
           title="Delete account"
           message="Delete this account? All trades, payouts, and certificates linked to it will also be removed."
-          onConfirm={() => { deleteAccount(deleteTarget); setDeleteTarget(null); }}
+          onConfirm={confirmDelete}
           onCancel={() => setDeleteTarget(null)}
         />
       )}

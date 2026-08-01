@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { BrandMark } from "../components/BrandMark";
+import { ErrorBanner } from "../components/ErrorBanner";
+import { friendlyError } from "../utils";
 
 export function LoginView() {
   const { signIn } = useAuthActions();
@@ -38,7 +40,7 @@ export function LoginView() {
         await signIn("password", { flow: "signIn", email: email.trim(), password });
       }
     } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
+      setError(friendlyError(err));
     } finally {
       setBusy(false);
     }
@@ -79,9 +81,7 @@ export function LoginView() {
               </div>
             )}
             {error && (
-              <div className="text-xs rounded-md px-3 py-2" style={{ background: "rgba(193,89,75,0.14)", color: "var(--brick)", border: "1px solid var(--brick-dim)" }}>
-                {error}
-              </div>
+              <ErrorBanner message={error} onDismiss={() => setError("")} />
             )}
             <button type="submit" className="pd-btn pd-btn-primary w-full mt-1" disabled={busy}>
               {busy ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}

@@ -2,11 +2,12 @@ import { useState } from "react";
 import { X, ChevronRight, PenLine, ArrowRight, AlertTriangle, Archive, ArchiveRestore } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useApp } from "../context";
-import { computeOutcome, money, getAccountLabel, formatDateUK, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel } from "../utils";
+import { computeOutcome, money, getAccountLabel, formatDateUK, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError } from "../utils";
 import { StatusPill } from "../components/StatusPill";
 import { ProgressionStepper } from "../components/ProgressionStepper";
 import { CredentialReveal } from "../components/CredentialReveal";
 import { EquityCurve } from "../components/EquityCurve";
+import { ErrorBanner } from "../components/ErrorBanner";
 
 export function AccountDrawer({ account, trades, payouts, certificates, settings, templates, onViewDetails, onLogTrade, onClose, archiveAccount, unarchiveAccount }) {
   const { proceed: proceedFn, breach: breachFn } = useApp();
@@ -55,19 +56,53 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
 
   const [showProceedConfirm, setShowProceedConfirm] = useState(false);
   const [showBreachConfirm, setShowBreachConfirm] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const canProceed = (account.targetPct ?? 0) >= 100 && nextStatus(account.status, phaseCount);
   const nextDest = nextStatusLabel(account.status, phaseCount);
 
   async function handleProceed() {
-    const newId = await proceedFn({ id: account.id });
-    onClose();
-    navigate({ to: "/accounts/$accountId", params: { accountId: newId } });
+    setBusy(true);
+    setActionError("");
+    try {
+      const newId = await proceedFn({ id: account.id });
+      onClose();
+      navigate({ to: "/accounts/$accountId", params: { accountId: newId } });
+    } catch (err) {
+      setShowProceedConfirm(false);
+      setActionError(friendlyError(err));
+      setBusy(false);
+    }
   }
 
   async function handleBreach() {
-    await breachFn({ id: account.id });
-    onClose();
+    setBusy(true);
+    setActionError("");
+    try {
+      await breachFn({ id: account.id });
+      onClose();
+    } catch (err) {
+      setShowBreachConfirm(false);
+      setActionError(friendlyError(err));
+      setBusy(false);
+    }
+  }
+
+  async function toggleArchive() {
+    setBusy(true);
+    setActionError("");
+    try {
+      if (account.archived) {
+        await unarchiveAccount(account.id);
+      } else {
+        await archiveAccount(account.id);
+      }
+      onClose();
+    } catch (err) {
+      setActionError(friendlyError(err));
+      setBusy(false);
+    }
   }
 
   return (
@@ -84,6 +119,8 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
             <button className="pd-btn" onClick={onClose} aria-label="Close"><X size={14} /></button>
           </div>
           <div className="mb-4"><StatusPill status={account.status} /></div>
+
+          {actionError && <div className="mb-4"><ErrorBanner message={actionError} onDismiss={() => setActionError("")} /></div>}
 
           <ProgressionStepper phaseCount={phaseCount} status={account.status} target={template?.target} compact />
 
@@ -193,14 +230,16 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
             <button
               className="pd-btn w-full flex items-center justify-center gap-2"
               style={{ borderColor: "var(--sage)", color: "var(--sage)" }}
-              onClick={() => { unarchiveAccount(account.id); onClose(); }}
+              onClick={toggleArchive}
+              disabled={busy}
             >
               <ArchiveRestore size={14} /> Unarchive
             </button>
           ) : (
             <button
               className="pd-btn w-full flex items-center justify-center gap-2"
-              onClick={() => { archiveAccount(account.id); onClose(); }}
+              onClick={toggleArchive}
+              disabled={busy}
             >
               <Archive size={14} /> Archive
             </button>
@@ -217,7 +256,7 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
             </div>
             <div className="flex justify-end gap-2">
               <button className="pd-btn" onClick={() => setShowProceedConfirm(false)}>Cancel</button>
-              <button className="pd-btn" style={{ background: "var(--sage)", color: "var(--ink)", borderColor: "var(--sage)" }} onClick={handleProceed}>Confirm</button>
+              <button className="pd-btn" style={{ background: "var(--sage)", color: "var(--ink)", borderColor: "var(--sage)" }} onClick={handleProceed} disabled={busy}>{busy ? "Working…" : "Confirm"}</button>
             </div>
           </div>
         </div>
@@ -232,7 +271,7 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
             </div>
             <div className="flex justify-end gap-2">
               <button className="pd-btn" onClick={() => setShowBreachConfirm(false)}>Cancel</button>
-              <button className="pd-btn" style={{ background: "var(--brick)", color: "white", borderColor: "var(--brick)" }} onClick={handleBreach}>Confirm</button>
+              <button className="pd-btn" style={{ background: "var(--brick)", color: "white", borderColor: "var(--brick)" }} onClick={handleBreach} disabled={busy}>{busy ? "Working…" : "Confirm"}</button>
             </div>
           </div>
         </div>

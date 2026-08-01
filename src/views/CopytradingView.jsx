@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Plus, X, Settings } from "lucide-react";
-import { getAccountLabel } from "../utils";
+import { getAccountLabel, friendlyError } from "../utils";
 import { StatusPill } from "../components/StatusPill";
 import { KpiTile } from "../components/KpiTile";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { Select } from "../components/Select";
+import { ErrorBanner } from "../components/ErrorBanner";
 
 export function CopytradingView({ accounts, clusters, createCluster, updateCluster, deleteCluster }) {
   const [showForm, setShowForm] = useState(false);
@@ -12,6 +13,8 @@ export function CopytradingView({ accounts, clusters, createCluster, updateClust
   const [simCluster, setSimCluster] = useState("");
   const [simRisk, setSimRisk] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const findAcc = (id) => accounts.find((a) => a.id === id);
 
@@ -24,28 +27,48 @@ export function CopytradingView({ accounts, clusters, createCluster, updateClust
     setEditingCluster(null);
     setForm({ name: "", masterAccountId: accounts[0]?.id || "", slaves: [] });
     setShowForm(true);
+    setFormError("");
   }
 
   function openEdit(cl) {
     setEditingCluster(cl);
     setForm({ name: cl.name, masterAccountId: cl.masterAccountId, slaves: cl.slaves.map((s) => ({ ...s })) });
     setShowForm(true);
+    setFormError("");
   }
 
-  function submitForm(e) {
+  async function submitForm(e) {
     e.preventDefault();
     if (!form.name || !form.masterAccountId) return;
-    if (editingCluster) {
-      updateCluster(editingCluster.id, { ...form, createdAt: editingCluster.createdAt });
-    } else {
-      createCluster({ ...form, createdAt: new Date().toISOString().slice(0, 10) });
+    setSaving(true);
+    setFormError("");
+    try {
+      if (editingCluster) {
+        await updateCluster(editingCluster.id, { ...form, createdAt: editingCluster.createdAt });
+      } else {
+        await createCluster({ ...form, createdAt: new Date().toISOString().slice(0, 10) });
+      }
+      setShowForm(false);
+      setEditingCluster(null);
+    } catch (err) {
+      setFormError(friendlyError(err));
+    } finally {
+      setSaving(false);
     }
-    setShowForm(false);
-    setEditingCluster(null);
   }
 
-  function deleteCluster(id) {
+  function askDelete(id) {
     setDeleteTarget(id);
+  }
+
+  async function confirmDelete() {
+    try {
+      await deleteCluster(deleteTarget);
+      setDeleteTarget(null);
+    } catch (err) {
+      setDeleteTarget(null);
+      setFormError(friendlyError(err));
+    }
   }
 
   function addSlave(accountId) {
@@ -102,6 +125,7 @@ export function CopytradingView({ accounts, clusters, createCluster, updateClust
       {showForm && (
         <form onSubmit={submitForm} className="rounded-lg p-4 mb-5" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
           <div className="pd-label mb-2">{editingCluster ? "Edit cluster" : "New cluster"}</div>
+          {formError && <div className="mb-3"><ErrorBanner message={formError} onDismiss={() => setFormError("")} /></div>}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
             <div><div className="pd-label mb-1">Cluster name</div><input required className="pd-input" placeholder="Gold Scalp Cluster" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} /></div>
             <div>
@@ -164,7 +188,7 @@ export function CopytradingView({ accounts, clusters, createCluster, updateClust
 
           <div className="flex gap-2 justify-end">
             <button type="button" className="pd-btn" onClick={() => { setShowForm(false); setEditingCluster(null); }}>Cancel</button>
-            <button type="submit" className="pd-btn pd-btn-primary">{editingCluster ? "Update cluster" : "Create cluster"}</button>
+            <button type="submit" className="pd-btn pd-btn-primary" disabled={saving}>{saving ? "Saving…" : (editingCluster ? "Update cluster" : "Create cluster")}</button>
           </div>
         </form>
       )}
@@ -184,7 +208,7 @@ export function CopytradingView({ accounts, clusters, createCluster, updateClust
                   <div className="pd-display text-xl" style={{ fontWeight: 700 }}>{cl.name}</div>
                   <div className="flex items-center gap-1">
                     <button className="pd-btn" style={{ padding: "3px 6px" }} onClick={() => openEdit(cl)} title="Edit cluster"><Settings size={12} /></button>
-                    <button className="pd-btn" style={{ padding: "3px 6px", borderColor: "var(--brick-dim)", color: "var(--brick)" }} onClick={() => deleteCluster(cl.id)} title="Delete cluster"><X size={12} /></button>
+                    <button className="pd-btn" style={{ padding: "3px 6px", borderColor: "var(--brick-dim)", color: "var(--brick)" }} onClick={() => askDelete(cl.id)} title="Delete cluster"><X size={12} /></button>
                   </div>
                 </div>
 
@@ -280,7 +304,7 @@ export function CopytradingView({ accounts, clusters, createCluster, updateClust
         <ConfirmModal
           title="Delete cluster"
           message="Delete this cluster? The accounts will remain, only the cluster link is removed."
-          onConfirm={() => { deleteCluster(deleteTarget); setDeleteTarget(null); }}
+          onConfirm={confirmDelete}
           onCancel={() => setDeleteTarget(null)}
         />
       )}

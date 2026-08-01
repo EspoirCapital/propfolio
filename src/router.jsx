@@ -122,7 +122,7 @@ function Layout() {
           </div>
         </aside>
 
-        {showLogout && <ConfirmModal onCancel={() => setShowLogout(false)} onConfirm={logout}
+        {showLogout && <ConfirmModal onCancel={() => setShowLogout(false)} onConfirm={() => { setShowLogout(false); logout(); }}
           title="Log out" message="Are you sure you want to log out?" confirmLabel="Log out" />}
 
         {/* Main content — offset by sidebar on desktop */}

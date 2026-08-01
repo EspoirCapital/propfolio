@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { ConvexReactClient } from "convex/react";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import App from "./App.jsx";
+import { friendlyError } from "./utils";
 import "./index.css";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
@@ -12,12 +13,12 @@ class ErrorBoundary extends Component {
   static getDerivedStateFromError(error) { return { error }; }
   render() {
     if (this.state.error) {
+      console.error("Unhandled app error:", this.state.error);
       return (
         <div style={{ minHeight: "100vh", background: "#0a0b0f", color: "#e8dcc8", fontFamily: "'IBM Plex Mono', monospace", display: "flex", alignItems: "center", justifyContent: "center", padding: 32 }}>
           <div style={{ maxWidth: 520, textAlign: "center" }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>⚠</div>
             <h2 style={{ margin: "0 0 12px", fontSize: 18, fontWeight: 600 }}>Something went wrong</h2>
-            <p style={{ margin: "0 0 20px", fontSize: 13, color: "#9a8e7a", lineHeight: 1.6 }}>{this.state.error.message}</p>
+            <p style={{ margin: "0 0 20px", fontSize: 13, color: "#9a8e7a", lineHeight: 1.6 }}>{friendlyError(this.state.error, "An unexpected error interrupted this page. Please reload and try again.")}</p>
             <button onClick={() => { this.setState({ error: null }); location.reload(); }} style={{ background: "#ce9f52", color: "#0a0b0f", border: "none", padding: "10px 24px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
               Reload page
             </button>

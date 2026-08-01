@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, ExternalLink, Award, Pencil, X, ArrowRight, AlertTriangle, PenLine, Archive, ArchiveRestore } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useApp } from "../context";
-import { computeOutcome, money, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel } from "../utils";
+import { computeOutcome, money, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError } from "../utils";
 import { StatusPill } from "../components/StatusPill";
 import { KpiTile } from "../components/KpiTile";
 import { ProgressionStepper } from "../components/ProgressionStepper";
@@ -10,6 +10,7 @@ import { CredentialReveal } from "../components/CredentialReveal";
 import { EquityCurve } from "../components/EquityCurve";
 import { TradeCalendar } from "../components/TradeCalendar";
 import { ConfirmModal } from "../components/ConfirmModal";
+import { ErrorBanner } from "../components/ErrorBanner";
 import { AccountPerformanceSummary } from "../components/AccountPerformanceSummary";
 
 export function AccountDetailPage({ accountId, derived, trades, payouts, certificates, settings, templates, updateAccount, onBack, onEdit, onDelete, archiveAccount, unarchiveAccount }) {
@@ -54,6 +55,8 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const [showConfirm, setShowConfirm] = useState(false);
   const [showProceedConfirm, setShowProceedConfirm] = useState(false);
   const [showBreachConfirm, setShowBreachConfirm] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const canProceed = (account.targetPct ?? 0) >= 100 && nextStatus(account.status, phaseCount);
   const nextDest = nextStatusLabel(account.status, phaseCount);
@@ -66,18 +69,61 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const isBreached = (maxLossBreached || dailyLossBreached) && account.status !== "breached" && account.status !== "passed";
 
   async function handleProceed() {
-    const newId = await proceedFn({ id: account.id });
-    navigate({ to: "/accounts/$accountId", params: { accountId: newId } });
+    setBusy(true);
+    setActionError("");
+    try {
+      const newId = await proceedFn({ id: account.id });
+      navigate({ to: "/accounts/$accountId", params: { accountId: newId } });
+    } catch (err) {
+      setShowProceedConfirm(false);
+      setActionError(friendlyError(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleBreach() {
-    await breachFn({ id: account.id });
-    onBack();
+    setBusy(true);
+    setActionError("");
+    try {
+      await breachFn({ id: account.id });
+      onBack();
+    } catch (err) {
+      setShowBreachConfirm(false);
+      setActionError(friendlyError(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleDelete() {
-    await onDelete(account.id);
-    onBack();
+    setBusy(true);
+    setActionError("");
+    try {
+      await onDelete(account.id);
+      onBack();
+    } catch (err) {
+      setShowConfirm(false);
+      setActionError(friendlyError(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggleArchive() {
+    setBusy(true);
+    setActionError("");
+    try {
+      if (account.archived) {
+        await unarchiveAccount(account.id);
+      } else {
+        await archiveAccount(account.id);
+      }
+    } catch (err) {
+      setActionError(friendlyError(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -111,13 +157,15 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
           )}
           <button className="pd-btn flex items-center gap-1.5" onClick={() => onEdit(account.id)}><Pencil size={13} /> Edit</button>
           {account.archived ? (
-            <button className="pd-btn flex items-center gap-1.5" style={{ borderColor: "var(--sage)", color: "var(--sage)" }} onClick={() => unarchiveAccount(account.id)}><ArchiveRestore size={13} /> Unarchive</button>
+            <button className="pd-btn flex items-center gap-1.5" style={{ borderColor: "var(--sage)", color: "var(--sage)" }} onClick={toggleArchive} disabled={busy}><ArchiveRestore size={13} /> Unarchive</button>
           ) : (
-            <button className="pd-btn flex items-center gap-1.5" onClick={() => archiveAccount(account.id)}><Archive size={13} /> Archive</button>
+            <button className="pd-btn flex items-center gap-1.5" onClick={toggleArchive} disabled={busy}><Archive size={13} /> Archive</button>
           )}
           <button className="pd-btn flex items-center gap-1.5" style={{ borderColor: "var(--brick-dim)", color: "var(--brick)" }} onClick={() => setShowConfirm(true)}><X size={13} /> Delete</button>
         </div>
       </div>
+
+      {actionError && <div className="mb-4"><ErrorBanner message={actionError} onDismiss={() => setActionError("")} /></div>}
 
       <ProgressionStepper phaseCount={phaseCount} status={account.status} target={template?.target} />
 
@@ -245,6 +293,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
           message="Delete this account? This cannot be undone. Trades, payouts, and certificates linked to it will remain orphaned."
           onConfirm={handleDelete}
           onCancel={() => setShowConfirm(false)}
+          confirmLabel={busy ? "Working…" : "Delete"}
         />
       )}
       {showProceedConfirm && (
@@ -253,7 +302,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
           message={`Mark this account as passed and create a new ${nextDest} account?`}
           onConfirm={handleProceed}
           onCancel={() => setShowProceedConfirm(false)}
-          confirmLabel="Confirm"
+          confirmLabel={busy ? "Working…" : "Confirm"}
           confirmStyle={{ background: "var(--sage)", color: "var(--ink)", borderColor: "var(--sage)" }}
         />
       )}
@@ -263,7 +312,8 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
           message="Mark this account as breached? This cannot be undone."
           onConfirm={handleBreach}
           onCancel={() => setShowBreachConfirm(false)}
-          confirmLabel="Confirm"
+          confirmLabel={busy ? "Working…" : "Confirm"}
+          confirmStyle={{ background: "var(--brick)", color: "white", borderColor: "var(--brick)" }}
         />
       )}
     </div>

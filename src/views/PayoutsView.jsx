@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { Plus, X, ExternalLink } from "lucide-react";
-import { money, formatDateUK, getAccountLabel } from "../utils";
+import { money, formatDateUK, getAccountLabel, friendlyError } from "../utils";
 import { KpiTile } from "../components/KpiTile";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { DatePicker } from "../components/DatePicker";
 import { Select } from "../components/Select";
+import { ErrorBanner } from "../components/ErrorBanner";
 
 export function PayoutsView({ accounts, payouts, createPayout, updatePayout, deletePayout }) {
   const [showForm, setShowForm] = useState(false);
   const [editingPayout, setEditingPayout] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
   const defaultForm = { accountId: accounts[0]?.id || "", requestedDate: "", amount: "", split: "80%", method: "Bank Wire", proofLink: "" };
   const [form, setForm] = useState(defaultForm);
   const findAcc = (id) => accounts.find((a) => a.id === id);
@@ -18,24 +21,43 @@ export function PayoutsView({ accounts, payouts, createPayout, updatePayout, del
     setEditingPayout(p);
     setForm({ accountId: p.accountId, requestedDate: p.requestedDate, amount: String(p.amount), split: p.split || "80%", method: p.method, proofLink: p.proofLink || "" });
     setShowForm(true);
+    setFormError("");
   }
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
     if (!form.accountId || !form.requestedDate || !form.amount) return;
     const parsed = { ...form, amount: parseFloat(form.amount) || 0 };
-    if (editingPayout) {
-      updatePayout(editingPayout.id, parsed);
-    } else {
-      createPayout(parsed);
+    setSaving(true);
+    setFormError("");
+    try {
+      if (editingPayout) {
+        await updatePayout(editingPayout.id, parsed);
+      } else {
+        await createPayout(parsed);
+      }
+      setShowForm(false);
+      setEditingPayout(null);
+      setForm(defaultForm);
+    } catch (err) {
+      setFormError(friendlyError(err));
+    } finally {
+      setSaving(false);
     }
-    setShowForm(false);
-    setEditingPayout(null);
-    setForm(defaultForm);
   }
 
-  function deletePayout(id) {
+  function askDelete(id) {
     setDeleteTarget(id);
+  }
+
+  async function confirmDelete() {
+    try {
+      await deletePayout(deleteTarget);
+      setDeleteTarget(null);
+    } catch (err) {
+      setDeleteTarget(null);
+      setFormError(friendlyError(err));
+    }
   }
 
   const totalPaid = payouts.reduce((s, p) => s + p.amount, 0);
@@ -47,12 +69,13 @@ export function PayoutsView({ accounts, payouts, createPayout, updatePayout, del
           <KpiTile label="Total Paid" value={money(totalPaid)} accent="var(--sage)" />
           <KpiTile label="Payout Records" value={payouts.length} />
         </div>
-        <button className="pd-btn pd-btn-primary flex items-center gap-1.5 shrink-0" onClick={() => { setEditingPayout(null); setShowForm(true); setForm(defaultForm); }}><Plus size={14} /> Log payout</button>
+        <button className="pd-btn pd-btn-primary flex items-center gap-1.5 shrink-0" onClick={() => { setEditingPayout(null); setShowForm(true); setFormError(""); setForm(defaultForm); }}><Plus size={14} /> Log payout</button>
       </div>
 
       {showForm && (
         <form onSubmit={submit} className="rounded-lg p-4 mb-5" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
           <div className="pd-label mb-2">{editingPayout ? "Edit payout" : "New payout"}</div>
+          {formError && <div className="mb-3"><ErrorBanner message={formError} onDismiss={() => setFormError("")} /></div>}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
             <div>
               <div className="pd-label mb-1">Account</div>
@@ -73,7 +96,7 @@ export function PayoutsView({ accounts, payouts, createPayout, updatePayout, del
           </div>
           <div className="flex gap-2 justify-end">
             <button type="button" className="pd-btn" onClick={() => { setShowForm(false); setEditingPayout(null); }}>Cancel</button>
-            <button type="submit" className="pd-btn pd-btn-primary">{editingPayout ? "Update payout" : "Save payout"}</button>
+            <button type="submit" className="pd-btn pd-btn-primary" disabled={saving}>{saving ? "Saving…" : (editingPayout ? "Update payout" : "Save payout")}</button>
           </div>
         </form>
       )}
@@ -94,7 +117,7 @@ export function PayoutsView({ accounts, payouts, createPayout, updatePayout, del
               <span className="whitespace-nowrap" style={{ color: "var(--sand-dim)" }}>{p.method}</span>
               {p.proofLink ? <a href={p.proofLink} target="_blank" rel="noreferrer" className="flex items-center justify-center" style={{ color: "var(--slate)" }} onClick={(e) => e.stopPropagation()}><ExternalLink size={13} /></a> : <span />}
               <span />
-              <button className="flex items-center justify-center" style={{ color: "var(--slate)", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={(e) => { e.stopPropagation(); deletePayout(p.id); }} title="Delete payout"><X size={13} /></button>
+              <button className="flex items-center justify-center" style={{ color: "var(--slate)", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={(e) => { e.stopPropagation(); askDelete(p.id); }} title="Delete payout"><X size={13} /></button>
             </div>
           );
         })}
@@ -103,7 +126,7 @@ export function PayoutsView({ accounts, payouts, createPayout, updatePayout, del
         <ConfirmModal
           title="Delete payout"
           message="Delete this payout record? This cannot be undone."
-          onConfirm={() => { deletePayout(deleteTarget); setDeleteTarget(null); }}
+          onConfirm={confirmDelete}
           onCancel={() => setDeleteTarget(null)}
         />
       )}

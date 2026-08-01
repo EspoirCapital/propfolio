@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Plus, X, ExternalLink, Award, Settings } from "lucide-react";
-import { getAccountLabel, formatDateUK } from "../utils";
+import { getAccountLabel, formatDateUK, friendlyError } from "../utils";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { DatePicker } from "../components/DatePicker";
 import { Select } from "../components/Select";
+import { ErrorBanner } from "../components/ErrorBanner";
 
 const CERT_TYPES = {
   phase_1_passing: { label: "Passing Phase 1", color: "var(--brass)", bg: "rgba(206,159,82,0.12)" },
@@ -17,6 +18,8 @@ export function CertificatesView({ accounts, certificates, createCertificate, up
   const [showForm, setShowForm] = useState(false);
   const [editingCert, setEditingCert] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
   const defaultForm = { accountId: filterAcc !== "All" ? filterAcc : accounts[0]?.id || "", type: "phase_2_passing", date: "", link: "" };
   const [form, setForm] = useState(defaultForm);
   const findAcc = (id) => accounts.find((a) => a.id === id);
@@ -27,25 +30,44 @@ export function CertificatesView({ accounts, certificates, createCertificate, up
     setEditingCert(c);
     setForm({ accountId: c.accountId, type: c.type, date: c.date, link: c.link });
     setShowForm(true);
+    setFormError("");
   }
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
     if (!form.accountId) return;
     const acc = findAcc(form.accountId);
     const label = `${getAccountLabel(acc)} · ${CERT_TYPES[form.type]?.label || form.type}`;
-    if (editingCert) {
-      updateCertificate(editingCert.id, { ...form, label });
-    } else {
-      createCertificate({ ...form, label });
+    setSaving(true);
+    setFormError("");
+    try {
+      if (editingCert) {
+        await updateCertificate(editingCert.id, { ...form, label });
+      } else {
+        await createCertificate({ ...form, label });
+      }
+      setShowForm(false);
+      setEditingCert(null);
+      setForm(defaultForm);
+    } catch (err) {
+      setFormError(friendlyError(err));
+    } finally {
+      setSaving(false);
     }
-    setShowForm(false);
-    setEditingCert(null);
-    setForm(defaultForm);
   }
 
   function deleteCert(id) {
     setDeleteTarget(id);
+  }
+
+  async function confirmDelete() {
+    try {
+      await deleteCertificate(deleteTarget);
+      setDeleteTarget(null);
+    } catch (err) {
+      setDeleteTarget(null);
+      setFormError(friendlyError(err));
+    }
   }
 
   return (
@@ -55,12 +77,13 @@ export function CertificatesView({ accounts, certificates, createCertificate, up
           <option value="All">All accounts</option>
           {accounts.map((a) => <option key={a.id} value={a.id}>{getAccountLabel(a)}</option>)}
         </Select>
-        <button className="pd-btn pd-btn-primary flex items-center gap-1.5 shrink-0" onClick={() => { setEditingCert(null); setShowForm(true); setForm({ ...defaultForm, accountId: filterAcc !== "All" ? filterAcc : accounts[0]?.id || "" }); }}><Plus size={14} /> Add certificate</button>
+        <button className="pd-btn pd-btn-primary flex items-center gap-1.5 shrink-0" onClick={() => { setEditingCert(null); setShowForm(true); setFormError(""); setForm({ ...defaultForm, accountId: filterAcc !== "All" ? filterAcc : accounts[0]?.id || "" }); }}><Plus size={14} /> Add certificate</button>
       </div>
 
       {showForm && (
         <form onSubmit={submit} className="rounded-lg p-4 mb-5" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
           <div className="pd-label mb-2">{editingCert ? "Edit certificate" : "New certificate"}</div>
+          {formError && <div className="mb-3"><ErrorBanner message={formError} onDismiss={() => setFormError("")} /></div>}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
             <div>
               <div className="pd-label mb-1">Account</div>
@@ -82,7 +105,7 @@ export function CertificatesView({ accounts, certificates, createCertificate, up
           </div>
           <div className="flex gap-2 justify-end">
             <button type="button" className="pd-btn" onClick={() => { setShowForm(false); setEditingCert(null); }}>Cancel</button>
-            <button type="submit" className="pd-btn pd-btn-primary">{editingCert ? "Update" : "Save"}</button>
+            <button type="submit" className="pd-btn pd-btn-primary" disabled={saving}>{saving ? "Saving…" : (editingCert ? "Update" : "Save")}</button>
           </div>
         </form>
       )}
@@ -116,7 +139,7 @@ export function CertificatesView({ accounts, certificates, createCertificate, up
         <ConfirmModal
           title="Delete certificate"
           message="Delete this certificate? This cannot be undone."
-          onConfirm={() => { deleteCertificate(deleteTarget); setDeleteTarget(null); }}
+          onConfirm={confirmDelete}
           onCancel={() => setDeleteTarget(null)}
         />
       )}
