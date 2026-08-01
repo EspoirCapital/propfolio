@@ -46,19 +46,19 @@ const PAGE_META = {
 };
 
 function Layout() {
-  const { session, isLoading, logout, selectedAccount, setSelectedId, trades, payouts, certificates, settings, templates, archiveAccount, unarchiveAccount } = useApp();
+  const { session, isLoading, dataReady, logout, selectedAccount, setSelectedId, trades, payouts, certificates, settings, templates, archiveAccount, unarchiveAccount } = useApp();
   const router = useRouterState();
   const navigate = useNavigate();
   const pathname = router.location.pathname;
   const [showLogout, setShowLogout] = useState(false);
 
   useEffect(() => {
-    if (!session && pathname !== "/") {
+    if (!isLoading && !session && pathname !== "/") {
       navigate({ to: "/", search: (prev) => prev });
     }
-  }, [session, pathname, navigate]);
+  }, [session, isLoading, pathname, navigate]);
 
-  if (isLoading) {
+  if (isLoading || (session && !dataReady)) {
     return (
       <div className="pd-root">
         <div className="relative z-[1] min-h-screen flex items-center justify-center">

@@ -16,7 +16,7 @@ const TEMPLATE_FIELDS = ["firm", "name", "phases", "target", "dailyLoss", "maxLo
 const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k]]).filter(([, v]) => v !== undefined));
 
 export function AppProvider({ children }) {
-  const { isLoading, isAuthenticated } = useConvexAuth();
+  const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
   const { signOut } = useAuthActions();
 
   const me = useQuery(api.users.me);
@@ -70,6 +70,9 @@ export function AppProvider({ children }) {
   const [selectedId, setSelectedId] = useState(null);
   const [editingAccount, setEditingAccount] = useState(null);
 
+  const isLoading = authLoading || me === undefined;
+  const dataReady = !isLoading && accounts !== undefined && trades !== undefined && payouts !== undefined && certificates !== undefined && templates !== undefined && clusters !== undefined && settingsRow !== undefined;
+
   const session = useMemo(() => {
     if (!me) return null;
     return { userId: me.id, name: me.name, email: me.email, isAdmin: me.isAdmin };
@@ -116,7 +119,7 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{
-      isLoading, isAuthenticated,
+      isLoading, dataReady, isAuthenticated,
       session, logout,
       settings, setSettings,
       accounts: accounts || [], trades: trades || [], payouts: payouts || [],

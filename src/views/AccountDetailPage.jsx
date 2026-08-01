@@ -53,6 +53,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const avgMae = maeTrades.length ? (maeTrades.reduce((s, t) => s + t.maeR, 0) / maeTrades.length).toFixed(2) : "—";
   const avgMaeR = maeTrades.length ? maeTrades.reduce((s, t) => s + t.maeR, 0) / maeTrades.length : null;
 
+  const mfeTrades = enrichedTrades.filter((t) => t.mfeR != null);
   const mfeSet = mfeTrades.filter((t) => t.risk > 0);
   const avgMfeR = mfeSet.length ? mfeSet.reduce((s, t) => s + t.mfeR, 0) / mfeSet.length : null;
   const avgRealizedOfMfe = mfeSet.length
@@ -198,18 +199,32 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 flex flex-col gap-6 min-w-0">
           {accTrades.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <KpiTile label="Total P&L" value={money(totalPnl)} accent={totalPnl >= 0 ? "var(--sage)" : "var(--brick)"} />
-              <KpiTile label="Win Rate" value={`${winRate}%`} accent="var(--sage)" sub={`${wins}W / ${losses}L`} />
-              <KpiTile label="Avg R:R" value={avgRR} accent="var(--brass)" />
-              <KpiTile label="Ratings" value={`${ratings.green}·${ratings.amber}·${ratings.red}`} accent="var(--sand)" sub="green · amber · red" />
-              <KpiTile label="Avg MFE" value={avgMfe} accent="var(--sage)" sub="R" />
-              <KpiTile label="Avg MAE" value={avgMae} accent="var(--brick)" sub="R" />
-              <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
-              <KpiTile label="Deep-dip recovery" value={deepRecovery} accent="var(--sand)" sub="dips > avg MAE that recovered" />
-              <KpiTile label="Retraced past avg MAE" value={retraceToMae} accent="var(--sage)" sub="MFE ≥ avg MAE" />
-              <KpiTile label="WR @ avg MFE" value={wrAtAvgMfe} accent="var(--brass)" sub="TP at avg MFE" />
-            </div>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <KpiTile label="Total P&L" value={money(totalPnl)} accent={totalPnl >= 0 ? "var(--sage)" : "var(--brick)"} />
+                <KpiTile label="Win Rate" value={`${winRate}%`} accent="var(--sage)" sub={`${wins}W / ${losses}L`} />
+                <KpiTile label="Avg R:R" value={avgRR} accent="var(--brass)" />
+                <KpiTile label="Ratings" value={`${ratings.green}·${ratings.amber}·${ratings.red}`} accent="var(--sand)" sub="green · amber · red" />
+                <KpiTile label="Avg MFE" value={avgMfe} accent="var(--sage)" sub="R" />
+                <KpiTile label="Avg MAE" value={avgMae} accent="var(--brick)" sub="R" />
+                <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
+                <KpiTile label="Deep-dip recovery" value={deepRecovery} accent="var(--sand)" sub="dips > avg MAE that recovered" />
+                <KpiTile label="Retraced past avg MAE" value={retraceToMae} accent="var(--sage)" sub="MFE ≥ avg MAE" />
+                <KpiTile label="WR @ avg MFE" value={wrAtAvgMfe} accent="var(--brass)" sub="TP at avg MFE" />
+              </div>
+              <div className="rounded-lg p-4 text-sm" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
+                <div className="pd-label mb-1">How to read these</div>
+                <p style={{ color: "var(--sand-dim)", lineHeight: 1.7 }}>
+                  MFE is how far a trade went <em>for</em> you (in R); MAE is how far it went <em>against</em> you before
+                  retracing. <strong>Capture</strong> shows how much of your peak R you actually banked.{" "}
+                  <strong>Retraced past avg MAE</strong> shows how often price comes back past your average dip. Compare
+                  the two: if price retraces ~75-80%+ of the time but you only capture ~50%, a limit order would likely
+                  have filled on the retrace and earned a bigger RR. If it retraces only ~50-60%, market entry is a
+                  coin flip and the edge is smaller. These numbers only mean something with enough trades (20-30+) -
+                  a handful of trades is just noise.
+                </p>
+              </div>
+            </>
           )}
 
           {accTrades.length > 0 && (
