@@ -145,7 +145,8 @@ export function OverviewView({ derived, trades, payouts, settings }) {
         <KpiTile label="Avg MFE" value={mfeStats.avgMfe} accent="var(--sage)" sub="R" />
         <KpiTile label="Avg MAE" value={mfeStats.avgMae} accent="var(--brick)" sub="R" />
         <KpiTile label="Capture" value={mfeStats.capture} accent="var(--brass)" sub={`giveback ${mfeStats.giveback}R`} />
-        <KpiTile label="Wins dipped to avg MAE" value={mfeStats.winsRetrace} accent="var(--sand)" sub="winners that dipped ≥ avg MAE" />
+        <KpiTile label="WR w/ limit @ avg MAE" value={mfeStats.limitWr} accent="var(--sand)" sub={mfeStats.limitSub} />
+        <KpiTile label="WR limit MAE + TP MFE" value={mfeStats.comboWr} accent="var(--sage)" sub={mfeStats.comboSub} />
         <KpiTile label="WR @ avg MFE" value={mfeStats.wrAtAvgMfe} accent="var(--brass)" sub={mfeStats.wrSub} />
       </div>
 

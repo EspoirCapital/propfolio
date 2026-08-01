@@ -50,7 +50,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   enrichedTrades.forEach((t) => { if (ratings[t.rating] !== undefined) ratings[t.rating]++; });
 
   const mfeStats = computeMfeMaeStats(enrichedTrades);
-  const { avgMfe, avgMae, capture, giveback, winsRetrace, wrAtAvgMfe, wrSub } = mfeStats;
+  const { avgMfe, avgMae, capture, giveback, limitWr, limitSub, comboWr, comboSub, wrAtAvgMfe, wrSub } = mfeStats;
 
   let running = 0;
   const sortedTrades = enrichedTrades.slice().reverse();
@@ -182,11 +182,11 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <KpiTile label="Win Rate" value={`${winRate}%`} accent="var(--sage)" sub={`${wins}W / ${losses}L`} />
                 <KpiTile label="Avg R:R" value={avgRR} accent="var(--brass)" />
                 <KpiTile label="Ratings" value={`${ratings.green}·${ratings.amber}·${ratings.red}`} accent="var(--sand)" sub="green · amber · red" />
-                <KpiTile label="Avg MFE" value={avgMfeR != null ? avgMfeR.toFixed(2) : "—"} accent="var(--sage)" sub="R" />
+                <KpiTile label="Avg MFE" value={avgMfe} accent="var(--sage)" sub="R" />
                 <KpiTile label="Avg MAE" value={avgMae} accent="var(--brick)" sub="R" />
                 <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
-                <KpiTile label="Wins dipped to avg MAE" value={winsRetrace} accent="var(--sand)" sub="winners that dipped ≥ avg MAE" />
-                <KpiTile label="Retraced past avg MAE" value={retraceToMae} accent="var(--sage)" sub="MFE ≥ avg MAE" />
+                <KpiTile label="WR w/ limit @ avg MAE" value={limitWr} accent="var(--sand)" sub={limitSub} />
+                <KpiTile label="WR limit MAE + TP MFE" value={comboWr} accent="var(--sage)" sub={comboSub} />
                 <KpiTile label="WR @ avg MFE" value={wrAtAvgMfe} accent="var(--brass)" sub={wrSub} />
               </div>
               <div className="rounded-lg p-4 text-sm" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
@@ -194,12 +194,13 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <p style={{ color: "var(--sand-dim)", lineHeight: 1.7 }}>
                   MFE is how far a trade went <em>for</em> you (in R); MAE is how far it went <em>against</em> you before
                   retracing. <strong>Capture</strong> shows how much of your peak R you actually banked.{" "}
-                  <strong>Wins dipped to avg MAE</strong> shows, of your winning trades, how many dipped to at least your
-                  average MAE (a limit order at that depth would have filled). Compare it with Capture: if most winners
-                  dip to your average MAE but you only capture ~50%, a limit order would have filled on the dip and
-                  earned a bigger RR. If winners rarely dip that far, market entry is a coin flip and the edge is
-                  smaller. These numbers only mean something with enough trades (20-30+) - a handful of trades is
-                  just noise.
+                  <strong>WR w/ limit @ avg MAE</strong> models placing a limit order at your average MAE depth instead
+                  of a market entry: it counts only trades that dipped to that level (your fills), shows the win rate
+                  among those, and the RR gained per fill. <strong>WR limit MAE + TP MFE</strong> combines it with a
+                  take-profit at your average MFE: it shows the win rate on fills that also reached that target, plus
+                  the RR gained per win and the % of trades you'd miss. If these beat your current win rate at a good
+                  RR gain, waiting for the dip and letting it run is worth it. These numbers only mean something with
+                  enough trades (20-30+) - a handful of trades is just noise.
                 </p>
               </div>
             </>

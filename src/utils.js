@@ -39,8 +39,8 @@ export function formatDateUK(dateStr) {
 }
 
 // MFE/MAE stats across any trade list (trades must carry `outcome`, `risk`, `pnl`).
-// Returns display-ready values: avgMfe, avgMae, capture, giveback, winsRetrace,
-// wrAtAvgMfe, wrSub — all strings ("—" when there's no data to compute).
+// Returns display-ready values: avgMfe, avgMae, capture, giveback, limitWr,
+// limitSub, comboWr, comboSub, wrAtAvgMfe, wrSub — strings ("—" when no data).
 export function computeMfeMaeStats(trades) {
   const maeTrades = trades.filter((t) => t.maeR != null);
   const avgMaeR = maeTrades.length ? maeTrades.reduce((s, t) => s + t.maeR, 0) / maeTrades.length : null;
@@ -58,9 +58,27 @@ export function computeMfeMaeStats(trades) {
   const giveback = avgMfeR !== null && avgRealizedOfMfe !== null
     ? (avgMfeR - avgRealizedOfMfe).toFixed(2) : "—";
 
-  const winsWithMae = mfeTrades.filter((t) => t.outcome === "W" && t.maeR != null);
-  const winsDippedToAvgMae = winsWithMae.filter((t) => avgMaeR !== null && t.maeR >= avgMaeR);
-  const winsRetrace = winsWithMae.length ? `${Math.round((winsDippedToAvgMae.length / winsWithMae.length) * 100)}%` : "—";
+  const limitPool = trades.filter((t) => t.maeR != null && t.risk > 0 && t.outcome !== "BE" && avgMaeR !== null);
+  const limitFills = limitPool.filter((t) => t.maeR >= avgMaeR);
+  const limitMissed = limitPool.length - limitFills.length;
+  const missedPct = limitPool.length ? Math.round((limitMissed / limitPool.length) * 100) : null;
+  const limitWr = limitFills.length
+    ? `${Math.round((limitFills.filter((t) => t.outcome === "W").length / limitFills.length) * 100)}%` : "—";
+  const limitSub = avgMaeR !== null && limitPool.length && missedPct !== null
+    ? `+${avgMaeR.toFixed(2)}R per fill · ${missedPct}% missed` : "—";
+
+  const comboPool = trades.filter((t) => t.mfeR != null && t.maeR != null && t.risk > 0 && t.outcome !== "BE" && avgMaeR !== null && avgMfeR !== null);
+  const comboFills = comboPool.filter((t) => t.maeR >= avgMaeR);
+  const comboWinners = comboFills.filter((t) => t.mfeR >= avgMfeR);
+  const comboMissed = comboPool.length - comboFills.length;
+  const comboMissedPct = comboPool.length ? Math.round((comboMissed / comboPool.length) * 100) : null;
+  const comboWr = comboFills.length
+    ? `${Math.round((comboWinners.length / comboFills.length) * 100)}%` : "—";
+  const comboRrGained = comboWinners.length && avgMfeR !== null
+    ? (avgMfeR - comboWinners.reduce((s, t) => s + (t.pnl / t.risk), 0) / comboWinners.length).toFixed(2)
+    : null;
+  const comboSub = comboRrGained !== null && comboMissedPct !== null
+    ? `+${comboRrGained}R/win · ${comboMissedPct}% missed` : "—";
 
   const mfeDecisions = mfeTrades.filter((t) => t.risk > 0 && t.outcome !== "BE");
   const currentWrPool = mfeDecisions.length
@@ -76,7 +94,7 @@ export function computeMfeMaeStats(trades) {
   const wrSub = currentWrPool !== null && wrDelta !== null && rrGained !== null
     ? `${wrDelta > 0 ? `-${wrDelta}` : wrDelta}pp vs now · +${rrGained}R/win` : "TP at avg MFE";
 
-  return { avgMfe, avgMae, capture, giveback, winsRetrace, wrAtAvgMfe, wrSub };
+  return { avgMfe, avgMae, capture, giveback, limitWr, limitSub, comboWr, comboSub, wrAtAvgMfe, wrSub };
 }
 
 export function parseDateUK(ukDate) {
