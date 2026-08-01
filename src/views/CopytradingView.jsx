@@ -6,7 +6,7 @@ import { KpiTile } from "../components/KpiTile";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { Select } from "../components/Select";
 
-export function CopytradingView({ accounts, clusters, setClusters }) {
+export function CopytradingView({ accounts, clusters, createCluster, updateCluster, deleteCluster }) {
   const [showForm, setShowForm] = useState(false);
   const [editingCluster, setEditingCluster] = useState(null);
   const [simCluster, setSimCluster] = useState("");
@@ -36,9 +36,9 @@ export function CopytradingView({ accounts, clusters, setClusters }) {
     e.preventDefault();
     if (!form.name || !form.masterAccountId) return;
     if (editingCluster) {
-      setClusters((prev) => prev.map((cl) => cl.id === editingCluster.id ? { ...cl, ...form } : cl));
+      updateCluster(editingCluster.id, { ...form, createdAt: editingCluster.createdAt });
     } else {
-      setClusters((prev) => [...prev, { ...form, id: "cl" + Date.now(), createdAt: new Date().toISOString().slice(0, 10) }]);
+      createCluster({ ...form, createdAt: new Date().toISOString().slice(0, 10) });
     }
     setShowForm(false);
     setEditingCluster(null);
@@ -280,7 +280,7 @@ export function CopytradingView({ accounts, clusters, setClusters }) {
         <ConfirmModal
           title="Delete cluster"
           message="Delete this cluster? The accounts will remain, only the cluster link is removed."
-          onConfirm={() => { setClusters((prev) => prev.filter((cl) => cl.id !== deleteTarget)); setDeleteTarget(null); }}
+          onConfirm={() => { deleteCluster(deleteTarget); setDeleteTarget(null); }}
           onCancel={() => setDeleteTarget(null)}
         />
       )}

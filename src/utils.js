@@ -1,19 +1,4 @@
-export const SESSION_KEY = "propfolio_session";
 export const DEFAULT_SETTINGS = { displayFormat: "dollar", beThreshold: 10 };
-
-export function loadSession() {
-  try { return JSON.parse(localStorage.getItem(SESSION_KEY)) || null; }
-  catch { return null; }
-}
-export function saveSession(session) { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }
-export function clearSession() { localStorage.removeItem(SESSION_KEY); }
-
-export function settingsKey(userId) { return `propfolio_settings_${userId}`; }
-export function loadSettings(userId) {
-  try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(settingsKey(userId))) }; }
-  catch { return DEFAULT_SETTINGS; }
-}
-export function saveSettings(userId, s) { localStorage.setItem(settingsKey(userId), JSON.stringify(s)); }
 
 export const money = (n) => {
   const sign = n < 0 ? "-" : "";

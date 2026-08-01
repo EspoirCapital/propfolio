@@ -12,7 +12,7 @@ const CERT_TYPES = {
   payout: { label: "Payout proof", color: "var(--sage)", bg: "rgba(111,176,139,0.12)" },
 };
 
-export function CertificatesView({ accounts, certificates, setCertificates, initialAccountId }) {
+export function CertificatesView({ accounts, certificates, createCertificate, updateCertificate, deleteCertificate, initialAccountId }) {
   const [filterAcc, setFilterAcc] = useState(initialAccountId || "All");
   const [showForm, setShowForm] = useState(false);
   const [editingCert, setEditingCert] = useState(null);
@@ -35,9 +35,9 @@ export function CertificatesView({ accounts, certificates, setCertificates, init
     const acc = findAcc(form.accountId);
     const label = `${getAccountLabel(acc)} · ${CERT_TYPES[form.type]?.label || form.type}`;
     if (editingCert) {
-      setCertificates((prev) => prev.map((c) => c.id === editingCert.id ? { ...c, ...form, label } : c));
+      updateCertificate(editingCert.id, { ...form, label });
     } else {
-      setCertificates((prev) => [...prev, { ...form, id: "c" + Date.now(), label }]);
+      createCertificate({ ...form, label });
     }
     setShowForm(false);
     setEditingCert(null);
@@ -116,7 +116,7 @@ export function CertificatesView({ accounts, certificates, setCertificates, init
         <ConfirmModal
           title="Delete certificate"
           message="Delete this certificate? This cannot be undone."
-          onConfirm={() => { setCertificates((prev) => prev.filter((c) => c.id !== deleteTarget)); setDeleteTarget(null); }}
+          onConfirm={() => { deleteCertificate(deleteTarget); setDeleteTarget(null); }}
           onCancel={() => setDeleteTarget(null)}
         />
       )}

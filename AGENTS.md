@@ -73,3 +73,17 @@ src/
 - Dark theme. Design tokens as CSS variables in `index.css`: `--ink`, `--ledger`, `--sand`, `--brass`, `--sage`, `--brick`, `--slate`, `--sand-dim`, `--line`, `--line-soft`.
 - Fonts: IBM Plex Mono (monospace/brand), IBM Plex Sans (UI), Big Shoulders Display (headings).
 - All UI components use `.pd-*` prefixed classes for styling.
+
+<!-- convex-ai-start -->
+
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read
+`convex/_generated/ai/guidelines.md` first** for important guidelines on
+how to correctly use Convex APIs and patterns. The file contains rules that
+override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running
+`npx convex ai-files install`.
+
+<!-- convex-ai-end -->

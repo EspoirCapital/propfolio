@@ -8,7 +8,7 @@ import { ConfirmModal } from "../components/ConfirmModal";
 import { DatePicker } from "../components/DatePicker";
 import { Select } from "../components/Select";
 
-export function JournalView({ accounts, trades, setTrades, settings, initialAccountId, onClearInitialAccount }) {
+export function JournalView({ accounts, trades, createTrade, updateTrade, deleteTrade, settings, initialAccountId, onClearInitialAccount }) {
   const [filterAcc, setFilterAcc] = useState(initialAccountId || "All");
   const [showForm, setShowForm] = useState(false);
   const [editingTrade, setEditingTrade] = useState(null);
@@ -60,9 +60,9 @@ export function JournalView({ accounts, trades, setTrades, settings, initialAcco
       lots: parseFloat(form.lots) || 0,
     };
     if (editingTrade) {
-      setTrades((prev) => prev.map((t) => t.id === editingTrade.id ? { ...t, ...parsed } : t));
+      updateTrade(editingTrade.id, parsed);
     } else {
-      setTrades((prev) => [{ ...parsed, id: "tr" + Date.now() }, ...prev]);
+      createTrade(parsed);
     }
     setShowForm(false);
     setEditingTrade(null);
@@ -70,7 +70,7 @@ export function JournalView({ accounts, trades, setTrades, settings, initialAcco
     setForm(defaultForm);
   }
 
-  function deleteTrade(id) {
+  function askDelete(id) {
     setDeleteTarget(id);
   }
 
@@ -178,7 +178,7 @@ export function JournalView({ accounts, trades, setTrades, settings, initialAcco
             <span className="truncate min-w-0" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "var(--sand-dim)" }} title={t.tag}>{t.tag}</span>
             <span className="truncate min-w-0" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "var(--sand-dim)" }} title={t.notes}>{t.notes || "—"}</span>
             {t.tvLink ? <a href={t.tvLink} target="_blank" rel="noreferrer" className="flex items-center justify-center" style={{ color: "var(--slate)" }} onClick={(e) => e.stopPropagation()}><ExternalLink size={13} /></a> : <span />}
-            <button className="flex items-center justify-center" style={{ color: "var(--slate)", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={(e) => { e.stopPropagation(); deleteTrade(t.id); }} title="Delete trade"><X size={13} /></button>
+            <button className="flex items-center justify-center" style={{ color: "var(--slate)", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={(e) => { e.stopPropagation(); askDelete(t.id); }} title="Delete trade"><X size={13} /></button>
           </div>
         ))}
       </div>
@@ -186,7 +186,7 @@ export function JournalView({ accounts, trades, setTrades, settings, initialAcco
         <ConfirmModal
           title="Delete trade"
           message="Delete this trade? This cannot be undone."
-          onConfirm={() => { setTrades((prev) => prev.filter((t) => t.id !== deleteTarget)); setDeleteTarget(null); }}
+          onConfirm={() => { deleteTrade(deleteTarget); setDeleteTarget(null); }}
           onCancel={() => setDeleteTarget(null)}
         />
       )}

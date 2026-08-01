@@ -1,7 +1,11 @@
 import { StrictMode, Component } from "react";
 import { createRoot } from "react-dom/client";
+import { ConvexReactClient } from "convex/react";
+import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import App from "./App.jsx";
 import "./index.css";
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
 
 class ErrorBoundary extends Component {
   state = { error: null };
@@ -28,7 +32,9 @@ class ErrorBoundary extends Component {
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ErrorBoundary>
-      <App />
+      <ConvexAuthProvider client={convex}>
+        <App />
+      </ConvexAuthProvider>
     </ErrorBoundary>
   </StrictMode>
 );

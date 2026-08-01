@@ -25,7 +25,7 @@ function buildTargetStr(targets) {
   return targets.filter((v) => v !== "" && v !== undefined).map((v) => `${v}%`).join(" / ");
 }
 
-export function TemplatesView({ templates, setTemplates }) {
+export function TemplatesView({ templates, createTemplate, updateTemplate, deleteTemplate }) {
   const [showForm, setShowForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -56,9 +56,9 @@ export function TemplatesView({ templates, setTemplates }) {
     if (!form.name) return;
     const parsed = { ...form, phases: parseInt(form.phases) || 0, target: buildTargetStr(targets) };
     if (editingTemplate) {
-      setTemplates((prev) => prev.map((t) => t.id === editingTemplate.id ? { ...t, ...parsed } : t));
+      updateTemplate(editingTemplate.id, parsed);
     } else {
-      setTemplates((prev) => [...prev, { ...parsed, id: "t" + Date.now() }]);
+      createTemplate(parsed);
     }
     setShowForm(false);
     setEditingTemplate(null);
@@ -189,7 +189,7 @@ export function TemplatesView({ templates, setTemplates }) {
         <ConfirmModal
           title="Delete template"
           message="Delete this template? Any accounts using it will keep their data."
-          onConfirm={() => { setTemplates((prev) => prev.filter((t) => t.id !== deleteTarget)); setDeleteTarget(null); }}
+          onConfirm={() => { deleteTemplate(deleteTarget); setDeleteTarget(null); }}
           onCancel={() => setDeleteTarget(null)}
         />
       )}

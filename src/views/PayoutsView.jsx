@@ -6,7 +6,7 @@ import { ConfirmModal } from "../components/ConfirmModal";
 import { DatePicker } from "../components/DatePicker";
 import { Select } from "../components/Select";
 
-export function PayoutsView({ accounts, payouts, setPayouts }) {
+export function PayoutsView({ accounts, payouts, createPayout, updatePayout, deletePayout }) {
   const [showForm, setShowForm] = useState(false);
   const [editingPayout, setEditingPayout] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -25,9 +25,9 @@ export function PayoutsView({ accounts, payouts, setPayouts }) {
     if (!form.accountId || !form.requestedDate || !form.amount) return;
     const parsed = { ...form, amount: parseFloat(form.amount) || 0 };
     if (editingPayout) {
-      setPayouts((prev) => prev.map((p) => p.id === editingPayout.id ? { ...p, ...parsed } : p));
+      updatePayout(editingPayout.id, parsed);
     } else {
-      setPayouts((prev) => [{ ...parsed, id: "p" + Date.now() }, ...prev]);
+      createPayout(parsed);
     }
     setShowForm(false);
     setEditingPayout(null);
@@ -103,7 +103,7 @@ export function PayoutsView({ accounts, payouts, setPayouts }) {
         <ConfirmModal
           title="Delete payout"
           message="Delete this payout record? This cannot be undone."
-          onConfirm={() => { setPayouts((prev) => prev.filter((p) => p.id !== deleteTarget)); setDeleteTarget(null); }}
+          onConfirm={() => { deletePayout(deleteTarget); setDeleteTarget(null); }}
           onCancel={() => setDeleteTarget(null)}
         />
       )}

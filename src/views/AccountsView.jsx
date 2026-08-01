@@ -9,7 +9,7 @@ import { Select } from "../components/Select";
 import { AccountForm } from "./AccountForm";
 import { TicketCard } from "./TicketCard";
 
-export function AccountsView({ derived, templates, onRowClick, onOpen, setAccounts, editingAccount, setEditingAccount, filterFirm, setFilterFirm, filterStatus, setFilterStatus, archiveAccount, unarchiveAccount }) {
+export function AccountsView({ derived, templates, onRowClick, onOpen, createAccount, updateAccount, deleteAccount, editingAccount, setEditingAccount, filterFirm, setFilterFirm, filterStatus, setFilterStatus, archiveAccount, unarchiveAccount }) {
   const [showForm, setShowForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [viewMode, setViewMode] = useState("card");
@@ -33,9 +33,9 @@ export function AccountsView({ derived, templates, onRowClick, onOpen, setAccoun
   }
   function handleSave(data) {
     if (editingAccount) {
-      setAccounts((prev) => prev.map((a) => a.id === editingAccount.id ? { ...a, ...data } : a));
+      updateAccount(editingAccount.id, data);
     } else {
-      setAccounts((prev) => [...prev, { ...data, id: "a" + Date.now() }]);
+      createAccount(data);
     }
     setShowForm(false);
     setEditingAccount(null);
@@ -162,8 +162,8 @@ export function AccountsView({ derived, templates, onRowClick, onOpen, setAccoun
       {deleteTarget && (
         <ConfirmModal
           title="Delete account"
-          message="Delete this account? All trades, payouts, and certificates linked to it will remain orphaned."
-          onConfirm={() => { setAccounts((prev) => prev.filter((a) => a.id !== deleteTarget)); setDeleteTarget(null); }}
+          message="Delete this account? All trades, payouts, and certificates linked to it will also be removed."
+          onConfirm={() => { deleteAccount(deleteTarget); setDeleteTarget(null); }}
           onCancel={() => setDeleteTarget(null)}
         />
       )}

@@ -1,24 +1,24 @@
 import { useState } from "react";
-import { saveSettings } from "../utils";
 import { FormatToggle } from "../components/FormatToggle";
 
-export function SettingsView({ settings, setSettings, session, onUpdateSession }) {
+export function SettingsView({ settings, setSettings, session, updateProfile }) {
   const [name, setName] = useState(session?.name || "");
   const [email, setEmail] = useState(session?.email || "");
+  const [profileSaving, setProfileSaving] = useState(false);
 
   function update(key, value) {
     const next = { ...settings, [key]: value };
     setSettings(next);
-    saveSettings(session.userId, next);
   }
   function handleProfileSave(e) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    onUpdateSession({ ...session, name: trimmed, email: email.trim() });
+    setProfileSaving(true);
+    updateProfile({ name: trimmed, email: email.trim() }).finally(() => setProfileSaving(false));
   }
 
-  const initials = session.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+  const initials = (session.name || "EC").split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 
   return (
     <div className="flex flex-col gap-6" style={{ maxWidth: 480 }}>
@@ -44,7 +44,7 @@ export function SettingsView({ settings, setSettings, session, onUpdateSession }
             <div className="pd-label mb-1">Email</div>
             <input className="pd-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
-          <button type="submit" className="pd-btn pd-btn-primary self-start">Save profile</button>
+          <button type="submit" className="pd-btn pd-btn-primary self-start" disabled={profileSaving}>{profileSaving ? "Saving…" : "Save profile"}</button>
         </form>
       </div>
 

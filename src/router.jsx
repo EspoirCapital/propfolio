@@ -42,17 +42,27 @@ const PAGE_META = {
 };
 
 function Layout() {
-  const { session, login, logout, selectedAccount, setSelectedId, trades, payouts, certificates, settings, templates, setAccounts, archiveAccount, unarchiveAccount } = useApp();
+  const { session, isLoading, logout, selectedAccount, setSelectedId, trades, payouts, certificates, settings, templates, archiveAccount, unarchiveAccount } = useApp();
   const router = useRouterState();
   const navigate = useNavigate();
   const pathname = router.location.pathname;
   const [showLogout, setShowLogout] = useState(false);
 
+  if (isLoading) {
+    return (
+      <div className="pd-root">
+        <div className="relative z-[1] min-h-screen flex items-center justify-center">
+          <div className="pd-mono text-sm" style={{ color: "var(--slate)" }}>Loading…</div>
+        </div>
+      </div>
+    );
+  }
+
   if (!session) {
     return (
       <div className="pd-root">
         <div className="relative z-[1] min-h-screen">
-          <LoginView onLogin={login} />
+          <LoginView />
         </div>
       </div>
     );
@@ -144,7 +154,6 @@ function Layout() {
       <AccountDrawer
         account={selectedAccount} trades={trades} payouts={payouts}
         certificates={certificates} settings={settings} templates={templates}
-        setAccounts={setAccounts}
         onViewDetails={(id) => { setSelectedId(null); navigate({ to: "/accounts/$accountId", params: { accountId: id } }); }}
         onLogTrade={(id) => { setSelectedId(null); navigate({ to: "/journal", search: { account: id } }); }}
         onClose={() => setSelectedId(null)}
@@ -160,13 +169,14 @@ function OverviewPage() {
 }
 
 function AccountsPage() {
-  const { derived, templates, editingAccount, setEditingAccount, setAccounts, setSelectedId, archiveAccount, unarchiveAccount } = useApp();
+  const { derived, templates, editingAccount, setEditingAccount, createAccount, updateAccount, deleteAccount, setSelectedId, archiveAccount, unarchiveAccount } = useApp();
   const { firm, status } = useSearch({ from: "/accounts" });
   const navigate = useNavigate();
 
   return (
     <AccountsView
-      derived={derived} templates={templates} setAccounts={setAccounts}
+      derived={derived} templates={templates}
+      createAccount={createAccount} updateAccount={updateAccount} deleteAccount={deleteAccount}
       editingAccount={editingAccount} setEditingAccount={setEditingAccount}
       filterFirm={firm} setFilterFirm={(v) => navigate({ search: (prev) => ({ ...prev, firm: v }) })}
       filterStatus={status} setFilterStatus={(v) => navigate({ search: (prev) => ({ ...prev, status: v }) })}
@@ -178,7 +188,7 @@ function AccountsPage() {
 }
 
 function AccountDetailPageRoute() {
-  const { derived, trades, payouts, certificates, settings, templates, setAccounts, setEditingAccount, archiveAccount, unarchiveAccount } = useApp();
+  const { derived, trades, payouts, certificates, settings, templates, updateAccount, deleteAccount, setEditingAccount, archiveAccount, unarchiveAccount } = useApp();
   const navigate = useNavigate();
   const { accountId } = useParams({ from: "/accounts/$accountId" });
 
@@ -186,23 +196,25 @@ function AccountDetailPageRoute() {
     <AccountDetailPage
       accountId={accountId} derived={derived} trades={trades}
       payouts={payouts} certificates={certificates} settings={settings}
-      templates={templates} setAccounts={setAccounts}
+      templates={templates} updateAccount={updateAccount}
       onBack={() => navigate({ to: "/accounts" })}
       onEdit={(id) => { const acc = derived.accounts.find((a) => a.id === id); if (acc) { setEditingAccount(acc); navigate({ to: "/accounts" }); } }}
-      onDelete={(id) => setAccounts((prev) => prev.filter((a) => a.id !== id))}
+      onDelete={deleteAccount}
       archiveAccount={archiveAccount} unarchiveAccount={unarchiveAccount}
     />
   );
 }
 
 function JournalPage() {
-  const { accounts, trades, setTrades, settings } = useApp();
+  const { accounts, trades, createTrade, updateTrade, deleteTrade, settings } = useApp();
   const { account } = useSearch({ from: "/journal" });
   const navigate = useNavigate();
 
   return (
     <JournalView
-      accounts={accounts} trades={trades} setTrades={setTrades} settings={settings}
+      accounts={accounts} trades={trades}
+      createTrade={createTrade} updateTrade={updateTrade} deleteTrade={deleteTrade}
+      settings={settings}
       initialAccountId={account || null}
       onClearInitialAccount={() => navigate({ search: (prev) => { const next = { ...prev }; delete next.account; return next; } })}
     />
@@ -210,36 +222,29 @@ function JournalPage() {
 }
 
 function PayoutsPage() {
-  const { derived, payouts, setPayouts } = useApp();
-  return <PayoutsView accounts={derived.accounts} payouts={payouts} setPayouts={setPayouts} />;
+  const { derived, payouts, createPayout, updatePayout, deletePayout } = useApp();
+  return <PayoutsView accounts={derived.accounts} payouts={payouts} createPayout={createPayout} updatePayout={updatePayout} deletePayout={deletePayout} />;
 }
 
 function CertificatesPage() {
-  const { derived, certificates, setCertificates } = useApp();
+  const { derived, certificates, createCertificate, updateCertificate, deleteCertificate } = useApp();
   const { account } = useSearch({ from: "/certificates" });
-  return <CertificatesView accounts={derived.accounts} certificates={certificates} setCertificates={setCertificates} initialAccountId={account} />;
+  return <CertificatesView accounts={derived.accounts} certificates={certificates} createCertificate={createCertificate} updateCertificate={updateCertificate} deleteCertificate={deleteCertificate} initialAccountId={account} />;
 }
 
 function TemplatesPage() {
-  const { templates, setTemplates } = useApp();
-  return <TemplatesView templates={templates} setTemplates={setTemplates} />;
+  const { templates, createTemplate, updateTemplate, deleteTemplate } = useApp();
+  return <TemplatesView templates={templates} createTemplate={createTemplate} updateTemplate={updateTemplate} deleteTemplate={deleteTemplate} />;
 }
 
 function CopytradingPage() {
-  const { derived, clusters, setClusters } = useApp();
-  return <CopytradingView accounts={derived.accounts} clusters={clusters} setClusters={setClusters} />;
+  const { derived, clusters, createCluster, updateCluster, deleteCluster } = useApp();
+  return <CopytradingView accounts={derived.accounts} clusters={clusters} createCluster={createCluster} updateCluster={updateCluster} deleteCluster={deleteCluster} />;
 }
 
 function SettingsPage() {
-  const { session, settings, setSettings } = useApp();
-  const [localSession, setLocalSession] = useState(session);
-
-  function handleUpdateSession(updated) {
-    setLocalSession(updated);
-    localStorage.setItem("propfolio_session", JSON.stringify(updated));
-  }
-
-  return <SettingsView settings={settings} setSettings={setSettings} session={localSession} onUpdateSession={handleUpdateSession} />;
+  const { session, settings, setSettings, updateProfile } = useApp();
+  return <SettingsView settings={settings} setSettings={setSettings} session={session} updateProfile={updateProfile} />;
 }
 
 function ReportPage() {

@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { X, ChevronRight, PenLine, ArrowRight, AlertTriangle, Archive, ArchiveRestore } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
+import { useApp } from "../context";
 import { computeOutcome, money, getAccountLabel, formatDateUK, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel } from "../utils";
 import { StatusPill } from "../components/StatusPill";
 import { ProgressionStepper } from "../components/ProgressionStepper";
 import { CredentialReveal } from "../components/CredentialReveal";
 import { EquityCurve } from "../components/EquityCurve";
 
-export function AccountDrawer({ account, trades, payouts, certificates, settings, templates, setAccounts, onViewDetails, onLogTrade, onClose, archiveAccount, unarchiveAccount }) {
-  if (!account) return null;
+export function AccountDrawer({ account, trades, payouts, certificates, settings, templates, onViewDetails, onLogTrade, onClose, archiveAccount, unarchiveAccount }) {
+  const { proceed: proceedFn, breach: breachFn } = useApp();
   const navigate = useNavigate();
+  if (!account) return null;
 
   const accTrades = trades.filter((t) => t.accountId === account.id && !t.archived);
   const accPayouts = payouts.filter((p) => p.accountId === account.id);
@@ -57,48 +59,14 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
   const canProceed = (account.targetPct ?? 0) >= 100 && nextStatus(account.status, phaseCount);
   const nextDest = nextStatusLabel(account.status, phaseCount);
 
-  function handleProceed() {
-    const today = new Date().toISOString().slice(0, 10);
-    const next = nextStatus(account.status, phaseCount);
-    const newId = crypto.randomUUID();
-    setAccounts((prev) => {
-      const updated = prev.map((a) =>
-        a.id === account.id ? { ...a, status: "passed", terminationDate: today } : a
-      );
-      return [
-        ...updated,
-        {
-          id: newId,
-          firm: account.firm,
-          template: account.template,
-          size: account.size,
-          platform: account.platform,
-          drawdown: account.drawdown,
-          maxLoss: account.maxLoss,
-          dailyLoss: account.dailyLoss,
-          status: next,
-          creationDate: today,
-          terminationDate: "",
-          platformLogin: "",
-          platformPassword: "",
-          platformInvestorPassword: "",
-          platformLink: "",
-          notes: "",
-          costs: [],
-        },
-      ];
-    });
+  async function handleProceed() {
+    const newId = await proceedFn({ id: account.id });
     onClose();
     navigate({ to: "/accounts/$accountId", params: { accountId: newId } });
   }
 
-  function handleBreach() {
-    const today = new Date().toISOString().slice(0, 10);
-    setAccounts((prev) =>
-      prev.map((a) =>
-        a.id === account.id ? { ...a, status: "breached", terminationDate: today } : a
-      )
-    );
+  async function handleBreach() {
+    await breachFn({ id: account.id });
     onClose();
   }
 
