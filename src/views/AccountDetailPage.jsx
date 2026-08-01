@@ -205,7 +205,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <KpiTile label="Win Rate" value={`${winRate}%`} accent="var(--sage)" sub={`${wins}W / ${losses}L`} />
                 <KpiTile label="Avg R:R" value={avgRR} accent="var(--brass)" />
                 <KpiTile label="Ratings" value={`${ratings.green}·${ratings.amber}·${ratings.red}`} accent="var(--sand)" sub="green · amber · red" />
-                <KpiTile label="Avg MFE" value={avgMfe} accent="var(--sage)" sub="R" />
+                <KpiTile label="Avg MFE" value={avgMfeR != null ? avgMfeR.toFixed(2) : "—"} accent="var(--sage)" sub="R" />
                 <KpiTile label="Avg MAE" value={avgMae} accent="var(--brick)" sub="R" />
                 <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
                 <KpiTile label="Deep-dip recovery" value={deepRecovery} accent="var(--sand)" sub="dips > avg MAE that recovered" />
