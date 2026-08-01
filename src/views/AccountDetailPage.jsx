@@ -196,7 +196,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                   retracing. <strong>Capture</strong> shows how much of your peak R you actually banked.{" "}
                   <strong>WR w/ limit @ avg MAE</strong> models placing a limit order at your average MAE depth instead
                   of a market entry: it counts only trades that dipped to that level (your fills), shows the win rate
-                  among those, and the RR gained per fill. <strong>WR limit MAE + TP MFE</strong> combines it with a
+                  among those, and the RR gained per trade. <strong>WR limit MAE + TP MFE</strong> combines it with a
                   take-profit at your average MFE: it shows the win rate on fills that also reached that target, plus
                   the RR gained per win and the % of trades you'd miss. If these beat your current win rate at a good
                   RR gain, waiting for the dip and letting it run is worth it. These numbers only mean something with

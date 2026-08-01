@@ -65,7 +65,7 @@ export function computeMfeMaeStats(trades) {
   const limitWr = limitFills.length
     ? `${Math.round((limitFills.filter((t) => t.outcome === "W").length / limitFills.length) * 100)}%` : "—";
   const limitSub = avgMaeR !== null && limitPool.length && missedPct !== null
-    ? `+${avgMaeR.toFixed(2)}R per fill · ${missedPct}% missed` : "—";
+    ? `+${avgMaeR.toFixed(2)}R per trade · ${missedPct}% missed` : "—";
 
   const comboPool = trades.filter((t) => t.mfeR != null && t.maeR != null && t.risk > 0 && t.outcome !== "BE" && avgMaeR !== null && avgMfeR !== null);
   const comboFills = comboPool.filter((t) => t.maeR >= avgMaeR);
@@ -81,18 +81,16 @@ export function computeMfeMaeStats(trades) {
     ? `+${comboRrGained}R/win · ${comboMissedPct}% missed` : "—";
 
   const mfeDecisions = mfeTrades.filter((t) => t.risk > 0 && t.outcome !== "BE");
-  const currentWrPool = mfeDecisions.length
-    ? mfeDecisions.filter((t) => t.outcome === "W").length / mfeDecisions.length : null;
   const mfeWinners = mfeDecisions.filter((t) => avgMfeR !== null && t.mfeR >= avgMfeR);
   const wrAtAvgMfe = mfeDecisions.length
     ? `${Math.round((mfeWinners.length / mfeDecisions.length) * 100)}%` : "—";
-  const wrDelta = currentWrPool !== null && mfeDecisions.length
-    ? Math.round((currentWrPool - (mfeWinners.length / mfeDecisions.length)) * 100) : null;
+  const mfeMissedPct = mfeDecisions.length
+    ? Math.round(((mfeDecisions.length - mfeWinners.length) / mfeDecisions.length) * 100) : null;
   const rrGained = mfeWinners.length && avgMfeR !== null
     ? (avgMfeR - mfeWinners.reduce((s, t) => s + (t.pnl / t.risk), 0) / mfeWinners.length).toFixed(2)
     : null;
-  const wrSub = currentWrPool !== null && wrDelta !== null && rrGained !== null
-    ? `${wrDelta > 0 ? `-${wrDelta}` : wrDelta}pp vs now · +${rrGained}R/win` : "TP at avg MFE";
+  const wrSub = rrGained !== null && mfeMissedPct !== null
+    ? `+${rrGained}R per trade · ${mfeMissedPct}% missed` : "TP at avg MFE";
 
   return { avgMfe, avgMae, capture, giveback, limitWr, limitSub, comboWr, comboSub, wrAtAvgMfe, wrSub };
 }
