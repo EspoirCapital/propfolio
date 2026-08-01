@@ -64,16 +64,27 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const giveback = avgMfeR !== null && avgRealizedOfMfe !== null
     ? (avgMfeR - avgRealizedOfMfe).toFixed(2) : "—";
 
-  const winsWithMfe = mfeTrades.filter((t) => t.outcome === "W");
-  const winsRetracedPastMae = winsWithMfe.filter((t) => avgMaeR !== null && t.mfeR >= avgMaeR);
-  const winsRetrace = winsWithMfe.length ? `${Math.round((winsRetracedPastMae.length / winsWithMfe.length) * 100)}%` : "—";
+  const winsWithMae = mfeTrades.filter((t) => t.outcome === "W" && t.maeR != null);
+  const winsDippedToAvgMae = winsWithMae.filter((t) => avgMaeR !== null && t.maeR >= avgMaeR);
+  const winsRetrace = winsWithMae.length ? `${Math.round((winsDippedToAvgMae.length / winsWithMae.length) * 100)}%` : "—";
 
   const dipRecoveredTrades = mfeTrades.filter((t) => t.maeR != null);
   const recoveredPastAvgMae = dipRecoveredTrades.filter((t) => avgMaeR !== null && t.mfeR >= avgMaeR);
   const retraceToMae = dipRecoveredTrades.length ? `${Math.round((recoveredPastAvgMae.length / dipRecoveredTrades.length) * 100)}%` : "—";
 
-  const wrAtAvgMfe = avgMfeR !== null && mfeTrades.length
-    ? `${Math.round((mfeTrades.filter((t) => t.mfeR >= avgMfeR).length / mfeTrades.length) * 100)}%` : "—";
+  const mfeDecisions = mfeTrades.filter((t) => t.risk > 0 && t.outcome !== "BE");
+  const currentWrPool = mfeDecisions.length
+    ? mfeDecisions.filter((t) => t.outcome === "W").length / mfeDecisions.length : null;
+  const mfeWinners = mfeDecisions.filter((t) => avgMfeR !== null && t.mfeR >= avgMfeR);
+  const wrAtAvgMfe = mfeDecisions.length
+    ? `${Math.round((mfeWinners.length / mfeDecisions.length) * 100)}%` : "—";
+  const wrDelta = currentWrPool !== null && mfeDecisions.length
+    ? Math.round((currentWrPool - (mfeWinners.length / mfeDecisions.length)) * 100) : null;
+  const rrGained = mfeWinners.length && avgMfeR !== null
+    ? (avgMfeR - mfeWinners.reduce((s, t) => s + (t.pnl / t.risk), 0) / mfeWinners.length).toFixed(2)
+    : null;
+  const wrSub = currentWrPool !== null && wrDelta !== null && rrGained !== null
+    ? `${wrDelta > 0 ? `-${wrDelta}` : wrDelta}pp vs now · +${rrGained}R/win` : "TP at avg MFE";
 
   let running = 0;
   const sortedTrades = enrichedTrades.slice().reverse();
@@ -208,20 +219,21 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <KpiTile label="Avg MFE" value={avgMfeR != null ? avgMfeR.toFixed(2) : "—"} accent="var(--sage)" sub="R" />
                 <KpiTile label="Avg MAE" value={avgMae} accent="var(--brick)" sub="R" />
                 <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
-                <KpiTile label="Wins past avg MAE" value={winsRetrace} accent="var(--sand)" sub="winners that retraced ≥ avg MAE" />
+                <KpiTile label="Wins dipped to avg MAE" value={winsRetrace} accent="var(--sand)" sub="winners that dipped ≥ avg MAE" />
                 <KpiTile label="Retraced past avg MAE" value={retraceToMae} accent="var(--sage)" sub="MFE ≥ avg MAE" />
-                <KpiTile label="WR @ avg MFE" value={wrAtAvgMfe} accent="var(--brass)" sub="TP at avg MFE" />
+                <KpiTile label="WR @ avg MFE" value={wrAtAvgMfe} accent="var(--brass)" sub={wrSub} />
               </div>
               <div className="rounded-lg p-4 text-sm" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
                 <div className="pd-label mb-1">How to read these</div>
                 <p style={{ color: "var(--sand-dim)", lineHeight: 1.7 }}>
                   MFE is how far a trade went <em>for</em> you (in R); MAE is how far it went <em>against</em> you before
                   retracing. <strong>Capture</strong> shows how much of your peak R you actually banked.{" "}
-                  <strong>Wins past avg MAE</strong> shows, of your winning trades, how many retraced past your average
-                  dip. Compare it with Capture: if most winners retrace past your average MAE but you only capture
-                  ~50%, a limit order would likely have filled on the retrace and earned a bigger RR. If winners rarely
-                  retrace, market entry is a coin flip and the edge is smaller. These numbers only mean something with
-                  enough trades (20-30+) - a handful of trades is just noise.
+                  <strong>Wins dipped to avg MAE</strong> shows, of your winning trades, how many dipped to at least your
+                  average MAE (a limit order at that depth would have filled). Compare it with Capture: if most winners
+                  dip to your average MAE but you only capture ~50%, a limit order would have filled on the dip and
+                  earned a bigger RR. If winners rarely dip that far, market entry is a coin flip and the edge is
+                  smaller. These numbers only mean something with enough trades (20-30+) - a handful of trades is
+                  just noise.
                 </p>
               </div>
             </>
