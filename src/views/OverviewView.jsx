@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { money, formatDateUK, computeOutcome, formatDisplay, getAccountLabel, OUTCOME_META, RATING_META } from "../utils";
+import { money, formatDateUK, computeOutcome, formatDisplay, getAccountLabel, OUTCOME_META, RATING_META, computeMfeMaeStats } from "../utils";
 import { STATUS_META } from "../constants";
 import { KpiTile } from "../components/KpiTile";
 import { StatusPill } from "../components/StatusPill";
@@ -33,6 +33,8 @@ export function OverviewView({ derived, trades, payouts, settings }) {
   const decisionTrades = wins + losses;
   const winRate = decisionTrades ? Math.round((wins / decisionTrades) * 100) : 0;
   const activeAccounts = derived.accounts.filter((a) => !a.archived && a.status !== "breached").length;
+
+  const mfeStats = useMemo(() => computeMfeMaeStats(allTrades), [allTrades]);
 
   const curve = useMemo(() => {
     const sorted = [...allTrades].sort((a, b) => (a.date > b.date ? 1 : -1));
@@ -136,6 +138,15 @@ export function OverviewView({ derived, trades, payouts, settings }) {
         <KpiTile label="Win Rate" value={`${winRate}%`} accent="var(--sage)" sub={`${wins}W / ${losses}L`} />
         <KpiTile label="Total Trades" value={totalTrades} accent="var(--sand)" sub="across all accounts" />
         <KpiTile label="Active Accounts" value={activeAccounts} accent="var(--brass)" sub={`of ${derived.accounts.length} total`} />
+      </div>
+
+      {/* Row 1b — MFE/MAE stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <KpiTile label="Avg MFE" value={mfeStats.avgMfe} accent="var(--sage)" sub="R" />
+        <KpiTile label="Avg MAE" value={mfeStats.avgMae} accent="var(--brick)" sub="R" />
+        <KpiTile label="Capture" value={mfeStats.capture} accent="var(--brass)" sub={`giveback ${mfeStats.giveback}R`} />
+        <KpiTile label="Wins dipped to avg MAE" value={mfeStats.winsRetrace} accent="var(--sand)" sub="winners that dipped ≥ avg MAE" />
+        <KpiTile label="WR @ avg MFE" value={mfeStats.wrAtAvgMfe} accent="var(--brass)" sub={mfeStats.wrSub} />
       </div>
 
       {/* Row 2 — Cumulative P&L Chart */}

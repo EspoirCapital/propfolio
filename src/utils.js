@@ -38,6 +38,47 @@ export function formatDateUK(dateStr) {
   return `${d}/${m}/${y}`;
 }
 
+// MFE/MAE stats across any trade list (trades must carry `outcome`, `risk`, `pnl`).
+// Returns display-ready values: avgMfe, avgMae, capture, giveback, winsRetrace,
+// wrAtAvgMfe, wrSub — all strings ("—" when there's no data to compute).
+export function computeMfeMaeStats(trades) {
+  const maeTrades = trades.filter((t) => t.maeR != null);
+  const avgMaeR = maeTrades.length ? maeTrades.reduce((s, t) => s + t.maeR, 0) / maeTrades.length : null;
+  const avgMae = avgMaeR !== null ? avgMaeR.toFixed(2) : "—";
+
+  const mfeTrades = trades.filter((t) => t.mfeR != null);
+  const mfeSet = mfeTrades.filter((t) => t.risk > 0);
+  const avgMfeR = mfeSet.length ? mfeSet.reduce((s, t) => s + t.mfeR, 0) / mfeSet.length : null;
+  const avgRealizedOfMfe = mfeSet.length
+    ? mfeSet.reduce((s, t) => s + (t.pnl / t.risk), 0) / mfeSet.length
+    : null;
+  const avgMfe = avgMfeR !== null ? avgMfeR.toFixed(2) : "—";
+  const capture = avgMfeR !== null && avgRealizedOfMfe !== null && avgMfeR > 0
+    ? `${Math.round((avgRealizedOfMfe / avgMfeR) * 100)}%` : "—";
+  const giveback = avgMfeR !== null && avgRealizedOfMfe !== null
+    ? (avgMfeR - avgRealizedOfMfe).toFixed(2) : "—";
+
+  const winsWithMae = mfeTrades.filter((t) => t.outcome === "W" && t.maeR != null);
+  const winsDippedToAvgMae = winsWithMae.filter((t) => avgMaeR !== null && t.maeR >= avgMaeR);
+  const winsRetrace = winsWithMae.length ? `${Math.round((winsDippedToAvgMae.length / winsWithMae.length) * 100)}%` : "—";
+
+  const mfeDecisions = mfeTrades.filter((t) => t.risk > 0 && t.outcome !== "BE");
+  const currentWrPool = mfeDecisions.length
+    ? mfeDecisions.filter((t) => t.outcome === "W").length / mfeDecisions.length : null;
+  const mfeWinners = mfeDecisions.filter((t) => avgMfeR !== null && t.mfeR >= avgMfeR);
+  const wrAtAvgMfe = mfeDecisions.length
+    ? `${Math.round((mfeWinners.length / mfeDecisions.length) * 100)}%` : "—";
+  const wrDelta = currentWrPool !== null && mfeDecisions.length
+    ? Math.round((currentWrPool - (mfeWinners.length / mfeDecisions.length)) * 100) : null;
+  const rrGained = mfeWinners.length && avgMfeR !== null
+    ? (avgMfeR - mfeWinners.reduce((s, t) => s + (t.pnl / t.risk), 0) / mfeWinners.length).toFixed(2)
+    : null;
+  const wrSub = currentWrPool !== null && wrDelta !== null && rrGained !== null
+    ? `${wrDelta > 0 ? `-${wrDelta}` : wrDelta}pp vs now · +${rrGained}R/win` : "TP at avg MFE";
+
+  return { avgMfe, avgMae, capture, giveback, winsRetrace, wrAtAvgMfe, wrSub };
+}
+
 export function parseDateUK(ukDate) {
   if (!ukDate) return "";
   const [d, m, y] = ukDate.split("/");
