@@ -89,6 +89,8 @@ const FRIENDLY_ERRORS = {
   "Only admins can manage roles.": "Only admins can change roles.",
   "You cannot remove your own admin role.": "You can't remove your own admin role.",
   "User not found.": "That user no longer exists. They may have been removed.",
+  "Current password is incorrect.": "Current password is incorrect. Try again.",
+  "New password must be at least 8 characters.": "New password must be at least 8 characters.",
   "Account not found.": "That account no longer exists. It may have been deleted.",
   "Cluster not found.": "That cluster no longer exists. It may have been deleted.",
   "Template not found.": "That template no longer exists. It may have been deleted.",

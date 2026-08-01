@@ -247,8 +247,8 @@ function CopytradingPage() {
 }
 
 function SettingsPage() {
-  const { session, settings, setSettings, updateProfile } = useApp();
-  return <SettingsView settings={settings} setSettings={setSettings} session={session} updateProfile={updateProfile} />;
+  const { session, settings, setSettings, updateProfile, changePassword } = useApp();
+  return <SettingsView settings={settings} setSettings={setSettings} session={session} updateProfile={updateProfile} changePassword={changePassword} />;
 }
 
 function ReportPage() {

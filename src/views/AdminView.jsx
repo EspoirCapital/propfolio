@@ -5,7 +5,7 @@ import { ConfirmModal } from "../components/ConfirmModal";
 import { ErrorBanner } from "../components/ErrorBanner";
 
 function inviteLink(code) {
-  return `${window.location.origin}${window.location.pathname}?invite=${code}`;
+  return `${window.location.origin}/?invite=${code}`;
 }
 
 function formatDate(ts) {

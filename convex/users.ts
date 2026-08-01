@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
-
+import { query, mutation, action, internalQuery } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { getAuthUserId, getAuthSessionId, retrieveAccount, modifyAccountCredentials, invalidateSessions } from "@convex-dev/auth/server";
 export const me = query({
   args: {},
   handler: async (ctx) => {
@@ -56,5 +56,43 @@ export const setRole = mutation({
     if (!target) throw new Error("User not found.");
     await ctx.db.patch(args.id, { isAdmin: args.isAdmin });
     return args.id;
+  },
+});
+
+export const changePassword = action({
+  args: { currentPassword: v.string(), newPassword: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) throw new Error("Not signed in.");
+    const sessionId = await getAuthSessionId(ctx);
+    if (sessionId === null) throw new Error("Not signed in.");
+
+    const email = await ctx.runQuery(internal.users.getEmail, { userId });
+    if (!email) throw new Error("User not found.");
+
+    if (args.newPassword.length < 8) throw new Error("New password must be at least 8 characters.");
+
+    await retrieveAccount(ctx, {
+      provider: "password",
+      account: { id: email, secret: args.currentPassword },
+    }).catch(() => {
+      throw new Error("Current password is incorrect.");
+    });
+
+    await modifyAccountCredentials(ctx, {
+      provider: "password",
+      account: { id: email, secret: args.newPassword },
+    });
+
+    await invalidateSessions(ctx, { userId, except: [sessionId] });
+    return true;
+  },
+});
+
+export const getEmail = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    return user?.email ?? null;
   },
 });

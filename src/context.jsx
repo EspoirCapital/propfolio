@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { useConvexAuth, useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../convex/_generated/api";
 import { useDerived } from "./hooks";
@@ -65,6 +65,8 @@ export function AppProvider({ children }) {
   const generateInviteFn = useMutation(api.invites.generate);
   const revokeInviteFn = useMutation(api.invites.revoke);
 
+  const changePasswordFn = useAction(api.users.changePassword);
+
   const [selectedId, setSelectedId] = useState(null);
   const [editingAccount, setEditingAccount] = useState(null);
 
@@ -127,6 +129,7 @@ export function AppProvider({ children }) {
       createTemplate, updateTemplate, deleteTemplate,
       createCluster, updateCluster, deleteCluster,
       updateProfile: (data) => updateProfileFn(data),
+      changePassword: (currentPassword, newPassword) => changePasswordFn({ currentPassword, newPassword }),
       setUserRole: (id, isAdmin) => setRoleFn({ id, isAdmin }),
       users: users || [], invites: invites || [],
       generateInvite: () => generateInviteFn(),

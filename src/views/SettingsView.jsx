@@ -3,12 +3,18 @@ import { FormatToggle } from "../components/FormatToggle";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { friendlyError } from "../utils";
 
-export function SettingsView({ settings, setSettings, session, updateProfile }) {
+export function SettingsView({ settings, setSettings, session, updateProfile, changePassword }) {
   const [name, setName] = useState(session?.name || "");
   const [email, setEmail] = useState(session?.email || "");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [settingsError, setSettingsError] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   function update(key, value) {
     const next = { ...settings, [key]: value };
@@ -27,6 +33,32 @@ export function SettingsView({ settings, setSettings, session, updateProfile }) 
       setProfileError(friendlyError(err));
     } finally {
       setProfileSaving(false);
+    }
+  }
+
+  async function handlePasswordSave(e) {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess(false);
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New password and confirmation don't match.");
+      return;
+    }
+    setPasswordSaving(true);
+    try {
+      await changePassword(currentPassword, newPassword);
+      setPasswordSuccess(true);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setPasswordError(friendlyError(err));
+    } finally {
+      setPasswordSaving(false);
     }
   }
 
@@ -58,6 +90,32 @@ export function SettingsView({ settings, setSettings, session, updateProfile }) 
             <input className="pd-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <button type="submit" className="pd-btn pd-btn-primary self-start" disabled={profileSaving}>{profileSaving ? "Saving…" : "Save profile"}</button>
+        </form>
+      </div>
+
+      {/* Password */}
+      <div className="rounded-lg p-5" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
+        <div className="pd-label mb-3">Change password</div>
+        <form onSubmit={handlePasswordSave} className="flex flex-col gap-3">
+          {passwordError && <ErrorBanner message={passwordError} onDismiss={() => setPasswordError("")} />}
+          {passwordSuccess && (
+            <div className="text-xs rounded-md px-3 py-2" style={{ background: "rgba(139,163,126,0.14)", color: "var(--sage)", border: "1px solid var(--sage-dim)" }} role="status">
+              Password updated.
+            </div>
+          )}
+          <div>
+            <div className="pd-label mb-1">Current password</div>
+            <input className="pd-input" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password" required />
+          </div>
+          <div>
+            <div className="pd-label mb-1">New password</div>
+            <input className="pd-input" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={8} autoComplete="new-password" required />
+          </div>
+          <div>
+            <div className="pd-label mb-1">Confirm new password</div>
+            <input className="pd-input" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} minLength={8} autoComplete="new-password" required />
+          </div>
+          <button type="submit" className="pd-btn pd-btn-primary self-start" disabled={passwordSaving}>{passwordSaving ? "Updating…" : "Update password"}</button>
         </form>
       </div>
 
