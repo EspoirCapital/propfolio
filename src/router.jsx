@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createRouter, createRoute, createRootRoute, Link, Outlet, useRouterState, useNavigate, useSearch, useParams } from "@tanstack/react-router";
-import { LayoutGrid, NotebookPen, Award, SlidersHorizontal, List, Wallet, Settings, Copy, BarChart3, LogOut, Users } from "lucide-react";
+import { LayoutGrid, NotebookPen, Award, SlidersHorizontal, List, Wallet, Settings, Copy, BarChart3, LogOut, Users, Menu, X } from "lucide-react";
 
 import { useApp } from "./context";
 import { BrandMark } from "./components/BrandMark";
@@ -51,12 +51,33 @@ function Layout() {
   const navigate = useNavigate();
   const pathname = router.location.pathname;
   const [showLogout, setShowLogout] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !session && pathname !== "/") {
       navigate({ to: "/", search: (prev) => prev });
     }
   }, [session, isLoading, pathname, navigate]);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") setMobileNavOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileNavOpen]);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileNavOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileNavOpen]);
 
   if (isLoading || (session && !dataReady)) {
     return (
@@ -86,18 +107,27 @@ function Layout() {
   return (
     <div className="pd-root">
       <div className="relative z-[1] min-h-screen">
-        {/* Desktop sidebar — fixed, no scroll */}
-        <aside className="pd-sidebar p-4">
-          <Link to="/" className="flex items-center mb-6 px-2 no-underline">
-            <BrandMark style={{ width: 140, height: 40 }} />
-          </Link>
-          <nav className="flex flex-col gap-1">
+        {/* Sidebar — fixed on desktop, off-canvas drawer on mobile */}
+        <aside className={`pd-sidebar p-4 ${mobileNavOpen ? "open" : ""}`} aria-label="Primary">
+          <div className="flex items-center justify-between mb-6 px-2">
+            <Link to="/" className="flex items-center no-underline" onClick={() => setMobileNavOpen(false)}>
+              <BrandMark style={{ width: 140, height: 40 }} />
+            </Link>
+            <button className="md:hidden shrink-0 p-2 rounded-md" onClick={() => setMobileNavOpen(false)}
+              aria-label="Close navigation"
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--slate)" }}>
+              <X size={18} />
+            </button>
+          </div>
+          <nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto pd-scrollbar" aria-label="Primary">
             {[...NAV, ...(session.isAdmin ? ADMIN_NAV : [])].map((n) => {
               const Icon = n.icon;
               const isActive = n.path === "/" ? pathname === "/" : pathname.startsWith(n.path);
               return (
                 <Link key={n.path} to={n.path}
                   className={`pd-navitem flex items-center gap-2.5 px-3 py-2.5 rounded-r-md text-sm text-left no-underline ${isActive ? "active" : ""}`}
+                  aria-current={isActive ? "page" : undefined}
+                  onClick={() => setMobileNavOpen(false)}
                   style={{ color: isActive ? "var(--sand)" : "var(--slate)" }}>
                   <Icon size={16} /> {n.label}
                 </Link>
@@ -116,13 +146,13 @@ function Layout() {
                 <div className="text-sm font-medium truncate" style={{ color: "var(--sand)" }}>{session.name}</div>
                 <div className="text-xs truncate" style={{ color: "var(--slate)" }}>{session.email || "No email"}</div>
               </div>
-              <Link to="/settings" className="shrink-0 p-1.5 rounded-md transition-colors"
+              <Link to="/settings" className="shrink-0 p-2 rounded-md transition-colors"
                 style={{ color: pathname === "/settings" ? "var(--brass)" : "var(--slate)" }}
                 onMouseEnter={(e) => e.currentTarget.style.color = "var(--brass)"}
                 onMouseLeave={(e) => e.currentTarget.style.color = pathname === "/settings" ? "var(--brass)" : "var(--slate)"}>
                 <Settings size={15} />
               </Link>
-              <button onClick={() => setShowLogout(true)} className="shrink-0 p-1.5 rounded-md transition-colors" style={{ color: "var(--slate)", background: "none", border: "none", cursor: "pointer" }}
+              <button onClick={() => setShowLogout(true)} className="shrink-0 p-2 rounded-md transition-colors" style={{ color: "var(--slate)", background: "none", border: "none", cursor: "pointer" }}
                 onMouseEnter={(e) => e.currentTarget.style.color = "var(--brick)"}
                 onMouseLeave={(e) => e.currentTarget.style.color = "var(--slate)"}
                 title="Log out">
@@ -132,24 +162,23 @@ function Layout() {
           </div>
         </aside>
 
+        {mobileNavOpen && (
+          <div className="pd-scrim md:hidden" onClick={() => setMobileNavOpen(false)} aria-hidden="true" />
+        )}
+
         {showLogout && <ConfirmModal onCancel={() => setShowLogout(false)} onConfirm={() => { setShowLogout(false); logout(); }}
           title="Log out" message="Are you sure you want to log out?" confirmLabel="Log out" />}
 
         {/* Main content — offset by sidebar on desktop */}
         <main className="md:ml-56 min-h-screen p-5 md:p-8 pd-scrollbar overflow-y-auto">
-          <div className="flex md:hidden items-center mb-4 px-1">
+          <div className="flex md:hidden items-center mb-4 gap-2">
+            <button className="shrink-0 p-2 rounded-md" onClick={() => setMobileNavOpen((v) => !v)}
+              aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
+              aria-expanded={mobileNavOpen}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--sand)" }}>
+              {mobileNavOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
             <BrandMark style={{ width: 120, height: 34 }} />
-          </div>
-          <div className="flex md:hidden gap-1 mb-5 overflow-x-auto pd-scrollbar">
-            {[...NAV, ...(session.isAdmin ? ADMIN_NAV : [])].map((n) => {
-              const isActive = n.path === "/" ? pathname === "/" : pathname.startsWith(n.path);
-              return (
-                <Link key={n.path} to={n.path} className="pd-btn shrink-0 no-underline"
-                  style={isActive ? { borderColor: "var(--brass)", color: "var(--brass)" } : {}}>{n.label}</Link>
-              );
-            })}
-            <Link to="/settings" className="pd-btn shrink-0 no-underline"
-              style={pathname === "/settings" ? { borderColor: "var(--brass)", color: "var(--brass)" } : {}}>Settings</Link>
           </div>
 
           <div className="mb-6 no-print">

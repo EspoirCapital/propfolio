@@ -74,6 +74,7 @@ body {
   top: 0;
   left: 0;
   height: 100vh;
+  height: 100dvh;
   width: 224px;
   overflow: hidden;
   z-index: 20;
@@ -83,7 +84,31 @@ body {
   border-right: 1px solid var(--line);
 }
 @media (max-width: 767px) {
-  .pd-sidebar { display: none; }
+  .pd-sidebar {
+    width: min(224px, 75vw);
+    transform: translateX(-100%);
+    visibility: hidden;
+    z-index: 40;
+    transition: transform 0.25s ease, visibility 0s linear 0.25s;
+  }
+  .pd-sidebar.open {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.25s ease, visibility 0s;
+  }
+}
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .pd-sidebar { transition: none; }
+}
+.pd-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 11, 15, 0.55);
+  z-index: 30;
+  transition: opacity 0.25s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-scrim { transition: none; }
 }
 .pd-sidebar-account {
   border: 1px solid var(--line);
