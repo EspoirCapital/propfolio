@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { money, computeOutcome } from "../utils";
+import { money } from "../utils";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -10,7 +10,7 @@ export function AccountPerformanceSummary({ trades, accountSize, refund, refundD
 
   const data = useMemo(() => {
     const monthly = {};
-    MONTHS.forEach((m, i) => { monthly[i] = { pnl: 0, trades: 0, rrSum: 0, rrCount: 0, refund: 0, hasData: false }; });
+    MONTHS.forEach((m, i) => { monthly[i] = { pnl: 0, trades: 0, rrTotal: 0, riskTrades: 0, refund: 0, hasData: false }; });
 
     trades.forEach((t) => {
       const d = new Date(t.date);
@@ -18,9 +18,9 @@ export function AccountPerformanceSummary({ trades, accountSize, refund, refundD
         const m = monthly[d.getMonth()];
         m.pnl += t.pnl;
         m.trades++;
-        if (t.risk > 0 && computeOutcome(t.pnl, t.risk, beThreshold) === "W") {
-          m.rrSum += t.pnl / t.risk;
-          m.rrCount++;
+        if (t.risk > 0) {
+          m.rrTotal += t.pnl / t.risk;
+          m.riskTrades++;
         }
         m.hasData = true;
       }
@@ -37,22 +37,22 @@ export function AccountPerformanceSummary({ trades, accountSize, refund, refundD
     let yearPnl = 0;
     let yearRefund = 0;
     let yearTrades = 0;
-    let yearRrSum = 0;
-    let yearRrCount = 0;
+    let yearRrTotal = 0;
+    let yearRiskTrades = 0;
     const rows = MONTHS.map((name, i) => {
-      const { pnl, trades: tCount, rrSum, rrCount, refund: r, hasData } = monthly[i];
+      const { pnl, trades: tCount, rrTotal, riskTrades, refund: r, hasData } = monthly[i];
       yearPnl += pnl;
       yearRefund += r;
       yearTrades += tCount;
-      yearRrSum += rrSum;
-      yearRrCount += rrCount;
-      const avgRr = rrCount > 0 ? (rrSum / rrCount).toFixed(1) : null;
-      return { name, pnl, refund: r, trades: tCount, avgRr, hasData };
+      yearRrTotal += rrTotal;
+      yearRiskTrades += riskTrades;
+      const totalR = riskTrades > 0 ? `${rrTotal >= 0 ? "+" : ""}${rrTotal.toFixed(1)}R` : null;
+      return { name, pnl, refund: r, trades: tCount, totalR, hasData };
     }).filter((r) => r.hasData);
 
-    const yearAvgRr = yearRrCount > 0 ? (yearRrSum / yearRrCount).toFixed(1) : null;
+    const yearTotalR = yearRiskTrades > 0 ? `${yearRrTotal >= 0 ? "+" : ""}${yearRrTotal.toFixed(1)}R` : null;
 
-    return { rows, yearPnl, yearRefund, yearTrades, yearAvgRr };
+    return { rows, yearPnl, yearRefund, yearTrades, yearTotalR };
   }, [trades, year, refund, refundDate, beThreshold]);
 
   const s = { fontSize: 11, color: "var(--slate)" };
@@ -79,7 +79,7 @@ export function AccountPerformanceSummary({ trades, accountSize, refund, refundD
           <span className="pd-mono" style={s}>P&L</span>
           <span className="pd-mono" style={s}>REFUND</span>
           <span className="pd-mono" style={{ ...s, textAlign: "right" }}>%</span>
-          <span className="pd-mono" style={{ ...s, textAlign: "right" }}>RR</span>
+          <span className="pd-mono" style={{ ...s, textAlign: "right" }}>R MADE</span>
         </div>
         {data.rows.map((r) => {
           const netPnl = r.pnl + r.refund;
@@ -90,7 +90,7 @@ export function AccountPerformanceSummary({ trades, accountSize, refund, refundD
               <span style={{ ...cell, color: r.pnl >= 0 ? "var(--sage)" : "var(--brick)" }}>{r.pnl !== 0 ? money(r.pnl) : "—"}</span>
               <span style={{ ...cell, color: r.refund > 0 ? "var(--sage)" : "var(--slate)" }}>{r.refund > 0 ? money(r.refund) : "—"}</span>
               <span style={{ ...cell, textAlign: "right", color: netPnl >= 0 ? "var(--sage)" : "var(--brick)" }}>{netPnl !== 0 ? `${netPnl >= 0 ? "+" : ""}${pnlPct}%` : "—"}</span>
-              <span style={{ ...cell, textAlign: "right", color: "var(--sand-dim)" }}>{r.avgRr !== null ? `${r.avgRr}R` : "—"}</span>
+              <span style={{ ...cell, textAlign: "right", color: r.totalR !== null && r.totalR.startsWith("+") ? "var(--sage)" : r.totalR !== null && r.totalR.startsWith("-") ? "var(--brick)" : "var(--sand-dim)" }}>{r.totalR ?? "—"}</span>
             </div>
           );
         })}
@@ -100,7 +100,7 @@ export function AccountPerformanceSummary({ trades, accountSize, refund, refundD
             <span style={{ ...cell, color: data.yearPnl >= 0 ? "var(--sage)" : "var(--brick)" }}>{money(data.yearPnl)}</span>
             <span style={{ ...cell, color: data.yearRefund > 0 ? "var(--sage)" : "var(--slate)" }}>{data.yearRefund > 0 ? money(data.yearRefund) : "—"}</span>
             <span style={{ ...cell, textAlign: "right", color: (data.yearPnl + data.yearRefund) >= 0 ? "var(--sage)" : "var(--brick)" }}>{`${(data.yearPnl + data.yearRefund) >= 0 ? "+" : ""}${(((data.yearPnl + data.yearRefund) / accSize) * 100).toFixed(1)}%`}</span>
-            <span style={{ ...cell, textAlign: "right", color: "var(--sand-dim)" }}>{data.yearAvgRr !== null ? `${data.yearAvgRr}R` : "—"}</span>
+            <span style={{ ...cell, textAlign: "right", color: data.yearTotalR !== null && data.yearTotalR.startsWith("+") ? "var(--sage)" : data.yearTotalR !== null && data.yearTotalR.startsWith("-") ? "var(--brick)" : "var(--sand-dim)" }}>{data.yearTotalR ?? "—"}</span>
           </div>
         )}
         {data.rows.length === 0 && (
