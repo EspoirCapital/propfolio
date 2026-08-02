@@ -191,17 +191,14 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
               </div>
               <div className="rounded-lg p-4 text-sm" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
                 <div className="pd-label mb-1">How to read these</div>
-                <p style={{ color: "var(--sand-dim)", lineHeight: 1.7 }}>
-                  MFE is how far a trade went <em>for</em> you (in R); MAE is how far it went <em>against</em> you before
-                  retracing. <strong>Capture</strong> shows how much of your peak R you actually banked.{" "}
-                  <strong>WR w/ limit @ avg MAE</strong> models placing a limit order at your average MAE depth instead
-                  of a market entry: it counts only trades that dipped to that level (your fills), shows the win rate
-                  among those, and the RR gained per trade. <strong>WR limit MAE + TP MFE</strong> combines it with a
-                  take-profit at your average MFE: it shows the win rate on fills that also reached that target, plus
-                  the RR gained per win and the % of trades you'd miss. If these beat your current win rate at a good
-                  RR gain, waiting for the dip and letting it run is worth it. These numbers only mean something with
-                  enough trades (20-30+) - a handful of trades is just noise.
-                </p>
+                <ul className="pd-bullets flex flex-col gap-1.5" style={{ color: "var(--sand-dim)", lineHeight: 1.6 }}>
+                  <li><strong>Avg MFE / Avg MAE</strong> - how far trades go for you / against you, in R.</li>
+                  <li><strong>Capture</strong> - how much of your peak R you actually banked. The rest is the giveback.</li>
+                  <li><strong>WR w/ limit @ avg MAE</strong> - if you entered on the dip instead of market, how often you'd win.</li>
+                  <li><strong>WR @ avg MFE</strong> - if you took profit at your average peak, how often you'd win.</li>
+                  <li><strong>WR limit MAE + TP MFE</strong> - both combined: enter the dip, exit at the peak.</li>
+                  <li>Missed % = trades you'd skip because they never reached the level. Only trust these with 20-30+ trades.</li>
+                </ul>
               </div>
             </>
           )}
