@@ -168,12 +168,6 @@ export function OverviewView({ derived, trades, payouts, settings }) {
 
       {totalTrades > 0 && (
         <div className="mb-6">
-          <DayOfWeekChart days={dayProfile} />
-        </div>
-      )}
-
-      {totalTrades > 0 && (
-        <div className="mb-6">
           <AiAnalysis
             scope="Overview"
             stats={{
@@ -199,14 +193,21 @@ export function OverviewView({ derived, trades, payouts, settings }) {
         </div>
       )}
 
-      {/* Row 2 — Cumulative P&L Chart */}
-      <div className="mb-6">
-        <div className="pd-label mb-2">Cumulative P&L</div>
-        {curve.length > 1 ? (
-          <EquityCurve data={curve} height={260} gradientId="pdAreaOverview" />
-        ) : (
-          <div className="rounded-lg p-10 text-center" style={{ background: "var(--ledger)", border: "1px solid var(--line)", color: "var(--slate)" }}>
-            Log some trades to see your equity curve.
+      {/* Row 2 — Cumulative P&L + Day of Week */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
+        <div className="lg:col-span-3">
+          <div className="pd-label mb-2">Cumulative P&L</div>
+          {curve.length > 1 ? (
+            <EquityCurve data={curve} height={260} gradientId="pdAreaOverview" />
+          ) : (
+            <div className="rounded-lg p-10 text-center" style={{ background: "var(--ledger)", border: "1px solid var(--line)", color: "var(--slate)" }}>
+              Log some trades to see your equity curve.
+            </div>
+          )}
+        </div>
+        {totalTrades > 0 && (
+          <div className="lg:col-span-2">
+            <DayOfWeekChart days={dayProfile} plotHeight={170} />
           </div>
         )}
       </div>

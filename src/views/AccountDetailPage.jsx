@@ -222,7 +222,6 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
                 <DayEdgeTile dayEdge={dayEdge} />
               </div>
-              <DayOfWeekChart days={dayProfile} />
               <AiAnalysis
                 scope={getAccountLabel(account)}
                 stats={{
@@ -338,6 +337,8 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
           </div>
 
           <AccountPerformanceSummary trades={accTrades} accountSize={account.size} refund={account.refund} refundDate={account.refundDate} beThreshold={settings.beThreshold} />
+
+          <DayOfWeekChart days={dayProfile} />
 
           <div className="rounded-lg p-4" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
             <div className="flex items-center justify-between mb-2">
