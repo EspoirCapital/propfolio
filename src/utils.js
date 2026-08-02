@@ -139,6 +139,28 @@ export const RATING_META = {
   red: { color: "var(--brick)", label: "Bad" },
 };
 
+const RATING_WEIGHTS = { green: 2, amber: 1, red: 0 };
+
+// Account health from trade ratings: weighted average of green/amber/red,
+// returned as a 0-100 score plus the per-rating counts.
+export function computeHealth(trades) {
+  const counts = { green: 0, amber: 0, red: 0 };
+  trades.forEach((t) => {
+    if (counts[t.rating] !== undefined) counts[t.rating]++;
+  });
+  const total = counts.green + counts.amber + counts.red;
+  if (!total) return { score: null, counts, total };
+  const weighted = (RATING_WEIGHTS.green * counts.green) + (RATING_WEIGHTS.amber * counts.amber) + (RATING_WEIGHTS.red * counts.red);
+  return { score: Math.round((weighted / (2 * total)) * 100), counts, total };
+}
+
+export function healthAccent(score) {
+  if (score === null || score === undefined) return "var(--sand)";
+  if (score >= 70) return "var(--sage)";
+  if (score >= 40) return "var(--brass)";
+  return "var(--brick)";
+}
+
 export function nextStatus(status, phaseCount) {
   if (phaseCount <= 0) return null;
   if (status === "phase_1") return phaseCount >= 2 ? "phase_2" : "funded";

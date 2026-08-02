@@ -2,7 +2,7 @@ import { useState } from "react";
 import { X, ChevronRight, PenLine, ArrowRight, AlertTriangle, Archive, ArchiveRestore } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useApp } from "../context";
-import { computeOutcome, money, getAccountLabel, formatDateUK, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError } from "../utils";
+import { computeOutcome, money, getAccountLabel, formatDateUK, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError, computeHealth, healthAccent } from "../utils";
 import { StatusPill } from "../components/StatusPill";
 import { ProgressionStepper } from "../components/ProgressionStepper";
 import { CredentialReveal } from "../components/CredentialReveal";
@@ -41,8 +41,7 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
   const avgRR = winTrades.length
     ? (winTrades.reduce((s, t) => s + (t.pnl / t.risk), 0) / winTrades.length).toFixed(1)
     : "—";
-  const ratings = { green: 0, amber: 0, red: 0 };
-  enrichedTrades.forEach((t) => { if (ratings[t.rating] !== undefined) ratings[t.rating]++; });
+  const health = computeHealth(enrichedTrades);
 
   const totalPnl = enrichedTrades.reduce((s, t) => s + t.pnl, 0);
   const maxLossBreached = account.maxLoss > 0 && totalPnl <= -account.maxLoss;
@@ -160,10 +159,11 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
                 <div className="pd-mono text-lg" style={{ color: "var(--brass)" }}>{avgRR}</div>
               </div>
               <div className="rounded-md p-2 text-center" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
-                <div className="pd-label mb-0.5" style={{ fontSize: 9 }}>Ratings</div>
-                <div className="flex items-center justify-center gap-1.5 mt-0.5">
+                <div className="pd-label mb-0.5" style={{ fontSize: 9 }}>Health</div>
+                <div className="pd-mono text-lg" style={{ color: healthAccent(health.score) }}>{health.score !== null ? `${health.score}%` : "—"}</div>
+                <div className="flex items-center justify-center gap-1 mt-1" style={{ height: 6 }}>
                   {["green", "amber", "red"].map((r) => (
-                    <span key={r} className="pd-mono text-xs" style={{ color: RATING_META[r].color }}>{ratings[r]}</span>
+                    <span key={r} title={`${health.counts[r]} ${RATING_META[r].label}`} style={{ width: `${Math.max((health.counts[r] / health.total) * 22, health.counts[r] > 0 ? 3 : 0)}px`, height: 4, borderRadius: 2, background: RATING_META[r].color, opacity: health.counts[r] > 0 ? 1 : 0.2 }} />
                   ))}
                 </div>
               </div>

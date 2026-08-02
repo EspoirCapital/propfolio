@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, ExternalLink, Award, Pencil, X, ArrowRight, AlertTriangle, PenLine, Archive, ArchiveRestore } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useApp } from "../context";
-import { computeOutcome, money, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError, computeMfeMaeStats, computeEv, formatEv } from "../utils";
+import { computeOutcome, money, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError, computeMfeMaeStats, computeEv, formatEv, computeHealth, healthAccent } from "../utils";
 import { StatusPill } from "../components/StatusPill";
 import { KpiTile } from "../components/KpiTile";
 import { ProgressionStepper } from "../components/ProgressionStepper";
@@ -48,8 +48,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const avgRR = winTrades.length
     ? (winTrades.reduce((s, t) => s + (t.pnl / t.risk), 0) / winTrades.length).toFixed(1)
     : "—";
-  const ratings = { green: 0, amber: 0, red: 0 };
-  enrichedTrades.forEach((t) => { if (ratings[t.rating] !== undefined) ratings[t.rating]++; });
+  const health = computeHealth(enrichedTrades);
 
   const mfeStats = computeMfeMaeStats(enrichedTrades, settings.mfeThreshold);
   const { avgMfe, avgMae, capture, giveback, limitWr, limitSub, comboWr, comboSub, wrAtAvgMfe, wrSub } = mfeStats;
@@ -186,7 +185,23 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <KpiTile label="Win Rate" value={`${winRate}%`} accent="var(--sage)" sub={`${wins}W / ${losses}L`} />
                 <KpiTile label="Avg R:R" value={avgRR} accent="var(--brass)" />
                 <KpiTile label="EV" value={formatEv(ev)} accent={ev !== null && ev < 0 ? "var(--brick)" : "var(--brass)"} sub="R per trade" />
-                <KpiTile label="Ratings" value={`${ratings.green}·${ratings.amber}·${ratings.red}`} accent="var(--sand)" sub="green · amber · red" />
+                <KpiTile
+                  label="Health"
+                  value={health.score !== null ? `${health.score}%` : "—"}
+                  accent={healthAccent(health.score)}
+                  sub={
+                    <span className="flex flex-col gap-1">
+                      <span className="flex" style={{ height: 4, borderRadius: 2, overflow: "hidden" }}>
+                        {["green", "amber", "red"].map((r) =>
+                          health.counts[r] > 0 ? (
+                            <span key={r} style={{ width: `${(health.counts[r] / health.total) * 100}%`, background: RATING_META[r].color }} />
+                          ) : null
+                        )}
+                      </span>
+                      <span>{`${health.counts.green} Good · ${health.counts.amber} Off · ${health.counts.red} Bad`}</span>
+                    </span>
+                  }
+                />
                 <KpiTile label="Avg MAE" value={avgMae} accent="var(--brick)" sub="R" />
                 <KpiTile label="Avg MFE" value={avgMfe} accent="var(--sage)" sub="R" />
                 <KpiTile label="WR w/ limit @ avg MAE" value={limitWr} accent="var(--sand)" sub={limitSub} />
