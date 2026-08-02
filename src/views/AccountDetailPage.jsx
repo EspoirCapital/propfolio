@@ -2,9 +2,10 @@ import { useState } from "react";
 import { ArrowLeft, ExternalLink, Award, Pencil, X, ArrowRight, AlertTriangle, PenLine, Archive, ArchiveRestore } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useApp } from "../context";
-import { computeOutcome, money, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError, computeMfeMaeStats, computeEv, formatEv, computeHealth, healthAccent } from "../utils";
+import { computeOutcome, money, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError, computeMfeMaeStats, computeEv, formatEv, computeHealth, healthAccent, computeDayEdge } from "../utils";
 import { StatusPill } from "../components/StatusPill";
 import { KpiTile } from "../components/KpiTile";
+import { DayEdgeTile } from "../components/DayEdgeTile";
 import { ProgressionStepper } from "../components/ProgressionStepper";
 import { CredentialReveal } from "../components/CredentialReveal";
 import { EquityCurve } from "../components/EquityCurve";
@@ -54,6 +55,8 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const { avgMfe, avgMae, capture, giveback, limitWr, limitSub, comboWr, comboSub, wrAtAvgMfe, wrSub } = mfeStats;
 
   const ev = computeEv(enrichedTrades);
+
+  const dayEdge = computeDayEdge(enrichedTrades);
 
   let running = 0;
   const sortedTrades = enrichedTrades.slice().reverse();
@@ -215,6 +218,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <KpiTile label="WR @ avg MFE" value={wrAtAvgMfe} accent="var(--brass)" sub={wrSub} />
                 <KpiTile label="WR limit MAE + TP MFE" value={comboWr} accent="var(--sage)" sub={comboSub} />
                 <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
+                <DayEdgeTile dayEdge={dayEdge} />
               </div>
               <AiAnalysis
                 scope={getAccountLabel(account)}

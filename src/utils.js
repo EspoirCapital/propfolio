@@ -161,6 +161,32 @@ export function healthAccent(score) {
   return "var(--brick)";
 }
 
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+// Best and worst trading day by average R per trade. The pool matches computeEv
+// (risk > 0, break-even excluded). Trades must carry `date` (YYYY-MM-DD), `risk`,
+// `pnl`, `outcome`. Returns { best, worst } where each is { day, label, avg, n }
+// or null when the pool is empty.
+export function computeDayEdge(trades) {
+  const pool = trades.filter((t) => t.risk > 0 && t.outcome !== "BE");
+  const byDay = {};
+  pool.forEach((t) => {
+    const dow = new Date(`${t.date}T00:00:00`).getDay();
+    if (!byDay[dow]) byDay[dow] = { sum: 0, n: 0 };
+    byDay[dow].sum += t.pnl / t.risk;
+    byDay[dow].n += 1;
+  });
+  let best = null;
+  let worst = null;
+  for (const [dow, v] of Object.entries(byDay)) {
+    const avg = v.sum / v.n;
+    const rec = { day: dow, label: DAY_LABELS[dow], avg, n: v.n };
+    if (!best || avg > best.avg) best = rec;
+    if (!worst || avg < worst.avg) worst = rec;
+  }
+  return { best, worst };
+}
+
 export function nextStatus(status, phaseCount) {
   if (phaseCount <= 0) return null;
   if (status === "phase_1") return phaseCount >= 2 ? "phase_2" : "funded";
