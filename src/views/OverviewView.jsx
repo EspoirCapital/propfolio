@@ -142,12 +142,12 @@ export function OverviewView({ derived, trades, payouts, settings }) {
 
       {/* Row 1b — MFE/MAE stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        <KpiTile label="Avg MFE" value={mfeStats.avgMfe} accent="var(--sage)" sub="R" />
         <KpiTile label="Avg MAE" value={mfeStats.avgMae} accent="var(--brick)" sub="R" />
-        <KpiTile label="Capture" value={mfeStats.capture} accent="var(--brass)" sub={`giveback ${mfeStats.giveback}R`} />
+        <KpiTile label="Avg MFE" value={mfeStats.avgMfe} accent="var(--sage)" sub="R" />
         <KpiTile label="WR w/ limit @ avg MAE" value={mfeStats.limitWr} accent="var(--sand)" sub={mfeStats.limitSub} />
-        <KpiTile label="WR limit MAE + TP MFE" value={mfeStats.comboWr} accent="var(--sage)" sub={mfeStats.comboSub} />
         <KpiTile label="WR @ avg MFE" value={mfeStats.wrAtAvgMfe} accent="var(--brass)" sub={mfeStats.wrSub} />
+        <KpiTile label="WR limit MAE + TP MFE" value={mfeStats.comboWr} accent="var(--sage)" sub={mfeStats.comboSub} />
+        <KpiTile label="Capture" value={mfeStats.capture} accent="var(--brass)" sub={`giveback ${mfeStats.giveback}R`} />
       </div>
 
       {/* Row 2 — Cumulative P&L Chart */}

@@ -182,12 +182,12 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <KpiTile label="Win Rate" value={`${winRate}%`} accent="var(--sage)" sub={`${wins}W / ${losses}L`} />
                 <KpiTile label="Avg R:R" value={avgRR} accent="var(--brass)" />
                 <KpiTile label="Ratings" value={`${ratings.green}·${ratings.amber}·${ratings.red}`} accent="var(--sand)" sub="green · amber · red" />
-                <KpiTile label="Avg MFE" value={avgMfe} accent="var(--sage)" sub="R" />
                 <KpiTile label="Avg MAE" value={avgMae} accent="var(--brick)" sub="R" />
-                <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
+                <KpiTile label="Avg MFE" value={avgMfe} accent="var(--sage)" sub="R" />
                 <KpiTile label="WR w/ limit @ avg MAE" value={limitWr} accent="var(--sand)" sub={limitSub} />
-                <KpiTile label="WR limit MAE + TP MFE" value={comboWr} accent="var(--sage)" sub={comboSub} />
                 <KpiTile label="WR @ avg MFE" value={wrAtAvgMfe} accent="var(--brass)" sub={wrSub} />
+                <KpiTile label="WR limit MAE + TP MFE" value={comboWr} accent="var(--sage)" sub={comboSub} />
+                <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
               </div>
               <div className="rounded-lg p-4 text-sm" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
                 <div className="pd-label mb-1">How to read these</div>
