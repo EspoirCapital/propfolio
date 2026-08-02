@@ -162,28 +162,37 @@ export function healthAccent(score) {
 }
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mon..Sun
 
-// Best and worst trading day by average R per trade. The pool matches computeEv
-// (risk > 0, break-even excluded). Trades must carry `date` (YYYY-MM-DD), `risk`,
-// `pnl`, `outcome`. Returns { best, worst } where each is { day, label, avg, n }
-// or null when the pool is empty.
-export function computeDayEdge(trades) {
-  const pool = trades.filter((t) => t.risk > 0 && t.outcome !== "BE");
+// Per-weekday average R per trade. The pool matches computeEv (risk > 0,
+// break-even excluded). Trades must carry `date` (YYYY-MM-DD), `risk`, `pnl`,
+// `outcome`. Returns all seven days in Mon..Sun order, each
+// { day, label, avg, n } (avg null, n 0 when untraded).
+export function computeDayProfile(trades) {
   const byDay = {};
-  pool.forEach((t) => {
+  trades.forEach((t) => {
+    if (!(t.risk > 0) || t.outcome === "BE") return;
     const dow = new Date(`${t.date}T00:00:00`).getDay();
     if (!byDay[dow]) byDay[dow] = { sum: 0, n: 0 };
     byDay[dow].sum += t.pnl / t.risk;
     byDay[dow].n += 1;
   });
+  return WEEK_ORDER.map((dow) => {
+    const v = byDay[dow];
+    return { day: dow, label: DAY_LABELS[dow], avg: v ? v.sum / v.n : null, n: v ? v.n : 0 };
+  });
+}
+
+// Best and worst trading day by average R per trade, from computeDayProfile.
+// Returns { best, worst } where each is { day, label, avg, n } or null when empty.
+export function computeDayEdge(trades) {
+  const traded = computeDayProfile(trades).filter((d) => d.n > 0);
   let best = null;
   let worst = null;
-  for (const [dow, v] of Object.entries(byDay)) {
-    const avg = v.sum / v.n;
-    const rec = { day: dow, label: DAY_LABELS[dow], avg, n: v.n };
-    if (!best || avg > best.avg) best = rec;
-    if (!worst || avg < worst.avg) worst = rec;
-  }
+  traded.forEach((d) => {
+    if (!best || d.avg > best.avg) best = d;
+    if (!worst || d.avg < worst.avg) worst = d;
+  });
   return { best, worst };
 }
 

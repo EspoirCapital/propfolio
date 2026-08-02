@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { money, formatDateUK, computeOutcome, formatDisplay, getAccountLabel, OUTCOME_META, RATING_META, computeMfeMaeStats, computeEv, formatEv, computeDayEdge } from "../utils";
+import { money, formatDateUK, computeOutcome, formatDisplay, getAccountLabel, OUTCOME_META, RATING_META, computeMfeMaeStats, computeEv, formatEv, computeDayProfile, computeDayEdge } from "../utils";
 import { STATUS_META } from "../constants";
 import { KpiTile } from "../components/KpiTile";
 import { DayEdgeTile } from "../components/DayEdgeTile";
+import { DayOfWeekChart } from "../components/DayOfWeekChart";
 import { StatusPill } from "../components/StatusPill";
 import { EquityCurve } from "../components/EquityCurve";
 import { TradeCalendar } from "../components/TradeCalendar";
@@ -41,6 +42,8 @@ export function OverviewView({ derived, trades, payouts, settings }) {
   const ev = useMemo(() => computeEv(allTrades), [allTrades]);
 
   const dayEdge = useMemo(() => computeDayEdge(allTrades), [allTrades]);
+
+  const dayProfile = useMemo(() => computeDayProfile(allTrades), [allTrades]);
 
   const avgRR = useMemo(() => {
     const winTrades = allTrades.filter((t) => t.outcome === "W" && t.risk > 0);
@@ -162,6 +165,12 @@ export function OverviewView({ derived, trades, payouts, settings }) {
         <KpiTile label="Capture" value={mfeStats.capture} accent="var(--brass)" sub={`giveback ${mfeStats.giveback}R`} />
         <DayEdgeTile dayEdge={dayEdge} />
       </div>
+
+      {totalTrades > 0 && (
+        <div className="mb-6">
+          <DayOfWeekChart days={dayProfile} />
+        </div>
+      )}
 
       {totalTrades > 0 && (
         <div className="mb-6">
