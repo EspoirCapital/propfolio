@@ -49,7 +49,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const ratings = { green: 0, amber: 0, red: 0 };
   enrichedTrades.forEach((t) => { if (ratings[t.rating] !== undefined) ratings[t.rating]++; });
 
-  const mfeStats = computeMfeMaeStats(enrichedTrades);
+  const mfeStats = computeMfeMaeStats(enrichedTrades, settings.mfeThreshold);
   const { avgMfe, avgMae, capture, giveback, limitWr, limitSub, comboWr, comboSub, wrAtAvgMfe, wrSub } = mfeStats;
 
   let running = 0;

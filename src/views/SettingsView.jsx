@@ -141,6 +141,17 @@ export function SettingsView({ settings, setSettings, session, updateProfile, ch
             P&L within this % of risk = breakeven (BE), not a win or loss
           </div>
         </div>
+        <div>
+          <div className="pd-label mb-2">MFE minimum</div>
+          <div className="flex items-center gap-2">
+            <input type="number" className="pd-input" style={{ width: 80 }} value={settings.mfeThreshold}
+              onChange={(e) => update("mfeThreshold", parseFloat(e.target.value) || 1)} />
+            <span className="pd-mono text-sm" style={{ color: "var(--slate)" }}>R</span>
+          </div>
+          <div className="pd-mono text-xs mt-1" style={{ color: "var(--slate)" }}>
+            MFE below this many R is excluded from the average
+          </div>
+        </div>
       </div>
     </div>
   );

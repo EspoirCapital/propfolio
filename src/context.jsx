@@ -80,7 +80,7 @@ export function AppProvider({ children }) {
 
   const settings = useMemo(() => {
     if (!settingsRow) return DEFAULT_SETTINGS;
-    return { displayFormat: settingsRow.displayFormat, beThreshold: settingsRow.beThreshold };
+    return { displayFormat: settingsRow.displayFormat, beThreshold: settingsRow.beThreshold, mfeThreshold: settingsRow.mfeThreshold ?? 1 };
   }, [settingsRow]);
 
   const derived = useDerived(accounts || [], trades || [], payouts || [], templates || []);
@@ -90,7 +90,7 @@ export function AppProvider({ children }) {
     signOut().catch(() => {});
   }
   function setSettings(next) {
-    return updateSettingsFn({ displayFormat: next.displayFormat, beThreshold: next.beThreshold });
+    return updateSettingsFn({ displayFormat: next.displayFormat, beThreshold: next.beThreshold, mfeThreshold: next.mfeThreshold ?? 1 });
   }
 
   const createAccount = (data) => createAccountFn(pick(data, ACCOUNT_FIELDS));

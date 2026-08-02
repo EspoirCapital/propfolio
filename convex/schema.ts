@@ -31,6 +31,7 @@ export default defineSchema({
     userId: v.id("users"),
     displayFormat: v.string(),
     beThreshold: v.number(),
+    mfeThreshold: v.number(),
   }).index("by_userId", ["userId"]),
 
   templates: defineTable({

@@ -1,4 +1,4 @@
-export const DEFAULT_SETTINGS = { displayFormat: "dollar", beThreshold: 10 };
+export const DEFAULT_SETTINGS = { displayFormat: "dollar", beThreshold: 10, mfeThreshold: 1 };
 
 export const DEFAULT_TEMPLATES = [
   { firm: "FundingPips", name: "2-Step Pro", phases: 2, target: "6% / 6%", dailyLoss: "3%", maxLoss: "6%", drawdown: "Static", consistency: "45%", feeRefund: false, platforms: "MatchTrader, MT5, cTrader" },

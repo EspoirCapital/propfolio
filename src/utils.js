@@ -1,4 +1,4 @@
-export const DEFAULT_SETTINGS = { displayFormat: "dollar", beThreshold: 10 };
+export const DEFAULT_SETTINGS = { displayFormat: "dollar", beThreshold: 10, mfeThreshold: 1 };
 
 export const money = (n) => {
   const sign = n < 0 ? "-" : "";
@@ -41,13 +41,12 @@ export function formatDateUK(dateStr) {
 // MFE/MAE stats across any trade list (trades must carry `outcome`, `risk`, `pnl`).
 // Returns display-ready values: avgMfe, avgMae, capture, giveback, limitWr,
 // limitSub, comboWr, comboSub, wrAtAvgMfe, wrSub — strings ("—" when no data).
-export function computeMfeMaeStats(trades) {
-  const maeTrades = trades.filter((t) => t.maeR != null);
-  const avgMaeR = maeTrades.length ? maeTrades.reduce((s, t) => s + t.maeR, 0) / maeTrades.length : null;
+export function computeMfeMaeStats(trades, mfeMinR = 1) {
+  const maeWins = trades.filter((t) => t.maeR != null && t.outcome === "W");
+  const avgMaeR = maeWins.length ? maeWins.reduce((s, t) => s + t.maeR, 0) / maeWins.length : null;
   const avgMae = avgMaeR !== null ? avgMaeR.toFixed(2) : "—";
 
-  const mfeTrades = trades.filter((t) => t.mfeR != null);
-  const mfeSet = mfeTrades.filter((t) => t.risk > 0);
+  const mfeSet = trades.filter((t) => t.mfeR != null && t.risk > 0 && t.mfeR > mfeMinR);
   const avgMfeR = mfeSet.length ? mfeSet.reduce((s, t) => s + t.mfeR, 0) / mfeSet.length : null;
   const avgRealizedOfMfe = mfeSet.length
     ? mfeSet.reduce((s, t) => s + (t.pnl / t.risk), 0) / mfeSet.length
@@ -88,7 +87,7 @@ export function computeMfeMaeStats(trades) {
   const comboSub = comboRrGained !== null && comboMissedPct !== null && comboMissedWPct !== null && comboMissedLPct !== null
     ? `+${comboRrGained}R per trade · ${comboMissedPct}% missed (${comboMissedWPct}%W · ${comboMissedLPct}%L)` : "—";
 
-  const mfeDecisions = mfeTrades.filter((t) => t.risk > 0 && t.outcome !== "BE");
+  const mfeDecisions = trades.filter((t) => t.mfeR != null && t.risk > 0 && t.outcome !== "BE");
   const mfeWinners = mfeDecisions.filter((t) => avgMfeR !== null && t.mfeR >= avgMfeR);
   const wrAtAvgMfe = mfeDecisions.length
     ? `${Math.round((mfeWinners.length / mfeDecisions.length) * 100)}%` : "—";

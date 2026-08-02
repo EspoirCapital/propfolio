@@ -18,7 +18,7 @@ export const get = query({
 });
 
 export const update = mutation({
-  args: { displayFormat: v.string(), beThreshold: v.number() },
+  args: { displayFormat: v.string(), beThreshold: v.number(), mfeThreshold: v.number() },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) throw new Error("Not signed in.");
