@@ -2,12 +2,14 @@ import {
   AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip,
 } from "recharts";
 
-export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = true, tooltipFmt }) {
+export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = true, tooltipFmt, title }) {
   const uniqueDates = [...new Set(data.map((d) => d.date))];
 
   return (
-    <div style={{ height: height || "100%", minHeight: height || 200, background: "var(--ledger)", border: "1px solid var(--line)", borderRadius: 8 }}>
-      <ResponsiveContainer width="100%" height="100%">
+    <div style={{ height: height || "100%", minHeight: height || 200, background: "var(--ledger)", border: "1px solid var(--line)", borderRadius: 8, display: "flex", flexDirection: "column", ...(title ? { padding: 16 } : {}) }}>
+      {title && <div className="pd-label" style={{ marginBottom: 12 }}>{title}</div>}
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: showAxes ? 16 : 8, right: showAxes ? 16 : 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -57,6 +59,7 @@ export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = tr
           <Area type="monotone" dataKey="pnl" stroke="var(--brass)" fill={`url(#${gradientId})`} strokeWidth={showAxes ? 2 : 1.5} />
         </AreaChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }

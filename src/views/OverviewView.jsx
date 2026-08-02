@@ -196,12 +196,14 @@ export function OverviewView({ derived, trades, payouts, settings }) {
       {/* Row 2 — Cumulative P&L + Day of Week */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
         <div className="lg:col-span-3">
-          <div className="pd-label mb-2">Cumulative P&L</div>
           {curve.length > 1 ? (
-            <EquityCurve data={curve} height={260} gradientId="pdAreaOverview" />
+            <EquityCurve data={curve} height={260} gradientId="pdAreaOverview" title="Cumulative P&L" />
           ) : (
-            <div className="rounded-lg p-10 text-center" style={{ background: "var(--ledger)", border: "1px solid var(--line)", color: "var(--slate)" }}>
-              Log some trades to see your equity curve.
+            <div className="rounded-lg" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
+              <div className="pd-label" style={{ padding: "16px 16px 0" }}>Cumulative P&L</div>
+              <div className="p-10 text-center text-sm" style={{ color: "var(--slate)" }}>
+                Log some trades to see your equity curve.
+              </div>
             </div>
           )}
         </div>
