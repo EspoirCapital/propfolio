@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, ExternalLink, Award, Pencil, X, ArrowRight, AlertTriangle, PenLine, Archive, ArchiveRestore } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useApp } from "../context";
-import { computeOutcome, money, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError, computeMfeMaeStats } from "../utils";
+import { computeOutcome, money, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError, computeMfeMaeStats, computeEv, formatEv } from "../utils";
 import { StatusPill } from "../components/StatusPill";
 import { KpiTile } from "../components/KpiTile";
 import { ProgressionStepper } from "../components/ProgressionStepper";
@@ -53,6 +53,8 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
 
   const mfeStats = computeMfeMaeStats(enrichedTrades, settings.mfeThreshold);
   const { avgMfe, avgMae, capture, giveback, limitWr, limitSub, comboWr, comboSub, wrAtAvgMfe, wrSub } = mfeStats;
+
+  const ev = computeEv(enrichedTrades);
 
   let running = 0;
   const sortedTrades = enrichedTrades.slice().reverse();
@@ -183,6 +185,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <KpiTile label="Total P&L" value={money(totalPnl)} accent={totalPnl >= 0 ? "var(--sage)" : "var(--brick)"} />
                 <KpiTile label="Win Rate" value={`${winRate}%`} accent="var(--sage)" sub={`${wins}W / ${losses}L`} />
                 <KpiTile label="Avg R:R" value={avgRR} accent="var(--brass)" />
+                <KpiTile label="EV" value={formatEv(ev)} accent={ev !== null && ev < 0 ? "var(--brick)" : "var(--brass)"} sub="R per trade" />
                 <KpiTile label="Ratings" value={`${ratings.green}·${ratings.amber}·${ratings.red}`} accent="var(--sand)" sub="green · amber · red" />
                 <KpiTile label="Avg MAE" value={avgMae} accent="var(--brick)" sub="R" />
                 <KpiTile label="Avg MFE" value={avgMfe} accent="var(--sage)" sub="R" />
@@ -199,6 +202,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                   losses,
                   winRate,
                   avgRR,
+                  ev: formatEv(ev),
                   mfeThreshold: settings.mfeThreshold,
                   avgMfe,
                   avgMae,

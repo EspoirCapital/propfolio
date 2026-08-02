@@ -26,6 +26,19 @@ export function computeOutcome(pnl, risk, beThreshold) {
   return pnl > 0 ? "W" : "L";
 }
 
+// Expected value per trade, in R: average pnl/risk across trades with risk,
+// excluding break-even outcomes. Trades must carry `outcome`, `risk`, `pnl`.
+export function computeEv(trades) {
+  const pool = trades.filter((t) => t.risk > 0 && t.outcome !== "BE");
+  if (!pool.length) return null;
+  return pool.reduce((s, t) => s + (t.pnl / t.risk), 0) / pool.length;
+}
+
+export function formatEv(ev) {
+  if (ev === null || ev === undefined || isNaN(ev)) return "—";
+  return `${ev >= 0 ? "+" : ""}${ev.toFixed(2)}R`;
+}
+
 export const OUTCOME_META = {
   W: { color: "var(--sage)", bg: "rgba(111,176,139,0.12)" },
   L: { color: "var(--brick)", bg: "rgba(193,89,75,0.14)" },

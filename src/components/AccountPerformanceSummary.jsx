@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { money } from "../utils";
+import { money, computeOutcome, formatEv } from "../utils";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -10,7 +10,7 @@ export function AccountPerformanceSummary({ trades, accountSize, refund, refundD
 
   const data = useMemo(() => {
     const monthly = {};
-    MONTHS.forEach((m, i) => { monthly[i] = { pnl: 0, trades: 0, rrTotal: 0, riskTrades: 0, refund: 0, hasData: false }; });
+    MONTHS.forEach((m, i) => { monthly[i] = { pnl: 0, trades: 0, rrTotal: 0, riskTrades: 0, evSum: 0, evCount: 0, refund: 0, hasData: false }; });
 
     trades.forEach((t) => {
       const d = new Date(t.date);
@@ -21,6 +21,10 @@ export function AccountPerformanceSummary({ trades, accountSize, refund, refundD
         if (t.risk > 0) {
           m.rrTotal += t.pnl / t.risk;
           m.riskTrades++;
+          if (computeOutcome(t.pnl, t.risk, beThreshold) !== "BE") {
+            m.evSum += t.pnl / t.risk;
+            m.evCount++;
+          }
         }
         m.hasData = true;
       }
@@ -39,20 +43,26 @@ export function AccountPerformanceSummary({ trades, accountSize, refund, refundD
     let yearTrades = 0;
     let yearRrTotal = 0;
     let yearRiskTrades = 0;
+    let yearEvSum = 0;
+    let yearEvCount = 0;
     const rows = MONTHS.map((name, i) => {
-      const { pnl, trades: tCount, rrTotal, riskTrades, refund: r, hasData } = monthly[i];
+      const { pnl, trades: tCount, rrTotal, riskTrades, evSum, evCount, refund: r, hasData } = monthly[i];
       yearPnl += pnl;
       yearRefund += r;
       yearTrades += tCount;
       yearRrTotal += rrTotal;
       yearRiskTrades += riskTrades;
+      yearEvSum += evSum;
+      yearEvCount += evCount;
       const totalR = riskTrades > 0 ? `${rrTotal >= 0 ? "+" : ""}${rrTotal.toFixed(1)}R` : null;
-      return { name, pnl, refund: r, trades: tCount, totalR, hasData };
+      const ev = evCount > 0 ? formatEv(evSum / evCount) : null;
+      return { name, pnl, refund: r, trades: tCount, totalR, ev, hasData };
     }).filter((r) => r.hasData);
 
     const yearTotalR = yearRiskTrades > 0 ? `${yearRrTotal >= 0 ? "+" : ""}${yearRrTotal.toFixed(1)}R` : null;
+    const yearEv = yearEvCount > 0 ? formatEv(yearEvSum / yearEvCount) : null;
 
-    return { rows, yearPnl, yearRefund, yearTrades, yearTotalR };
+    return { rows, yearPnl, yearRefund, yearTrades, yearTotalR, yearEv };
   }, [trades, year, refund, refundDate, beThreshold]);
 
   const s = { fontSize: 11, color: "var(--slate)" };
@@ -74,33 +84,36 @@ export function AccountPerformanceSummary({ trades, accountSize, refund, refundD
         </div>
       </div>
       <div className="flex flex-col">
-        <div className="grid items-center" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr", borderBottom: "1px solid var(--line)", paddingBottom: 6 }}>
+        <div className="grid items-center" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr 1fr", borderBottom: "1px solid var(--line)", paddingBottom: 6 }}>
           <span style={s}>MONTH</span>
           <span className="pd-mono" style={s}>P&L</span>
           <span className="pd-mono" style={s}>REFUND</span>
           <span className="pd-mono" style={{ ...s, textAlign: "right" }}>%</span>
           <span className="pd-mono" style={{ ...s, textAlign: "right" }}>R MADE</span>
+          <span className="pd-mono" style={{ ...s, textAlign: "right" }}>EV</span>
         </div>
         {data.rows.map((r) => {
           const netPnl = r.pnl + r.refund;
           const pnlPct = ((netPnl / accSize) * 100).toFixed(1);
           return (
-            <div key={r.name} className="grid items-center pd-mono" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr", padding: "5px 0", borderBottom: "1px solid var(--line-soft)" }}>
+            <div key={r.name} className="grid items-center pd-mono" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr 1fr", padding: "5px 0", borderBottom: "1px solid var(--line-soft)" }}>
               <span className="pd-label" style={{ fontSize: 11 }}>{r.name}</span>
               <span style={{ ...cell, color: r.pnl >= 0 ? "var(--sage)" : "var(--brick)" }}>{r.pnl !== 0 ? money(r.pnl) : "—"}</span>
               <span style={{ ...cell, color: r.refund > 0 ? "var(--sage)" : "var(--slate)" }}>{r.refund > 0 ? money(r.refund) : "—"}</span>
               <span style={{ ...cell, textAlign: "right", color: netPnl >= 0 ? "var(--sage)" : "var(--brick)" }}>{netPnl !== 0 ? `${netPnl >= 0 ? "+" : ""}${pnlPct}%` : "—"}</span>
               <span style={{ ...cell, textAlign: "right", color: r.totalR !== null && r.totalR.startsWith("+") ? "var(--sage)" : r.totalR !== null && r.totalR.startsWith("-") ? "var(--brick)" : "var(--sand-dim)" }}>{r.totalR ?? "—"}</span>
+              <span style={{ ...cell, textAlign: "right", color: r.ev !== null && r.ev.startsWith("+") ? "var(--sage)" : r.ev !== null && r.ev.startsWith("-") ? "var(--brick)" : "var(--sand-dim)" }}>{r.ev ?? "—"}</span>
             </div>
           );
         })}
         {data.rows.length > 0 && (
-          <div className="grid items-center pd-mono mt-auto" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr", padding: "8px 0", borderTop: "1px solid var(--line)", fontWeight: 700 }}>
+          <div className="grid items-center pd-mono mt-auto" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr 1fr", padding: "8px 0", borderTop: "1px solid var(--line)", fontWeight: 700 }}>
             <span className="pd-label" style={{ fontSize: 11, color: "var(--brass)" }}>TOTAL</span>
             <span style={{ ...cell, color: data.yearPnl >= 0 ? "var(--sage)" : "var(--brick)" }}>{money(data.yearPnl)}</span>
             <span style={{ ...cell, color: data.yearRefund > 0 ? "var(--sage)" : "var(--slate)" }}>{data.yearRefund > 0 ? money(data.yearRefund) : "—"}</span>
             <span style={{ ...cell, textAlign: "right", color: (data.yearPnl + data.yearRefund) >= 0 ? "var(--sage)" : "var(--brick)" }}>{`${(data.yearPnl + data.yearRefund) >= 0 ? "+" : ""}${(((data.yearPnl + data.yearRefund) / accSize) * 100).toFixed(1)}%`}</span>
             <span style={{ ...cell, textAlign: "right", color: data.yearTotalR !== null && data.yearTotalR.startsWith("+") ? "var(--sage)" : data.yearTotalR !== null && data.yearTotalR.startsWith("-") ? "var(--brick)" : "var(--sand-dim)" }}>{data.yearTotalR ?? "—"}</span>
+            <span style={{ ...cell, textAlign: "right", color: data.yearEv !== null && data.yearEv.startsWith("+") ? "var(--sage)" : data.yearEv !== null && data.yearEv.startsWith("-") ? "var(--brick)" : "var(--sand-dim)" }}>{data.yearEv ?? "—"}</span>
           </div>
         )}
         {data.rows.length === 0 && (

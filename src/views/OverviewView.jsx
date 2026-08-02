@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { money, formatDateUK, computeOutcome, formatDisplay, getAccountLabel, OUTCOME_META, RATING_META, computeMfeMaeStats } from "../utils";
+import { money, formatDateUK, computeOutcome, formatDisplay, getAccountLabel, OUTCOME_META, RATING_META, computeMfeMaeStats, computeEv, formatEv } from "../utils";
 import { STATUS_META } from "../constants";
 import { KpiTile } from "../components/KpiTile";
 import { StatusPill } from "../components/StatusPill";
@@ -36,6 +36,8 @@ export function OverviewView({ derived, trades, payouts, settings }) {
   const activeAccounts = derived.accounts.filter((a) => !a.archived && a.status !== "breached").length;
 
   const mfeStats = useMemo(() => computeMfeMaeStats(allTrades, settings.mfeThreshold), [allTrades, settings.mfeThreshold]);
+
+  const ev = useMemo(() => computeEv(allTrades), [allTrades]);
 
   const avgRR = useMemo(() => {
     const winTrades = allTrades.filter((t) => t.outcome === "W" && t.risk > 0);
@@ -147,9 +149,10 @@ export function OverviewView({ derived, trades, payouts, settings }) {
       </div>
 
       {/* Row 1b — MFE/MAE stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6">
         <KpiTile label="Avg MAE" value={mfeStats.avgMae} accent="var(--brick)" sub="R" />
         <KpiTile label="Avg MFE" value={mfeStats.avgMfe} accent="var(--sage)" sub="R" />
+        <KpiTile label="EV" value={formatEv(ev)} accent={ev !== null && ev < 0 ? "var(--brick)" : "var(--brass)"} sub="R per trade" />
         <KpiTile label="WR w/ limit @ avg MAE" value={mfeStats.limitWr} accent="var(--sand)" sub={mfeStats.limitSub} />
         <KpiTile label="WR @ avg MFE" value={mfeStats.wrAtAvgMfe} accent="var(--brass)" sub={mfeStats.wrSub} />
         <KpiTile label="WR limit MAE + TP MFE" value={mfeStats.comboWr} accent="var(--sage)" sub={mfeStats.comboSub} />
@@ -166,6 +169,7 @@ export function OverviewView({ derived, trades, payouts, settings }) {
               losses,
               winRate,
               avgRR,
+              ev: formatEv(ev),
               mfeThreshold: settings.mfeThreshold,
               avgMfe: mfeStats.avgMfe,
               avgMae: mfeStats.avgMae,

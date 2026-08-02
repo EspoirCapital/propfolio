@@ -26,6 +26,7 @@ export const analyze = action({
     losses: v.number(),
     winRate: v.number(),
     avgRR: v.optional(v.string()),
+    ev: v.optional(v.string()),
     mfeThreshold: v.number(),
     avgMfe: v.string(),
     avgMae: v.string(),
@@ -49,7 +50,7 @@ export const analyze = action({
 
     const userContent = [
       `Context: ${args.scope}`,
-      `Trades: ${args.tradeCount} (${args.wins}W / ${args.losses}L), win rate ${args.winRate}%, avg RR on winners ${args.avgRR || "n/a"}`,
+      `Trades: ${args.tradeCount} (${args.wins}W / ${args.losses}L), win rate ${args.winRate}%, avg RR on winners ${args.avgRR || "n/a"}, EV per trade ${args.ev || "n/a"}`,
       `MFE minimum threshold: ${args.mfeThreshold}R (trades below it excluded from the average)`,
       `Avg MFE: ${args.avgMfe}R | Avg MAE: ${args.avgMae}R | Capture: ${args.capture} (giveback ${args.giveback}R)`,
       `WR w/ limit @ avg MAE: ${args.limitWr} | ${args.limitSub}`,
