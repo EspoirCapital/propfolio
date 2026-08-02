@@ -190,17 +190,6 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <KpiTile label="WR limit MAE + TP MFE" value={comboWr} accent="var(--sage)" sub={comboSub} />
                 <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
               </div>
-              <div className="rounded-lg p-4 text-sm" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
-                <div className="pd-label mb-1">How to read these</div>
-                <ul className="pd-bullets flex flex-col gap-1.5" style={{ color: "var(--sand-dim)", lineHeight: 1.6 }}>
-                  <li><strong>Avg MFE / Avg MAE</strong> - how far trades go for you / against you, in R.</li>
-                  <li><strong>Capture</strong> - how much of your peak R you actually banked. The rest is the giveback.</li>
-                  <li><strong>WR w/ limit @ avg MAE</strong> - if you entered on the dip instead of market, how often you'd win.</li>
-                  <li><strong>WR @ avg MFE</strong> - if you took profit at your average peak, how often you'd win.</li>
-                  <li><strong>WR limit MAE + TP MFE</strong> - both combined: enter the dip, exit at the peak.</li>
-                  <li>Missed % = trades you'd skip because they never reached the level. Only trust these with 20-30+ trades.</li>
-                </ul>
-              </div>
             </>
           )}
 
@@ -310,6 +299,18 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <ExternalLink size={11} style={{ color: "var(--slate)", flexShrink: 0 }} />
               </a>
             ))}
+          </div>
+
+          <div className="rounded-lg p-4 text-sm" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
+            <div className="pd-label mb-1">How to read these</div>
+            <ul className="pd-bullets flex flex-col gap-1.5" style={{ color: "var(--sand-dim)", lineHeight: 1.6 }}>
+              <li><strong>Avg MFE / Avg MAE</strong> - how far trades go for you / against you, in R.</li>
+              <li><strong>Capture</strong> - how much of your peak R you actually banked. The rest is the giveback.</li>
+              <li><strong>WR w/ limit @ avg MAE</strong> - if you entered on the dip instead of market, how often you'd win.</li>
+              <li><strong>WR @ avg MFE</strong> - if you took profit at your average peak, how often you'd win.</li>
+              <li><strong>WR limit MAE + TP MFE</strong> - both combined: enter the dip, exit at the peak.</li>
+              <li>Missed % = trades you'd skip because they never reached the level. Only trust these with 20-30+ trades.</li>
+            </ul>
           </div>
         </div>
       </div>
