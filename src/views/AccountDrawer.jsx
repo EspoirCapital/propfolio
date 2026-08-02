@@ -37,8 +37,9 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
   const losses = enrichedTrades.filter((t) => t.outcome === "L").length;
   const decisionTrades = wins + losses;
   const winRate = decisionTrades ? Math.round((wins / decisionTrades) * 100) : 0;
-  const avgRR = decisionTrades
-    ? (enrichedTrades.filter((t) => t.outcome !== "BE" && t.risk > 0).reduce((s, t) => s + (t.pnl / t.risk), 0) / decisionTrades).toFixed(1)
+  const winTrades = enrichedTrades.filter((t) => t.outcome === "W" && t.risk > 0);
+  const avgRR = winTrades.length
+    ? (winTrades.reduce((s, t) => s + (t.pnl / t.risk), 0) / winTrades.length).toFixed(1)
     : "—";
   const ratings = { green: 0, amber: 0, red: 0 };
   enrichedTrades.forEach((t) => { if (ratings[t.rating] !== undefined) ratings[t.rating]++; });

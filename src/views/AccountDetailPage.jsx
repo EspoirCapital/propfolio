@@ -43,8 +43,9 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const losses = enrichedTrades.filter((t) => t.outcome === "L").length;
   const decisionTrades = wins + losses;
   const winRate = decisionTrades ? Math.round((wins / decisionTrades) * 100) : 0;
-  const avgRR = decisionTrades
-    ? (enrichedTrades.filter((t) => t.outcome !== "BE" && t.risk > 0).reduce((s, t) => s + (t.pnl / t.risk), 0) / decisionTrades).toFixed(1)
+  const winTrades = enrichedTrades.filter((t) => t.outcome === "W" && t.risk > 0);
+  const avgRR = winTrades.length
+    ? (winTrades.reduce((s, t) => s + (t.pnl / t.risk), 0) / winTrades.length).toFixed(1)
     : "—";
   const ratings = { green: 0, amber: 0, red: 0 };
   enrichedTrades.forEach((t) => { if (ratings[t.rating] !== undefined) ratings[t.rating]++; });
@@ -292,7 +293,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
             />
           </div>
 
-          <AccountPerformanceSummary trades={accTrades} accountSize={account.size} refund={account.refund} refundDate={account.refundDate} />
+          <AccountPerformanceSummary trades={accTrades} accountSize={account.size} refund={account.refund} refundDate={account.refundDate} beThreshold={settings.beThreshold} />
 
           <div className="rounded-lg p-4" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
             <div className="flex items-center justify-between mb-2">

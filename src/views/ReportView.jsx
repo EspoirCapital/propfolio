@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
-import { money, getAccountLabel } from "../utils";
+import { money, getAccountLabel, computeOutcome } from "../utils";
 import { Select } from "../components/Select";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -72,7 +72,7 @@ export function ReportView({ accounts, trades, payouts, settings }) {
         const m = monthly[d.getMonth()];
         m.pnl += t.pnl;
         m.trades++;
-        if (t.risk > 0) { m.rrSum += t.pnl / t.risk; m.rrCount++; }
+        if (t.risk > 0 && computeOutcome(t.pnl, t.risk, settings.beThreshold) === "W") { m.rrSum += t.pnl / t.risk; m.rrCount++; }
         if (t.mfeR != null) { m.mfeSum += t.mfeR; m.mfeCount++; }
         if (t.maeR != null) { m.maeSum += t.maeR; m.maeCount++; }
         m.hasData = true;

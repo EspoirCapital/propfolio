@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { money } from "../utils";
+import { money, computeOutcome } from "../utils";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export function AccountPerformanceSummary({ trades, accountSize, refund, refundDate }) {
+export function AccountPerformanceSummary({ trades, accountSize, refund, refundDate, beThreshold = 10 }) {
   const [year, setYear] = useState(new Date().getFullYear());
   const currentYear = new Date().getFullYear();
 
@@ -18,7 +18,7 @@ export function AccountPerformanceSummary({ trades, accountSize, refund, refundD
         const m = monthly[d.getMonth()];
         m.pnl += t.pnl;
         m.trades++;
-        if (t.risk > 0) {
+        if (t.risk > 0 && computeOutcome(t.pnl, t.risk, beThreshold) === "W") {
           m.rrSum += t.pnl / t.risk;
           m.rrCount++;
         }
@@ -53,7 +53,7 @@ export function AccountPerformanceSummary({ trades, accountSize, refund, refundD
     const yearAvgRr = yearRrCount > 0 ? (yearRrSum / yearRrCount).toFixed(1) : null;
 
     return { rows, yearPnl, yearRefund, yearTrades, yearAvgRr };
-  }, [trades, year, refund, refundDate]);
+  }, [trades, year, refund, refundDate, beThreshold]);
 
   const s = { fontSize: 11, color: "var(--slate)" };
   const cell = { fontSize: 12, fontWeight: 500 };
