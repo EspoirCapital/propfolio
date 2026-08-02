@@ -7,6 +7,7 @@ import { StatusPill } from "../components/StatusPill";
 import { EquityCurve } from "../components/EquityCurve";
 import { TradeCalendar } from "../components/TradeCalendar";
 import { PerformanceSummary } from "../components/PerformanceSummary";
+import { AiAnalysis } from "../components/AiAnalysis";
 
 const SESSIONS = ["London", "NY", "Asia"];
 const SESSION_LABEL = { London: "LONDON", NY: "NEW YORK", Asia: "ASIA" };
@@ -35,6 +36,11 @@ export function OverviewView({ derived, trades, payouts, settings }) {
   const activeAccounts = derived.accounts.filter((a) => !a.archived && a.status !== "breached").length;
 
   const mfeStats = useMemo(() => computeMfeMaeStats(allTrades, settings.mfeThreshold), [allTrades, settings.mfeThreshold]);
+
+  const avgRR = useMemo(() => {
+    const winTrades = allTrades.filter((t) => t.outcome === "W" && t.risk > 0);
+    return winTrades.length ? (winTrades.reduce((s, t) => s + (t.pnl / t.risk), 0) / winTrades.length).toFixed(1) : null;
+  }, [allTrades]);
 
   const curve = useMemo(() => {
     const sorted = [...allTrades].sort((a, b) => (a.date > b.date ? 1 : -1));
@@ -149,6 +155,32 @@ export function OverviewView({ derived, trades, payouts, settings }) {
         <KpiTile label="WR limit MAE + TP MFE" value={mfeStats.comboWr} accent="var(--sage)" sub={mfeStats.comboSub} />
         <KpiTile label="Capture" value={mfeStats.capture} accent="var(--brass)" sub={`giveback ${mfeStats.giveback}R`} />
       </div>
+
+      {totalTrades > 0 && (
+        <div className="mb-6">
+          <AiAnalysis
+            scope="Overview"
+            stats={{
+              tradeCount: totalTrades,
+              wins,
+              losses,
+              winRate,
+              avgRR,
+              mfeThreshold: settings.mfeThreshold,
+              avgMfe: mfeStats.avgMfe,
+              avgMae: mfeStats.avgMae,
+              capture: mfeStats.capture,
+              giveback: mfeStats.giveback,
+              limitWr: mfeStats.limitWr,
+              limitSub: mfeStats.limitSub,
+              comboWr: mfeStats.comboWr,
+              comboSub: mfeStats.comboSub,
+              wrAtAvgMfe: mfeStats.wrAtAvgMfe,
+              wrSub: mfeStats.wrSub,
+            }}
+          />
+        </div>
+      )}
 
       {/* Row 2 — Cumulative P&L Chart */}
       <div className="mb-6">

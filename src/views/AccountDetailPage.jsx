@@ -12,6 +12,7 @@ import { TradeCalendar } from "../components/TradeCalendar";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { AccountPerformanceSummary } from "../components/AccountPerformanceSummary";
+import { AiAnalysis } from "../components/AiAnalysis";
 
 export function AccountDetailPage({ accountId, derived, trades, payouts, certificates, settings, templates, updateAccount, onBack, onEdit, onDelete, archiveAccount, unarchiveAccount }) {
   const { proceed: proceedFn, breach: breachFn } = useApp();
@@ -190,6 +191,27 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <KpiTile label="WR limit MAE + TP MFE" value={comboWr} accent="var(--sage)" sub={comboSub} />
                 <KpiTile label="Capture" value={capture} accent="var(--brass)" sub={`giveback ${giveback}R`} />
               </div>
+              <AiAnalysis
+                scope={getAccountLabel(account)}
+                stats={{
+                  tradeCount: enrichedTrades.length,
+                  wins,
+                  losses,
+                  winRate,
+                  avgRR,
+                  mfeThreshold: settings.mfeThreshold,
+                  avgMfe,
+                  avgMae,
+                  capture,
+                  giveback,
+                  limitWr,
+                  limitSub,
+                  comboWr,
+                  comboSub,
+                  wrAtAvgMfe,
+                  wrSub,
+                }}
+              />
             </>
           )}
 
