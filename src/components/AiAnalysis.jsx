@@ -25,13 +25,7 @@ export function AiAnalysis({ scope, stats }) {
 
   return (
     <div className="rounded-lg p-4" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="pd-label">AI Analysis</div>
-        <button onClick={run} disabled={loading} className="pd-btn flex items-center gap-1.5 no-underline" style={{ opacity: loading ? 0.6 : 1 }}>
-          <RefreshCw size={11} className={loading ? "animate-spin" : ""} />
-          {loading ? "Analyzing…" : result ? "Refresh" : "Generate analysis"}
-        </button>
-      </div>
+      <div className="pd-label mb-2">AI Analysis</div>
       {error && (
         <div className="flex items-center gap-2 text-xs rounded-md px-3 py-2 mb-2" style={{ background: "rgba(193,89,75,0.14)", color: "var(--brick)", border: "1px solid var(--brick-dim)" }}>
           <AlertTriangle size={12} style={{ flexShrink: 0 }} /> {error}
@@ -46,6 +40,12 @@ export function AiAnalysis({ scope, stats }) {
           </p>
         )
       )}
+      <div className="flex justify-end mt-3">
+        <button onClick={run} disabled={loading} className="pd-btn flex items-center gap-1.5 no-underline" style={{ opacity: loading ? 0.6 : 1 }}>
+          <RefreshCw size={11} className={loading ? "animate-spin" : ""} />
+          {loading ? "Analyzing…" : result ? "Refresh" : "Generate analysis"}
+        </button>
+      </div>
     </div>
   );
 }
