@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAction } from "convex/react";
-import { Sparkles, RefreshCw, AlertTriangle } from "lucide-react";
+import { RefreshCw, AlertTriangle } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 
 export function AiAnalysis({ scope, stats }) {
@@ -26,9 +26,7 @@ export function AiAnalysis({ scope, stats }) {
   return (
     <div className="rounded-lg p-4" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
       <div className="flex items-center justify-between mb-2">
-        <div className="pd-label flex items-center gap-1.5">
-          <Sparkles size={12} style={{ color: "var(--brass)" }} /> AI Analysis
-        </div>
+        <div className="pd-label">AI Analysis</div>
         <button onClick={run} disabled={loading} className="pd-btn flex items-center gap-1.5 no-underline" style={{ opacity: loading ? 0.6 : 1 }}>
           <RefreshCw size={11} className={loading ? "animate-spin" : ""} />
           {loading ? "Analyzing…" : result ? "Refresh" : "Generate analysis"}
