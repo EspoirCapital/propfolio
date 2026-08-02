@@ -198,7 +198,14 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                           ) : null
                         )}
                       </span>
-                      <span>{`${health.counts.green} in green · ${health.counts.amber} in amber · ${health.counts.red} in red`}</span>
+                      <span className="flex items-center gap-1">
+                        {["green", "amber", "red"].map((r, i) => (
+                          <span key={r} className="flex items-center gap-1">
+                            {i > 0 && <span style={{ color: "var(--slate)" }}>·</span>}
+                            <span className="pd-mono" style={{ color: RATING_META[r].color }}>{health.counts[r]}</span>
+                          </span>
+                        ))}
+                      </span>
                     </span>
                   }
                 />
