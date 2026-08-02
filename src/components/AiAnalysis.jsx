@@ -33,10 +33,18 @@ export function AiAnalysis({ scope, stats }) {
       )}
       {result ? (
         <p className="text-sm" style={{ color: "var(--sand-dim)", lineHeight: 1.7, whiteSpace: "pre-line" }}>{result}</p>
+      ) : loading ? (
+        <div aria-label="Analyzing" className="flex flex-col gap-2 py-1">
+          <div className="pd-skeleton" style={{ height: 10, width: "92%" }} />
+          <div className="pd-skeleton" style={{ height: 10, width: "100%" }} />
+          <div className="pd-skeleton" style={{ height: 10, width: "78%" }} />
+          <div className="pd-skeleton" style={{ height: 10, width: "85%" }} />
+          <div className="pd-skeleton" style={{ height: 10, width: "60%" }} />
+        </div>
       ) : (
         !error && (
           <p className="text-sm" style={{ color: "var(--slate)" }}>
-            {loading ? "Reviewing your MFE/MAE stats…" : "Generate a plain-English take on market vs limit entry and your take-profit, from your MFE/MAE numbers."}
+            A plain-English read on your entry, take-profit, and edge — based on your MFE/MAE numbers.
           </p>
         )
       )}

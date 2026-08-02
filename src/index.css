@@ -176,6 +176,32 @@ body {
   }
 }
 
+.pd-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 5px;
+  background: var(--ledger-raised);
+}
+.pd-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(224,196,143,0.12), transparent);
+  transform: translateX(-100%);
+  animation: pd-shimmer 1.6s ease-in-out infinite;
+}
+@keyframes pd-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-skeleton::after {
+    animation: none;
+    transform: none;
+  }
+}
+
 .pd-pill {
   display: inline-flex;
   align-items: center;
