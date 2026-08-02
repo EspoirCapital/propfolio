@@ -190,12 +190,15 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                   value={health.score !== null ? `${health.score}%` : "—"}
                   accent={healthAccent(health.score)}
                   sub={
-                    <span className="flex" style={{ height: 4, borderRadius: 2, overflow: "hidden" }}>
-                      {["green", "amber", "red"].map((r) =>
-                        health.counts[r] > 0 ? (
-                          <span key={r} title={`${health.counts[r]} ${RATING_META[r].label}`} style={{ width: `${(health.counts[r] / health.total) * 100}%`, background: RATING_META[r].color }} />
-                        ) : null
-                      )}
+                    <span className="flex flex-col gap-1">
+                      <span className="flex" style={{ height: 4, borderRadius: 2, overflow: "hidden" }}>
+                        {["green", "amber", "red"].map((r) =>
+                          health.counts[r] > 0 ? (
+                            <span key={r} title={`${health.counts[r]} ${RATING_META[r].label}`} style={{ width: `${(health.counts[r] / health.total) * 100}%`, background: RATING_META[r].color }} />
+                          ) : null
+                        )}
+                      </span>
+                      <span>{`${health.counts.green} in green · ${health.counts.amber} in amber · ${health.counts.red} in red`}</span>
                     </span>
                   }
                 />
