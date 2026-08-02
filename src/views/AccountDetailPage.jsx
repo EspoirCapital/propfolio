@@ -198,7 +198,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                           ) : null
                         )}
                       </span>
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center justify-end gap-1">
                         {["green", "amber", "red"].map((r, i) => (
                           <span key={r} className="flex items-center gap-1">
                             {i > 0 && <span style={{ color: "var(--slate)" }}>·</span>}
