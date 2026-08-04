@@ -231,6 +231,8 @@ const FRIENDLY_ERRORS = {
   "Only admins can revoke invites.": "Only admins can revoke invite links.",
   "Invite not found.": "That invite couldn't be found. It may have been removed.",
   "Only admins can manage roles.": "Only admins can change roles.",
+  "Cannot delete this firm while": "That firm is still in use by accounts. Reassign or remove those accounts first, then you can delete it.",
+  "Firm not found.": "That firm no longer exists. It may have been deleted.",
   "You cannot remove your own admin role.": "You can't remove your own admin role.",
   "User not found.": "That user no longer exists. They may have been removed.",
   "Current password is incorrect.": "Current password is incorrect. Try again.",
