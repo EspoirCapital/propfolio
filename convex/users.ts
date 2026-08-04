@@ -45,6 +45,61 @@ export const list = query({
   },
 });
 
+// Aggregated performance per user, computed server-side so admins can see
+// everyone's numbers (the per-user accounts/trades/payouts queries only ever
+// return the signed-in user's own rows).
+export const stats = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) return [];
+    const actor = await ctx.db.get(userId);
+    if (!actor?.isAdmin) return [];
+
+    const users = await ctx.db.query("users").collect();
+    const ACTIVE_STATUS = new Set(["phase_1", "phase_2", "phase_3", "funded"]);
+
+    const out = [];
+    for (const u of users) {
+      if (!u.email) continue;
+
+      const accounts = await ctx.db.query("accounts").withIndex("by_userId", (q) => q.eq("userId", u._id)).collect();
+      const payouts = await ctx.db.query("payouts").withIndex("by_userId", (q) => q.eq("userId", u._id)).collect();
+      const trades = await ctx.db.query("trades").withIndex("by_userId", (q) => q.eq("userId", u._id)).collect();
+
+      let active = 0;
+      let cost = 0;
+      let refund = 0;
+      for (const a of accounts) {
+        cost += (a.costs || []).reduce((s, c) => s + c.amount, 0);
+        if (!a.archived && ACTIVE_STATUS.has(a.status)) active++;
+        if (a.templateId) {
+          const tpl = await ctx.db.get(a.templateId);
+          const firstPayout = payouts.some((p) => p.accountId === a._id);
+          if (tpl?.feeRefund && firstPayout) refund += Math.abs((a.costs || [])[0]?.amount || 0);
+        }
+      }
+
+      const wins = trades.filter((t) => !t.archived && t.pnl > 0).length;
+      const totalTrades = trades.filter((t) => !t.archived).length;
+      const received = payouts.reduce((s, p) => s + p.amount, 0);
+      const net = received + refund - cost;
+
+      out.push({
+        userId: u._id,
+        joinDate: u._creationTime,
+        activeAccounts: active,
+        winRate: totalTrades > 0 ? Math.round((wins / totalTrades) * 1000) / 10 : null,
+        payoutCount: payouts.length,
+        totalReceived: received,
+        net,
+      });
+    }
+
+    return out;
+  },
+});
+
 export const setRole = mutation({
   args: { id: v.id("users"), isAdmin: v.boolean() },
   handler: async (ctx, args) => {

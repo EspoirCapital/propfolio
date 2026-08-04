@@ -15,7 +15,13 @@ function formatDate(ts) {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
-export function AdminView({ users, invites, generateInvite, revokeInvite, setUserRole, setUserBanned, currentUserId }) {
+function money(n) {
+  if (n === null || n === undefined || Number.isNaN(n)) return "—";
+  const sign = n < 0 ? "-" : "";
+  return `${sign}$${Math.abs(n).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+
+export function AdminView({ users, userStats = [], invites, generateInvite, revokeInvite, setUserRole, setUserBanned, currentUserId }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
@@ -26,6 +32,8 @@ export function AdminView({ users, invites, generateInvite, revokeInvite, setUse
   const [useMode, setUseMode] = useState("single");
   const [customUses, setCustomUses] = useState(3);
   const [expiryHours, setExpiryHours] = useState(24);
+  const [search, setSearch] = useState("");
+  const statsByUser = Object.fromEntries(userStats.map((s) => [s.userId, s]));
 
   async function handleGenerate() {
     setBusy(true);
@@ -207,14 +215,31 @@ export function AdminView({ users, invites, generateInvite, revokeInvite, setUse
 
       <div className="rounded-lg p-4" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
         <div className="pd-eyebrow mb-3">People</div>
-        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)" }}>
-          <div className="grid pd-label items-center" style={{ gridTemplateColumns: "1.4fr 1.6fr 70px 84px", gap: "0 12px", background: "var(--ledger-raised)", borderBottom: "1px solid var(--line)", padding: "10px 16px" }}>
-            <span>Name</span><span>Email</span><span>Role</span><span className="text-right">Action</span>
+        <div className="mb-3">
+          <input
+            className="pd-input"
+            placeholder="Search by name or email…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ maxWidth: 320 }}
+          />
+        </div>
+        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)", overflowX: "auto" }}>
+          <div className="grid pd-label items-center" style={{ gridTemplateColumns: "1.3fr 1.4fr 96px 92px 96px 74px 110px 110px 70px", gap: "0 12px", background: "var(--ledger-raised)", borderBottom: "1px solid var(--line)", padding: "10px 16px", minWidth: 980 }}>
+            <span>Name</span><span>Email</span><span>Role</span><span>Joined</span><span>Active</span><span>WR%</span><span>Payouts</span><span>Received</span><span>Net</span>
           </div>
-          {users.map((u) => {
+          {users
+            .filter((u) => {
+              const q = search.trim().toLowerCase();
+              if (!q) return true;
+              return (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q);
+            })
+            .map((u) => {
             const isSelf = u.id === currentUserId;
+            const st = statsByUser[u.id];
+            const netColor = st && st.net < 0 ? "var(--brick)" : "var(--sage)";
             return (
-            <div key={u.id} className="pd-row grid items-center text-sm" style={{ gridTemplateColumns: "1.4fr 1.6fr 70px 84px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)", opacity: u.banned ? 0.55 : 1 }}>
+            <div key={u.id} className="pd-row grid items-center text-sm" style={{ gridTemplateColumns: "1.3fr 1.4fr 96px 92px 96px 74px 110px 110px 70px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)", opacity: u.banned ? 0.55 : 1, minWidth: 980 }}>
               <span className="min-w-0 truncate" style={{ color: "var(--sand)", fontWeight: 500 }}>
                 {u.name || "—"}
                 {isSelf && <span className="pd-mono text-xs ml-1.5" style={{ color: "var(--brass)" }}>(you)</span>}
@@ -239,6 +264,12 @@ export function AdminView({ users, invites, generateInvite, revokeInvite, setUse
                 {u.isAdmin ? <ShieldCheck size={12} /> : <Shield size={12} />}
                 {u.isAdmin ? "ADMIN" : "USER"}
               </button>
+              <span className="whitespace-nowrap pd-mono text-sm" style={{ color: "var(--slate)" }}>{formatDate(u.createdAt)}</span>
+              <span className="whitespace-nowrap pd-mono text-sm" style={{ color: "var(--sand)" }}>{st ? st.activeAccounts : "—"}</span>
+              <span className="whitespace-nowrap pd-mono text-sm" style={{ color: st && st.winRate !== null ? "var(--sand)" : "var(--slate)" }}>{st && st.winRate !== null ? `${st.winRate}%` : "—"}</span>
+              <span className="whitespace-nowrap pd-mono text-sm" style={{ color: st ? "var(--sand)" : "var(--slate)" }}>{st ? st.payoutCount : "—"}</span>
+              <span className="whitespace-nowrap pd-mono text-sm" style={{ color: st ? "var(--sage)" : "var(--slate)" }}>{st ? money(st.totalReceived) : "—"}</span>
+              <span className="whitespace-nowrap pd-mono text-sm" style={{ color: st ? netColor : "var(--slate)" }}>{st ? money(st.net) : "—"}</span>
               <button
                 onClick={() => setBanTarget({ id: u.id, name: u.name || u.email, banned: u.banned })}
                 disabled={isSelf}
@@ -261,8 +292,8 @@ export function AdminView({ users, invites, generateInvite, revokeInvite, setUse
             </div>
           );
           })}
-          {users.length === 0 && (
-            <div className="text-sm pd-mono" style={{ padding: "10px 16px", color: "var(--slate)" }}>No users found.</div>
+          {users.filter((u) => { const q = search.trim().toLowerCase(); return !q || (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q); }).length === 0 && (
+            <div className="text-sm pd-mono" style={{ padding: "10px 16px", color: "var(--slate)" }}>{users.length === 0 ? "No users found." : "No users match your search."}</div>
           )}
         </div>
       </div>

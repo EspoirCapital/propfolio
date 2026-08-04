@@ -30,6 +30,7 @@ export function AppProvider({ children }) {
   const copyLinks = useQuery(api.copies.list);
   const settingsRow = useQuery(api.settings.get);
   const users = useQuery(api.users.list);
+  const userStats = useQuery(api.users.stats);
   const invites = useQuery(api.invites.list);
 
   const createAccountFn = useMutation(api.accounts.create);
@@ -157,7 +158,7 @@ export function AppProvider({ children }) {
       changePassword: (currentPassword, newPassword) => changePasswordFn({ currentPassword, newPassword }),
       setUserRole: (id, isAdmin) => setRoleFn({ id, isAdmin }),
       setUserBanned: (id, banned) => setBannedFn({ id, banned }),
-      users: users || [], invites: invites || [],
+      users: users || [], userStats: userStats || [], invites: invites || [],
       generateInvite: (maxUses, hours) => generateInviteFn({ maxUses, hours }),
       revokeInvite: (id) => revokeInviteFn({ id }),
       selectedId, setSelectedId,
