@@ -6,19 +6,25 @@ const STATUS_LABELS = [
   "Pulling accounts",
   "Settling trades",
   "Reconciling payouts",
+  "Casting the day's equity",
+  "Reconciling open positions",
 ];
 
 export function LoadingScreen() {
-  const [label, setLabel] = useState(STATUS_LABELS[0]);
+  const [label, setLabel] = useState(() => STATUS_LABELS[Math.floor(Math.random() * STATUS_LABELS.length)]);
 
   useEffect(() => {
-    let i = 0;
+    let last = STATUS_LABELS.indexOf(label);
     const timer = setInterval(() => {
-      i = (i + 1) % STATUS_LABELS.length;
-      setLabel(STATUS_LABELS[i]);
+      let next;
+      do {
+        next = Math.floor(Math.random() * STATUS_LABELS.length);
+      } while (next === last);
+      last = next;
+      setLabel(STATUS_LABELS[next]);
     }, 1200);
     return () => clearInterval(timer);
-  }, []);
+  }, [label]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-5" style={{ background: "var(--ink)" }} role="status" aria-live="polite">
