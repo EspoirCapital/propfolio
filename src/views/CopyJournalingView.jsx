@@ -7,7 +7,7 @@ import { ConfirmModal } from "../components/ConfirmModal";
 import { Select } from "../components/Select";
 import { ErrorBanner } from "../components/ErrorBanner";
 
-export function CopytradingView({ accounts, clusters, createCluster, updateCluster, deleteCluster }) {
+export function CopyJournalingView({ accounts, clusters, createCluster, updateCluster, deleteCluster }) {
   const [showForm, setShowForm] = useState(false);
   const [editingCluster, setEditingCluster] = useState(null);
   const [simCluster, setSimCluster] = useState("");
@@ -117,7 +117,7 @@ export function CopytradingView({ accounts, clusters, createCluster, updateClust
 
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm max-w-lg" style={{ color: "var(--sand-dim)" }}>
-          Group a master account with slaves. Risk scales automatically by account size and the multiplier you set.
+          Build copy groups: one master account with slaves. Log a trade on the master and copy it to the whole group — risk scales by account size and each slave's multiplier.
         </p>
         <button className="pd-btn pd-btn-primary flex items-center gap-1.5 shrink-0" onClick={openAdd}><Plus size={14} /> Create cluster</button>
       </div>
@@ -195,7 +195,7 @@ export function CopytradingView({ accounts, clusters, createCluster, updateClust
 
       {clusters.length === 0 ? (
         <div className="rounded-lg p-10 text-center" style={{ border: "1px dashed var(--line)", color: "var(--slate)" }}>
-          No clusters yet. Create one to start copytrading between your accounts.
+          No copy groups yet. Create one to copy a master account's trades into its slaves.
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-8">
@@ -250,7 +250,7 @@ export function CopytradingView({ accounts, clusters, createCluster, updateClust
       )}
 
       <div className="rounded-lg p-5" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
-        <div className="pd-label mb-3">Trade Simulator</div>
+        <div className="pd-label mb-3">Copy preview</div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
           <div>
             <div className="pd-label mb-1">Cluster</div>
@@ -296,7 +296,7 @@ export function CopytradingView({ accounts, clusters, createCluster, updateClust
           </div>
         ) : (
           <div className="text-sm text-center p-4" style={{ color: "var(--slate)" }}>
-            {simCluster ? "Enter a master risk amount to simulate." : "Select a cluster and enter a risk amount to see projected copy trades."}
+            {simCluster ? "Enter a master risk amount to preview the copied slave trades." : "Select a cluster and enter a risk amount to see projected copy trades."}
           </div>
         )}
       </div>

@@ -65,6 +65,7 @@ export function AppProvider({ children }) {
   const createClusterFn = useMutation(api.clusters.create);
   const updateClusterFn = useMutation(api.clusters.update);
   const deleteClusterFn = useMutation(api.clusters.remove);
+  const copyTradeFn = useMutation(api.clusters.copyTrade);
 
   const updateSettingsFn = useMutation(api.settings.update);
   const updateProfileFn = useMutation(api.users.updateProfile);
@@ -146,6 +147,7 @@ export function AppProvider({ children }) {
       createTemplate, updateTemplate, deleteTemplate,
       createFirm, updateFirm, deleteFirm,
       createCluster, updateCluster, deleteCluster,
+      copyTrade: (tradeId, clusterId) => copyTradeFn({ tradeId, clusterId }),
       updateProfile: (data) => updateProfileFn(data),
       changePassword: (currentPassword, newPassword) => changePasswordFn({ currentPassword, newPassword }),
       setUserRole: (id, isAdmin) => setRoleFn({ id, isAdmin }),

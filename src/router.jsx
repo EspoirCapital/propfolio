@@ -15,7 +15,7 @@ import { JournalView } from "./views/JournalView";
 import { PayoutsView } from "./views/PayoutsView";
 import { CertificatesView } from "./views/CertificatesView";
 import { TemplatesView } from "./views/TemplatesView";
-import { CopytradingView } from "./views/CopytradingView";
+import { CopyJournalingView } from "./views/CopyJournalingView";
 import { SettingsView } from "./views/SettingsView";
 import { ReportView } from "./views/ReportView";
 import { AdminView } from "./views/AdminView";
@@ -24,7 +24,7 @@ const NAV = [
   { path: "/", label: "Overview", icon: LayoutGrid },
   { path: "/accounts", label: "Accounts", icon: List },
   { path: "/journal", label: "Journal", icon: NotebookPen },
-  { path: "/copytrading", label: "Copytrading", icon: Copy },
+  { path: "/copytrading", label: "Copy Journaling", icon: Copy },
   { path: "/payouts", label: "Payouts", icon: Wallet },
   { path: "/certificates", label: "Certificates", icon: Award },
   { path: "/report", label: "Report", icon: BarChart3 },
@@ -42,7 +42,7 @@ const PAGE_META = {
   "/payouts": ["Payouts", "Requested and paid — with proof."],
   "/certificates": ["Certificates", "Passing and payout proof, ready to show."],
   "/templates": ["Firms & Rules", "How each firm's challenges are structured."],
-  "/copytrading": ["Copytrading", "Cluster accounts, set risk multipliers, simulate copy trades."],
+  "/copytrading": ["Copy Journaling", "Copy a master account's trades into its slave accounts, scaled by size and multiplier."],
   "/report": ["Performance Report", "Monthly fees, refunds, payouts, and net position."],
   "/settings": ["Settings", "How risk and P&L display in the journal."],
   "/people": ["People", "Invites and admin access for your workspace."],
@@ -248,7 +248,7 @@ function AccountDetailPageRoute() {
 }
 
 function JournalPage() {
-  const { accounts, trades, createTrade, updateTrade, deleteTrade, settings } = useApp();
+  const { accounts, trades, createTrade, updateTrade, deleteTrade, settings, clusters, copyTrade } = useApp();
   const { account } = useSearch({ from: "/journal" });
   const navigate = useNavigate();
 
@@ -257,6 +257,7 @@ function JournalPage() {
       accounts={accounts} trades={trades}
       createTrade={createTrade} updateTrade={updateTrade} deleteTrade={deleteTrade}
       settings={settings}
+      clusters={clusters} copyTrade={copyTrade}
       initialAccountId={account || null}
       onClearInitialAccount={() => navigate({ search: (prev) => { const next = { ...prev }; delete next.account; return next; } })}
     />
@@ -292,7 +293,7 @@ function TemplatesPage() {
 
 function CopytradingPage() {
   const { derived, clusters, createCluster, updateCluster, deleteCluster } = useApp();
-  return <CopytradingView accounts={derived.accounts} clusters={clusters} createCluster={createCluster} updateCluster={updateCluster} deleteCluster={deleteCluster} />;
+  return <CopyJournalingView accounts={derived.accounts} clusters={clusters} createCluster={createCluster} updateCluster={updateCluster} deleteCluster={deleteCluster} />;
 }
 
 function SettingsPage() {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Plus, X, ExternalLink, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Plus, X, ExternalLink, Eye, EyeOff, ArrowRight, Copy } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { marked } from "marked";
 import { computeOutcome, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, friendlyError } from "../utils";
@@ -9,7 +9,7 @@ import { DatePicker } from "../components/DatePicker";
 import { Select } from "../components/Select";
 import { ErrorBanner } from "../components/ErrorBanner";
 
-export function JournalView({ accounts, trades, createTrade, updateTrade, deleteTrade, settings, initialAccountId, onClearInitialAccount }) {
+export function JournalView({ accounts, trades, createTrade, updateTrade, deleteTrade, settings, clusters = [], copyTrade, initialAccountId, onClearInitialAccount }) {
   const [filterAcc, setFilterAcc] = useState(initialAccountId || "All");
   const [showForm, setShowForm] = useState(false);
   const [editingTrade, setEditingTrade] = useState(null);
@@ -17,6 +17,9 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [copyCluster, setCopyCluster] = useState("");
+  const [copying, setCopying] = useState(false);
+  const [copyMsg, setCopyMsg] = useState("");
 
   useEffect(() => {
     if (initialAccountId) {
@@ -33,6 +36,8 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
   const [form, setForm] = useState(defaultForm);
 
   const filtered = trades.filter((t) => !t.archived && (filterAcc === "All" || t.accountId === filterAcc)).sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  const masterClusters = clusters.filter((cl) => cl.masterAccountId === form.accountId);
 
   const enrichedFiltered = useMemo(() => {
     return filtered.map((t) => {
@@ -73,11 +78,25 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
       if (editingTrade) {
         await updateTrade(editingTrade.id, parsed);
       } else {
-        await createTrade(parsed);
+        const newTradeId = await createTrade(parsed);
+        if (copyCluster && copyTrade) {
+          setCopying(true);
+          try {
+            const res = await copyTrade(newTradeId, copyCluster);
+            setCopyMsg(`${res.copied} trade${res.copied === 1 ? "" : "s"} copied to the group.`);
+          } catch (err) {
+            setCopyMsg("");
+            setFormError(friendlyError(err));
+          } finally {
+            setCopying(false);
+          }
+        }
       }
       setShowForm(false);
       setEditingTrade(null);
       setNotesMode("edit");
+      setCopyCluster("");
+      setCopyMsg("");
       setForm(defaultForm);
     } catch (err) {
       setFormError(friendlyError(err));
@@ -115,7 +134,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
             </Link>
           )}
         </div>
-        <button className="pd-btn pd-btn-primary flex items-center gap-1.5" onClick={() => { setEditingTrade(null); setShowForm(true); setFormError(""); setForm({ ...defaultForm, accountId: filterAcc !== "All" ? filterAcc : accounts[0]?.id || "" }); setNotesMode("edit"); }}><Plus size={14} /> Log trade</button>
+        <button className="pd-btn pd-btn-primary flex items-center gap-1.5" onClick={() => { setEditingTrade(null); setShowForm(true); setFormError(""); setCopyCluster(""); setCopyMsg(""); setForm({ ...defaultForm, accountId: filterAcc !== "All" ? filterAcc : accounts[0]?.id || "" }); setNotesMode("edit"); }}><Plus size={14} /> Log trade</button>
       </div>
 
       {showForm && (
@@ -157,6 +176,25 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
               <RatingPicker value={form.rating} onChange={(v) => setForm({ ...form, rating: v })} />
             </div>
           </div>
+
+          {!editingTrade && masterClusters.length > 0 && (
+            <div className="rounded-md p-3 mb-3 flex items-center gap-4 justify-between flex-wrap" style={{ background: "var(--ink-2)", border: "1px solid var(--brass-dim)" }}>
+              {copyMsg ? (
+                <span className="text-sm" style={{ color: "var(--sage)" }}>{copyMsg}</span>
+              ) : (
+                <>
+                  <span className="pd-label flex items-center gap-1.5 shrink-0" style={{ color: "var(--brass)" }}><Copy size={12} /> Copy to cluster</span>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Select style={{ width: "auto", minWidth: 190 }} value={copyCluster} onChange={(e) => setCopyCluster(e.target.value)}>
+                      <option value="">Don't copy</option>
+                      {masterClusters.map((cl) => <option key={cl.id} value={cl.id}>{cl.name} · {cl.slaves.length} slave{cl.slaves.length === 1 ? "" : "s"}</option>)}
+                    </Select>
+                    <span className="text-xs" style={{ color: "var(--slate)" }}>Risk, lots & P&L scale by size-ratio × multiplier</span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           <div className="mb-3">
             <div className="flex items-center justify-between mb-1">
