@@ -158,7 +158,7 @@ export function AppProvider({ children }) {
       setUserRole: (id, isAdmin) => setRoleFn({ id, isAdmin }),
       setUserBanned: (id, banned) => setBannedFn({ id, banned }),
       users: users || [], invites: invites || [],
-      generateInvite: () => generateInviteFn(),
+      generateInvite: (maxUses, hours) => generateInviteFn({ maxUses, hours }),
       revokeInvite: (id) => revokeInviteFn({ id }),
       selectedId, setSelectedId,
       selectedAccount,

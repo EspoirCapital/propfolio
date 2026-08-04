@@ -1,12 +1,17 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { Doc } from "./_generated/dataModel";
 
 function makeCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
   for (let i = 0; i < 12; i++) out += chars[Math.floor(Math.random() * chars.length)];
   return `ECP-${out.slice(0, 4)}-${out.slice(4, 8)}-${out.slice(8)}`;
+}
+
+function usedIds(r: Doc<"invites">) {
+  return r.usedByIds ?? (r.usedById ? [r.usedById] : []);
 }
 
 export const list = query({
@@ -19,30 +24,37 @@ export const list = query({
     const rows = await ctx.db.query("invites").order("desc").take(200);
     const now = Date.now();
     return rows.map((r) => {
-      const used = r.usedById ? "used" : r.expiresAt < now ? "expired" : "pending";
+      const ids = usedIds(r);
+      const maxUses = Math.max(1, r.maxUses ?? 1);
+      const usedCount = ids.length;
+      const status = r.expiresAt < now ? "expired" : usedCount >= maxUses ? "used" : "active";
       return {
         id: r._id,
         code: r.code,
         createdAt: r.createdAt,
         expiresAt: r.expiresAt,
-        usedById: r.usedById,
-        usedAt: r.usedAt,
-        status: used,
+        maxUses,
+        usedCount,
+        usedByIds: ids,
+        status,
       };
     });
   },
 });
 
 export const generate = mutation({
-  args: {},
-  handler: async (ctx) => {
+  args: { maxUses: v.optional(v.number()), hours: v.optional(v.number()) },
+  handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) throw new Error("Not signed in.");
     const user = await ctx.db.get(userId);
     if (!user?.isAdmin) throw new Error("Only admins can create invites.");
 
+    const maxUses = Math.max(1, Math.floor(args.maxUses ?? 1));
+    const hours = Math.max(1, args.hours ?? 24);
     const now = Date.now();
-    const expiresAt = now + 7 * 24 * 60 * 60 * 1000;
+    const expiresAt = now + hours * 60 * 60 * 1000;
+
     let code = makeCode();
     let existing = await ctx.db
       .query("invites")
@@ -58,8 +70,15 @@ export const generate = mutation({
       attempts++;
     }
 
-    const id = await ctx.db.insert("invites", { code, createdBy: userId, createdAt: now, expiresAt });
-    return { id, code, createdAt: now, expiresAt, status: "pending" };
+    const id = await ctx.db.insert("invites", {
+      code,
+      createdBy: userId,
+      createdAt: now,
+      expiresAt,
+      maxUses,
+      usedByIds: [],
+    });
+    return { id, code, createdAt: now, expiresAt, maxUses, usedByIds: [], status: "active" };
   },
 });
 

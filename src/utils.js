@@ -217,6 +217,7 @@ const FRIENDLY_ERRORS = {
   "Invite code is required.": "An invite code is required. Use the link from your invitation.",
   "This invite has already been used.": "That invite link has already been used. Ask the admin for a new one.",
   "This invite has expired.": "That invite link has expired. Ask the admin for a new one.",
+  "This invite has reached its maximum uses.": "That invite link has reached its limit. Ask the admin for a new one.",
   "InvalidAccountId": "No account is linked to that email. Check the address and try again.",
   "InvalidSecret": "Incorrect email or password. Check your details and try again.",
   "Invalid credentials": "Incorrect email or password. Check your details and try again.",

@@ -55,8 +55,10 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           .filter((q) => q.eq(q.field("code"), inviteCode))
           .first();
         if (!invite) throw new Error("Invalid invite code.");
-        if (invite.usedById) throw new Error("This invite has already been used.");
         if (invite.expiresAt < Date.now()) throw new Error("This invite has expired.");
+        const usedIds = invite.usedByIds ?? (invite.usedById ? [invite.usedById] : []);
+        const maxUses = Math.max(1, invite.maxUses ?? 1);
+        if (usedIds.length >= maxUses) throw new Error("This invite has reached its maximum uses.");
       }
 
       const userId = await ctx.db.insert("users", { name, email, isAdmin, inviteCode });
@@ -67,7 +69,11 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           .filter((q) => q.eq(q.field("code"), inviteCode))
           .first();
         if (!invite) throw new Error("Invalid invite code.");
-        await ctx.db.patch(invite._id, { usedById: userId, usedAt: Date.now() });
+        await ctx.db.patch(invite._id, {
+          usedByIds: [...(invite.usedByIds ?? (invite.usedById ? [invite.usedById] : [])), userId],
+          usedById: userId,
+          usedAt: Date.now(),
+        });
       }
 
       // Seed a fresh user with defaults. Templates and firms are global and

@@ -24,6 +24,8 @@ export default defineSchema({
     createdBy: v.id("users"),
     createdAt: v.number(),
     expiresAt: v.number(),
+    maxUses: v.optional(v.number()),
+    usedByIds: v.optional(v.array(v.id("users"))),
     usedById: v.optional(v.id("users")),
     usedAt: v.optional(v.number()),
   }).index("by_code", ["code"]),

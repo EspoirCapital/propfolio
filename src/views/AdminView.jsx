@@ -3,6 +3,7 @@ import { Plus, Copy, Check, X, ShieldCheck, Shield, Ban, RotateCcw } from "lucid
 import { friendlyError } from "../utils";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { Select } from "../components/Select";
 
 function inviteLink(code) {
   return `${window.location.origin}/?invite=${code}`;
@@ -21,12 +22,21 @@ export function AdminView({ users, invites, generateInvite, revokeInvite, setUse
   const [revokeTarget, setRevokeTarget] = useState(null);
   const [revoking, setRevoking] = useState(false);
   const [banTarget, setBanTarget] = useState(null);
+  const [showGenerate, setShowGenerate] = useState(false);
+  const [useMode, setUseMode] = useState("single");
+  const [customUses, setCustomUses] = useState(3);
+  const [expiryHours, setExpiryHours] = useState(24);
 
   async function handleGenerate() {
     setBusy(true);
     setError("");
     try {
-      await generateInvite();
+      const maxUses = useMode === "custom" ? Math.max(2, customUses) : 1;
+      await generateInvite(maxUses, expiryHours);
+      setShowGenerate(false);
+      setUseMode("single");
+      setCustomUses(3);
+      setExpiryHours(24);
     } catch (err) {
       setError(friendlyError(err));
     } finally {
@@ -91,35 +101,98 @@ export function AdminView({ users, invites, generateInvite, revokeInvite, setUse
       <div className="rounded-lg p-4 mb-6" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
         <div className="flex items-center justify-between mb-3">
           <div className="pd-eyebrow">Invites</div>
-          <button className="pd-btn pd-btn-primary flex items-center gap-1.5" onClick={handleGenerate} disabled={busy}>
+          <button className="pd-btn pd-btn-primary flex items-center gap-1.5" onClick={() => { setShowGenerate(true); setError(""); }} disabled={busy}>
             <Plus size={14} /> Generate invite
           </button>
         </div>
+
+        {showGenerate && (
+          <div className="rounded-lg p-4 mb-4" style={{ background: "var(--ledger-raised)", border: "1px solid var(--brass-dim)" }}>
+            <div className="pd-label mb-2">New invite</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+              <div>
+                <div className="pd-label mb-1">Uses</div>
+                <div className="flex gap-2">
+                  <button
+                    className="flex-1 pd-mono text-xs"
+                    onClick={() => setUseMode("single")}
+                    style={{
+                      padding: "7px 10px", borderRadius: 6, cursor: "pointer",
+                      color: useMode === "single" ? "var(--brass)" : "var(--slate)",
+                      background: useMode === "single" ? "rgba(206,159,82,0.12)" : "transparent",
+                      border: `1px solid ${useMode === "single" ? "var(--brass-dim)" : "var(--line)"}`,
+                    }}
+                  >Single use</button>
+                  <button
+                    className="flex-1 pd-mono text-xs"
+                    onClick={() => setUseMode("custom")}
+                    style={{
+                      padding: "7px 10px", borderRadius: 6, cursor: "pointer",
+                      color: useMode === "custom" ? "var(--brass)" : "var(--slate)",
+                      background: useMode === "custom" ? "rgba(206,159,82,0.12)" : "transparent",
+                      border: `1px solid ${useMode === "custom" ? "var(--brass-dim)" : "var(--line)"}`,
+                    }}
+                  >Custom uses</button>
+                </div>
+              </div>
+              <div>
+                <div className="pd-label mb-1">Max signups</div>
+                <input
+                  type="number" min="2" value={customUses}
+                  disabled={useMode === "single"}
+                  onChange={(e) => setCustomUses(Number(e.target.value))}
+                  onFocus={() => setUseMode("custom")}
+                  className="pd-input"
+                  style={{ opacity: useMode === "single" ? 0.5 : 1 }}
+                />
+              </div>
+              <div>
+                <div className="pd-label mb-1">Expires</div>
+                <Select
+                  value={expiryHours}
+                  onChange={(e) => setExpiryHours(Number(e.target.value))}
+                >
+                  <option value={24}>24 hours</option>
+                  <option value={168}>7 days</option>
+                  <option value={720}>30 days</option>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 mt-4">
+              <button className="pd-btn pd-btn-primary" onClick={handleGenerate} disabled={busy}>{busy ? "Creating…" : "Create invite"}</button>
+              <button className="pd-btn" onClick={() => setShowGenerate(false)} disabled={busy}>Cancel</button>
+            </div>
+          </div>
+        )}
 
         {invites.length === 0 ? (
           <p className="text-sm" style={{ color: "var(--slate)" }}>No invites yet. Generate one and share the link.</p>
         ) : (
           <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)" }}>
-            <div className="grid pd-label items-center" style={{ gridTemplateColumns: "1.3fr 120px 130px 60px 96px 28px", gap: "0 12px", background: "var(--ledger-raised)", borderBottom: "1px solid var(--line)", padding: "10px 16px" }}>
-              <span>Link</span><span>Created</span><span>Expires</span><span>Status</span><span>Used by</span><span></span>
+            <div className="grid pd-label items-center" style={{ gridTemplateColumns: "1.3fr 100px 110px 60px 90px 1.2fr 28px", gap: "0 12px", background: "var(--ledger-raised)", borderBottom: "1px solid var(--line)", padding: "10px 16px" }}>
+              <span>Link</span><span>Created</span><span>Expires</span><span>Uses</span><span>Status</span><span>Used by</span><span></span>
             </div>
             {invites.map((inv) => {
-              const usedBy = users.find((u) => u.id === inv.usedById);
               const statusColor = inv.status === "used" ? "var(--slate)"
                 : inv.status === "expired" ? "var(--brick)"
                 : "var(--sage)";
+              const names = inv.usedByIds.map((id) => {
+                const u = users.find((x) => x.id === id);
+                return u ? u.name || u.email : "—";
+              });
               return (
-                <div key={inv.id} className="pd-row grid items-center text-sm pd-mono" style={{ gridTemplateColumns: "1.3fr 120px 130px 60px 96px 28px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)" }}>
+                <div key={inv.id} className="pd-row grid items-center text-sm pd-mono" style={{ gridTemplateColumns: "1.3fr 100px 110px 60px 90px 1.2fr 28px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)" }}>
                   <span className="min-w-0 truncate" title={inviteLink(inv.code)} style={{ color: "var(--sand)" }}>{inv.code}</span>
                   <span className="whitespace-nowrap" style={{ color: "var(--slate)" }}>{formatDate(inv.createdAt)}</span>
                   <span className="whitespace-nowrap" style={{ color: "var(--slate)" }}>{formatDate(inv.expiresAt)}</span>
+                  <span className="whitespace-nowrap" style={{ color: "var(--sand-dim)" }}>{inv.usedCount}/{inv.maxUses}</span>
                   <span className="whitespace-nowrap" style={{ color: statusColor }}>{inv.status}</span>
-                  <span className="whitespace-nowrap truncate" style={{ color: "var(--slate)" }}>{usedBy ? usedBy.name || usedBy.email : "—"}</span>
+                  <span className="min-w-0 truncate" title={names.join(", ")} style={{ color: "var(--slate)" }}>{names.join(", ") || "—"}</span>
                   <div className="flex items-center justify-end gap-1">
                     <button className="flex items-center justify-center" style={{ color: copied === inv.code ? "var(--sage)" : "var(--slate)", background: "none", border: "none", cursor: "pointer", padding: 4 }} onClick={() => copy(inv.code)} title="Copy invite link">
                       {copied === inv.code ? <Check size={14} /> : <Copy size={14} />}
                     </button>
-                    {inv.status === "pending" && (
+                    {inv.status === "active" && (
                       <button className="flex items-center justify-center" style={{ color: "var(--brick)", background: "none", border: "none", cursor: "pointer", padding: 4 }} onClick={() => setRevokeTarget(inv.id)} title="Revoke invite">
                         <X size={14} />
                       </button>
