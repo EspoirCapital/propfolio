@@ -68,7 +68,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
         .sort((a, b) => (a.creationDate < b.creationDate ? -1 : 1))
     : null;
 
-  const linkCandidates = derived.accounts.filter((a) => a.id !== account.id && !a.archived);
+  const linkCandidates = derived.accounts.filter((a) => a.id !== account.id && !a.archived && a.chainId !== account.chainId);
 
   let running = 0;
   const sortedTrades = enrichedTrades.slice().reverse();
@@ -205,10 +205,9 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
             </button>
           )}
           <button className="pd-btn flex items-center gap-1.5" onClick={() => onEdit(account.id)}><Pencil size={13} /> Edit</button>
-          {account.chainId ? (
+          <button className="pd-btn flex items-center gap-1.5" onClick={() => setShowLinkPicker(true)} disabled={busy}><Link2 size={13} /> Link</button>
+          {account.chainId && (
             <button className="pd-btn flex items-center gap-1.5" style={{ borderColor: "var(--brass-dim)", color: "var(--brass)" }} onClick={() => setShowUnlinkConfirm(true)} disabled={busy}><Unlink size={13} /> Unlink</button>
-          ) : (
-            <button className="pd-btn flex items-center gap-1.5" onClick={() => setShowLinkPicker(true)} disabled={busy}><Link2 size={13} /> Link</button>
           )}
           {account.archived ? (
             <button className="pd-btn flex items-center gap-1.5" style={{ borderColor: "var(--sage)", color: "var(--sage)" }} onClick={toggleArchive} disabled={busy}><ArchiveRestore size={13} /> Unarchive</button>
@@ -465,7 +464,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
               <button className="pd-btn" style={{ padding: "4px 6px" }} onClick={() => setShowLinkPicker(false)}><X size={14} /></button>
             </div>
             <p className="text-sm mb-4" style={{ color: "var(--slate)", lineHeight: 1.5 }}>
-              Pick another account to group with this one as one phase journey. Accounts already in a journey will merge with it.
+              Pick another account to add to this journey, in any order — e.g. a funded account alongside its phases. Accounts from a different journey will merge into this one.
             </p>
             <div className="max-h-72 overflow-y-auto pd-scrollbar flex flex-col gap-1.5">
               {linkCandidates.length === 0 && (

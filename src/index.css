@@ -379,6 +379,95 @@ select.pd-input {
   color: var(--slate);
 }
 
+/* ── Journey stepper ─────────────────────────────────── */
+.pd-journey {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+.pd-jnode {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--ink);
+  color: var(--sand);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.pd-jnode:hover {
+  border-color: var(--brass-dim);
+}
+.pd-jnode.done {
+  border-color: var(--sage-dim);
+  background: rgba(111, 176, 139, 0.07);
+}
+.pd-jnode.done:hover {
+  border-color: var(--sage);
+}
+.pd-jnode.active {
+  border-color: var(--brass);
+  background: rgba(206, 159, 82, 0.08);
+}
+.pd-jnode.bad {
+  border-color: var(--brick-dim);
+  background: rgba(193, 89, 75, 0.08);
+}
+.pd-jnode.bad:hover {
+  border-color: var(--brick);
+}
+.pd-jnode-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.pd-jnode-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--slate);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pd-jnode.done .pd-jnode-label { color: var(--sage); }
+.pd-jnode.active .pd-jnode-label { color: var(--brass); }
+.pd-jnode.bad .pd-jnode-label { color: var(--brick); }
+.pd-jnode-pnl {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.pd-jnode-date {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  color: var(--slate);
+}
+.pd-jconn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
+  color: var(--line);
+}
+.pd-jconn-line {
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+.pd-jconn.done { color: var(--sage-dim); }
+
 /* ── People / access console ─────────────────────────── */
 .pd-btn-action {
   font-family: "IBM Plex Mono", monospace;
