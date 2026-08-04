@@ -380,6 +380,18 @@ select.pd-input {
 }
 
 /* ── Journey stepper ─────────────────────────────────── */
+.pd-group {
+  background: var(--ledger);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  animation: pd-fade-in 0.4s ease backwards;
+}
+.pd-group:hover {
+  border-color: var(--brass-dim);
+  box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.55);
+}
 .pd-journey {
   display: flex;
   align-items: stretch;

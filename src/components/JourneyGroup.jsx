@@ -19,7 +19,7 @@ export function JourneyGroup({ chain, onOpen }) {
   const activeId = active ? active.id : null;
 
   return (
-    <div className="pd-ticket">
+    <div className="pd-group">
       <div className="flex items-center justify-between gap-3" style={{ padding: "14px 16px", borderBottom: "1px dashed var(--line)" }}>
         <div className="min-w-0">
           <div className="pd-eyebrow truncate">{firm} · {template}</div>
