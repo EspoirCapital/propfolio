@@ -4,6 +4,7 @@ import { LayoutGrid, NotebookPen, Award, SlidersHorizontal, List, Wallet, Settin
 
 import { useApp } from "./context";
 import { BrandMark } from "./components/BrandMark";
+import { LoadingScreen } from "./components/LoadingScreen";
 import { ConfirmModal } from "./components/ConfirmModal";
 import { LoginView } from "./views/LoginView";
 import { AccountDrawer } from "./views/AccountDrawer";
@@ -84,8 +85,8 @@ function Layout() {
   if (isLoading || (session && !dataReady)) {
     return (
       <div className="pd-root">
-        <div className="relative z-[1] min-h-screen flex items-center justify-center">
-          <div className="pd-mono text-sm" style={{ color: "var(--slate)" }}>Loading…</div>
+        <div className="relative z-[1] min-h-screen">
+          <LoadingScreen />
         </div>
       </div>
     );

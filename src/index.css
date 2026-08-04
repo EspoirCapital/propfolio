@@ -227,6 +227,37 @@ body {
   }
 }
 
+.pd-loading-track {
+  position: relative;
+  width: 180px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.pd-loading-sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--brass), transparent);
+  transform: translateX(-100%);
+  animation: pd-sweep 1.4s ease-in-out infinite;
+}
+@keyframes pd-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-loading-sweep {
+    animation: none;
+    transform: none;
+    opacity: 0.35;
+  }
+}
+
 .pd-pill {
   display: inline-flex;
   align-items: center;
