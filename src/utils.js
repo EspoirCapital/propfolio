@@ -283,3 +283,29 @@ export function friendlyError(err, fallback = "Something went wrong. Please try 
 
   return clean;
 }
+
+// Group accounts that share a chainId into lifecycle "journeys" (phase 1 ->
+// phase 2 -> funded). Returns only chains with 2+ members, each member sorted
+// by creation date. Accounts without a chainId (or solo chains) are left to the
+// caller to render as standalone cards.
+export function groupAccountsByChain(accounts) {
+  const byId = new Map();
+  for (const a of accounts) {
+    if (!a.chainId) continue;
+    if (!byId.has(a.chainId)) byId.set(a.chainId, []);
+    byId.get(a.chainId).push(a);
+  }
+  const groups = [];
+  for (const [chainId, members] of byId) {
+    if (members.length > 1) {
+      members.sort((a, b) => (a.creationDate < b.creationDate ? -1 : 1));
+      groups.push({ chainId, accounts: members });
+    }
+  }
+  return groups;
+}
+
+// The active account in a journey is the first one still in progress.
+export function activeChainMember(accounts) {
+  return accounts.find((a) => ["phase_1", "phase_2", "phase_3"].includes(a.status) && !a.archived) || null;
+}

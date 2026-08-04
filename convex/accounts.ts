@@ -148,7 +148,8 @@ export const proceed = mutation({
     const phaseCount = template?.phases ?? 0;
 
     const today = new Date().toISOString().slice(0, 10);
-    await ctx.db.patch(args.id, { status: "passed", terminationDate: today });
+    const chainId = account.chainId ?? args.id;
+    await ctx.db.patch(args.id, { status: "passed", terminationDate: today, chainId });
 
     const nextStatus = (status: string, count: number): string | null => {
       if (count <= 0) return null;
@@ -179,6 +180,7 @@ export const proceed = mutation({
       notes: "",
       costs: [],
       archived: false,
+      chainId,
     });
     return newId;
   },

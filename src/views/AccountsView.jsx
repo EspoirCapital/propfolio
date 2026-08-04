@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Pencil, X, LayoutGrid, List, Plus, Archive } from "lucide-react";
 import { FIRMS, STATUS_META } from "../constants";
-import { money, formatDateUK, friendlyError } from "../utils";
+import { money, formatDateUK, friendlyError, groupAccountsByChain } from "../utils";
 import { KpiTile } from "../components/KpiTile";
 import { StatusPill } from "../components/StatusPill";
 import { ConfirmModal } from "../components/ConfirmModal";
@@ -9,6 +9,7 @@ import { Select } from "../components/Select";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { AccountForm } from "./AccountForm";
 import { TicketCard } from "./TicketCard";
+import { JourneyGroup } from "../components/JourneyGroup";
 
 export function AccountsView({ derived, templates, onRowClick, onOpen, createAccount, updateAccount, deleteAccount, editingAccount, setEditingAccount, filterFirm, setFilterFirm, filterStatus, setFilterStatus, archiveAccount, unarchiveAccount }) {
   const [showForm, setShowForm] = useState(false);
@@ -24,6 +25,10 @@ export function AccountsView({ derived, templates, onRowClick, onOpen, createAcc
     if (filterStatus !== "All" && a.status !== filterStatus) return false;
     return !a.archived;
   }).sort((a, b) => (a.creationDate < b.creationDate ? 1 : -1));
+
+  const journeys = groupAccountsByChain(filtered);
+  const journeyChainIds = new Set(journeys.map((j) => j.chainId));
+  const singles = filtered.filter((a) => !journeyChainIds.has(a.chainId));
 
   useEffect(() => { if (editingAccount) setShowForm(true); }, [editingAccount]);
 
@@ -169,9 +174,20 @@ export function AccountsView({ derived, templates, onRowClick, onOpen, createAcc
               No accounts match this filter. Adjust the filters above or buy a new challenge to fill this space.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filtered.map((a, i) => <TicketCard key={a.id} account={a} onOpen={onOpen} onEdit={openEdit} onArchive={handleArchive} onUnarchive={handleUnarchive} index={i} />)}
-            </div>
+            <>
+              {journeys.length > 0 && (
+                <div className="mb-6 space-y-4">
+                  {journeys.map((j) => (
+                    <JourneyGroup key={j.chainId} chain={j.accounts} onOpen={onRowClick} />
+                  ))}
+                </div>
+              )}
+              {singles.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {singles.map((a, i) => <TicketCard key={a.id} account={a} onOpen={onOpen} onEdit={openEdit} onArchive={handleArchive} onUnarchive={handleUnarchive} index={i} />)}
+                </div>
+              )}
+            </>
           )}
         </>
       )}

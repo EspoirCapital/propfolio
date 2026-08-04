@@ -1,6 +1,7 @@
 import { Check, Circle, X } from "lucide-react";
+import { money } from "../utils";
 
-export function ProgressionStepper({ phaseCount, status, target, compact }) {
+export function ProgressionStepper({ phaseCount, status, target, compact, chain, onOpen }) {
   if (phaseCount <= 0) return null;
 
   const steps = [];
@@ -11,6 +12,9 @@ export function ProgressionStepper({ phaseCount, status, target, compact }) {
   const currentIdx = statusOrder[status] ?? -1;
   const isBreached = status === "breached";
   const targetParts = target ? target.split("/").map((s) => s.trim()) : [];
+  const activeMember = chain
+    ? chain.find((a) => ["phase_1", "phase_2", "phase_3"].includes(a.status) && !a.archived) || null
+    : null;
 
   const p = compact ? { pad: "p-2", radius: "rounded-md", connector: 16 } : { pad: "p-3", radius: "rounded-lg", connector: 24 };
 
@@ -20,10 +24,20 @@ export function ProgressionStepper({ phaseCount, status, target, compact }) {
       <div className="flex items-stretch gap-0">
         {steps.map((step, i) => {
           const isLast = i === steps.length - 1;
+          const member = chain && i < chain.length ? chain[i] : null;
+
           let state = "pending";
-          if (isBreached) state = "breached";
-          else if (i < currentIdx) state = "done";
-          else if (i === currentIdx) state = "active";
+          if (member) {
+            if (member.status === "breached") state = "breached";
+            else if (member.status === "passed" || member.status === "funded") state = "done";
+            else if (activeMember && member.id === activeMember.id) state = "active";
+          } else if (isBreached) {
+            state = "breached";
+          } else if (i < currentIdx) {
+            state = "done";
+          } else if (i === currentIdx) {
+            state = "active";
+          }
 
           const colors = {
             done: { bg: "var(--sage-dim)", text: "var(--sage)", border: "var(--sage)" },
@@ -33,16 +47,34 @@ export function ProgressionStepper({ phaseCount, status, target, compact }) {
           };
           const c = colors[state];
           const target = i < targetParts.length ? targetParts[i] : null;
+          const detail = member && (state === "done" || state === "breached")
+            ? money(member.tradePnl)
+            : (target || null);
+
+          const inner = (
+            <div className={`flex-1 flex flex-col items-center justify-center ${p.radius} ${p.pad}`} style={{ border: `1.5px solid ${c.border}`, background: c.bg }}>
+              <div className="pd-mono text-xs" style={{ color: c.text, fontWeight: state === "active" ? 600 : 500 }}>{step.label}</div>
+              {state === "done" && <div className="w-full flex justify-center"><Check size={12} style={{ color: "var(--sage)" }} /></div>}
+              {state === "active" && <div className="w-full flex justify-center"><Circle size={8} className={isBreached ? "" : "pd-pulse"} fill="var(--brass)" style={{ color: "var(--brass)" }} /></div>}
+              {state === "breached" && <div className="w-full flex justify-center"><X size={12} style={{ color: "var(--brick)" }} /></div>}
+              {detail && <div className="pd-mono text-xs mt-0.5" style={{ color: state === "done" || state === "breached" ? (state === "done" ? "var(--sage)" : "var(--brick)") : "var(--slate)" }}>{detail}</div>}
+            </div>
+          );
 
           return (
             <div key={step.label} className="flex items-center" style={{ flex: 1 }}>
-              <div className={`flex-1 flex flex-col items-center justify-center ${p.radius} ${p.pad}`} style={{ border: `1.5px solid ${c.border}`, background: c.bg }}>
-                <div className="pd-mono text-xs" style={{ color: c.text, fontWeight: state === "active" ? 600 : 500 }}>{step.label}</div>
-                {state === "done" && <div className="w-full flex justify-center"><Check size={12} style={{ color: "var(--sage)" }} /></div>}
-                {state === "active" && <div className="w-full flex justify-center"><Circle size={8} className={isBreached ? "" : "pd-pulse"} fill="var(--brass)" style={{ color: "var(--brass)" }} /></div>}
-                {state === "breached" && <div className="w-full flex justify-center"><X size={12} style={{ color: "var(--brick)" }} /></div>}
-                {target && <div className="pd-mono text-xs mt-0.5" style={{ color: "var(--slate)" }}>{target}</div>}
-              </div>
+              {member && onOpen ? (
+                <button
+                  className={`flex-1 ${p.radius}`}
+                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}
+                  onClick={() => onOpen(member.id)}
+                  title={`Open ${step.label} account`}
+                >
+                  {inner}
+                </button>
+              ) : (
+                <div className="flex-1">{inner}</div>
+              )}
               {!isLast && <div style={{ width: p.connector, height: 2, background: state === "done" ? "var(--sage)" : "var(--line)", flexShrink: 0 }} />}
             </div>
           );

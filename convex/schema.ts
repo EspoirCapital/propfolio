@@ -67,6 +67,7 @@ export default defineSchema({
     platformLink: v.string(),
     notes: v.optional(v.string()),
     archived: v.boolean(),
+    chainId: v.optional(v.string()),
   }).index("by_userId", ["userId"]),
 
   trades: defineTable({

@@ -60,6 +60,12 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const dayProfile = computeDayProfile(enrichedTrades);
   const dayEdge = computeDayEdge(enrichedTrades);
 
+  const chain = account.chainId
+    ? derived.accounts
+        .filter((a) => a.chainId === account.chainId)
+        .sort((a, b) => (a.creationDate < b.creationDate ? -1 : 1))
+    : null;
+
   let running = 0;
   const sortedTrades = enrichedTrades.slice().reverse();
   const refundEvent = account.refund > 0 && account.refundDate
@@ -179,7 +185,13 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
 
       {actionError && <div className="mb-4"><ErrorBanner message={actionError} onDismiss={() => setActionError("")} /></div>}
 
-      <ProgressionStepper phaseCount={phaseCount} status={account.status} target={template?.target} />
+      <ProgressionStepper
+        phaseCount={phaseCount}
+        status={account.status}
+        target={template?.target}
+        chain={chain}
+        onOpen={(id) => navigate({ to: "/accounts/$accountId", params: { accountId: id } })}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 flex flex-col gap-6 min-w-0">
@@ -373,7 +385,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
       {showConfirm && (
         <ConfirmModal
           title="Delete account"
-          message="Delete this account? This cannot be undone. Trades, payouts, and certificates linked to it will remain orphaned."
+          message="Delete this account? All trades, payouts, and certificates linked to it will also be removed."
           onConfirm={handleDelete}
           onCancel={() => setShowConfirm(false)}
           confirmLabel={busy ? "Working…" : "Delete"}
