@@ -7,11 +7,12 @@ import { DEFAULT_SETTINGS } from "./utils";
 
 const AppContext = createContext(null);
 
-const ACCOUNT_FIELDS = ["firm", "template", "size", "platform", "creationDate", "terminationDate", "status", "drawdown", "maxLoss", "dailyLoss", "costs", "platformLogin", "platformPassword", "platformInvestorPassword", "platformLink"];
+const ACCOUNT_FIELDS = ["firmId", "templateId", "size", "platform", "creationDate", "terminationDate", "status", "drawdown", "maxLoss", "dailyLoss", "costs", "platformLogin", "platformPassword", "platformInvestorPassword"];
 const TRADE_FIELDS = ["accountId", "date", "symbol", "side", "lots", "risk", "pnl", "session", "tag", "tvLink", "rating", "notes", "mfeR", "maeR"];
 const PAYOUT_FIELDS = ["accountId", "requestedDate", "amount", "split", "method", "proofLink"];
 const CERT_FIELDS = ["accountId", "type", "date", "link", "label"];
-const TEMPLATE_FIELDS = ["firm", "name", "phases", "target", "dailyLoss", "maxLoss", "drawdown", "consistency", "feeRefund", "platforms"];
+const TEMPLATE_FIELDS = ["firmId", "name", "phases", "target", "dailyLoss", "maxLoss", "drawdown", "consistency", "feeRefund", "platforms"];
+const FIRM_FIELDS = ["name", "platformLink"];
 
 const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k]]).filter(([, v]) => v !== undefined));
 
@@ -25,6 +26,7 @@ export function AppProvider({ children }) {
   const payouts = useQuery(api.payouts.list);
   const certificates = useQuery(api.certificates.list);
   const templates = useQuery(api.templates.list);
+  const firms = useQuery(api.firms.list);
   const clusters = useQuery(api.clusters.list);
   const settingsRow = useQuery(api.settings.get);
   const users = useQuery(api.users.list);
@@ -56,6 +58,10 @@ export function AppProvider({ children }) {
   const updateTemplateFn = useMutation(api.templates.update);
   const deleteTemplateFn = useMutation(api.templates.remove);
 
+  const createFirmFn = useMutation(api.firms.create);
+  const updateFirmFn = useMutation(api.firms.update);
+  const deleteFirmFn = useMutation(api.firms.remove);
+
   const createClusterFn = useMutation(api.clusters.create);
   const updateClusterFn = useMutation(api.clusters.update);
   const deleteClusterFn = useMutation(api.clusters.remove);
@@ -73,7 +79,7 @@ export function AppProvider({ children }) {
   const [editingAccount, setEditingAccount] = useState(null);
 
   const isLoading = authLoading || me === undefined;
-  const dataReady = !isLoading && accounts !== undefined && trades !== undefined && payouts !== undefined && certificates !== undefined && templates !== undefined && clusters !== undefined && settingsRow !== undefined;
+  const dataReady = !isLoading && accounts !== undefined && trades !== undefined && payouts !== undefined && certificates !== undefined && templates !== undefined && firms !== undefined && clusters !== undefined && settingsRow !== undefined;
 
   const session = useMemo(() => {
     if (!me) return null;
@@ -85,7 +91,7 @@ export function AppProvider({ children }) {
     return { displayFormat: settingsRow.displayFormat, beThreshold: settingsRow.beThreshold, mfeThreshold: settingsRow.mfeThreshold ?? 1 };
   }, [settingsRow]);
 
-  const derived = useDerived(accounts || [], trades || [], payouts || [], templates || []);
+  const derived = useDerived(accounts || [], trades || [], payouts || [], templates || [], firms || []);
   const selectedAccount = derived.accounts.find((a) => a.id === selectedId);
 
   function logout() {
@@ -115,6 +121,10 @@ export function AppProvider({ children }) {
   const updateTemplate = (id, data) => updateTemplateFn({ id, ...pick(data, TEMPLATE_FIELDS) });
   const deleteTemplate = (id) => deleteTemplateFn({ id });
 
+  const createFirm = (data) => createFirmFn(pick(data, FIRM_FIELDS));
+  const updateFirm = (id, data) => updateFirmFn({ id, ...pick(data, FIRM_FIELDS) });
+  const deleteFirm = (id) => deleteFirmFn({ id });
+
   const createCluster = (data) => createClusterFn(data);
   const updateCluster = (id, data) => updateClusterFn({ id, ...data });
   const deleteCluster = (id) => deleteClusterFn({ id });
@@ -125,7 +135,7 @@ export function AppProvider({ children }) {
       session, logout,
       settings, setSettings,
       accounts: accounts || [], trades: trades || [], payouts: payouts || [],
-      certificates: certificates || [], templates: templates || [], clusters: clusters || [],
+      certificates: certificates || [], templates: templates || [], firms: firms || [], clusters: clusters || [],
       createAccount, updateAccount, deleteAccount,
       proceed: proceedFn, breach: breachFn,
       linkAccounts: linkAccountsFn, unlinkAccount: unlinkAccountFn,
@@ -133,6 +143,7 @@ export function AppProvider({ children }) {
       createPayout, updatePayout, deletePayout,
       createCertificate, updateCertificate, deleteCertificate,
       createTemplate, updateTemplate, deleteTemplate,
+      createFirm, updateFirm, deleteFirm,
       createCluster, updateCluster, deleteCluster,
       updateProfile: (data) => updateProfileFn(data),
       changePassword: (currentPassword, newPassword) => changePasswordFn({ currentPassword, newPassword }),

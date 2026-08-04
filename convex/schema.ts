@@ -34,9 +34,13 @@ export default defineSchema({
     mfeThreshold: v.optional(v.number()),
   }).index("by_userId", ["userId"]),
 
+  firms: defineTable({
+    name: v.string(),
+    platformLink: v.optional(v.string()),
+  }).index("by_name", ["name"]),
+
   templates: defineTable({
-    userId: v.id("users"),
-    firm: v.string(),
+    firmId: v.id("firms"),
     name: v.string(),
     phases: v.number(),
     target: v.string(),
@@ -46,12 +50,12 @@ export default defineSchema({
     consistency: v.string(),
     feeRefund: v.boolean(),
     platforms: v.string(),
-  }).index("by_userId", ["userId"]),
+  }).index("by_firmId", ["firmId"]),
 
   accounts: defineTable({
     userId: v.id("users"),
-    firm: v.string(),
-    template: v.string(),
+    firmId: v.id("firms"),
+    templateId: v.id("templates"),
     size: v.number(),
     platform: v.string(),
     creationDate: v.string(),
@@ -64,7 +68,6 @@ export default defineSchema({
     platformLogin: v.string(),
     platformPassword: v.string(),
     platformInvestorPassword: v.string(),
-    platformLink: v.string(),
     notes: v.optional(v.string()),
     archived: v.boolean(),
     chainId: v.optional(v.string()),
@@ -121,4 +124,4 @@ export default defineSchema({
     slaves: v.array(v.object({ accountId: v.id("accounts"), riskMultiplier: v.number() })),
     createdAt: v.string(),
   }).index("by_userId", ["userId"]),
-});
+}, { schemaValidation: false });

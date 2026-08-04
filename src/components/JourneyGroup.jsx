@@ -14,8 +14,8 @@ function stateMark(a) {
 }
 
 export function JourneyGroup({ chain, onOpen }) {
-  const firm = chain[0].firm;
-  const template = chain[0].template;
+  const firm = chain[0].firmName || chain[0].firm;
+  const template = chain[0].templateName || chain[0].template;
   const size = chain[0].size;
   const invested = chain.reduce((s, a) => s + (a.cost || 0), 0);
   const active = activeChainMember(chain);

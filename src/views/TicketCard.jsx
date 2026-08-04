@@ -38,7 +38,7 @@ export function TicketCard({ account, onOpen, onEdit, onArchive, onUnarchive, in
           </div>
         </div>
         <div className="flex items-center gap-4 pd-mono text-xs" style={{ color: "var(--slate)" }}>
-          <span>{account.template}</span>
+          <span>{account.templateName || account.template}</span>
           <span>{account.maxLoss} max</span>
           <span>{account.dailyLoss} daily</span>
           {account.targetGoal && <span style={{ color: "var(--brass)" }}>Target {account.targetGoal}</span>}

@@ -130,7 +130,8 @@ export function parseDateUK(ukDate) {
 export function getAccountLabel(account) {
   if (!account) return "";
   const login = account.platformLogin || "No login";
-  return `${account.firm} $${(account.size / 1000).toFixed(0)}K · ${login}`;
+  const firm = account.firmName || account.firm || "";
+  return `${firm} $${(account.size / 1000).toFixed(0)}K · ${login}`;
 }
 
 export const RATING_META = {

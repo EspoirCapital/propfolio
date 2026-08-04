@@ -35,7 +35,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const accPayouts = payouts.filter((p) => p.accountId === account.id);
   const accCerts = certificates.filter((c) => c.accountId === account.id);
 
-  const template = templates.find((t) => t.firm === account.firm && t.name === account.template);
+  const template = account.template || templates.find((t) => t.id === account.templateId) || null;
   const phaseCount = template?.phases ?? 0;
   const challengeFee = account.costs?.[0]?.amount ?? 0;
 
@@ -380,7 +380,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 { key: "platformPassword", label: "Password", value: account.platformPassword },
                 { key: "platformInvestorPassword", label: "Investor", value: account.platformInvestorPassword },
               ]}
-              link={account.platformLink}
+              link={account.firm?.platformLink}
             />
           </div>
 
@@ -480,7 +480,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 >
                   <span className="flex flex-col min-w-0">
                     <span className="text-sm truncate">{getAccountLabel(c)}</span>
-                    <span className="pd-mono text-xs" style={{ color: "var(--slate)" }}>{c.firm} · {c.template} · ${(c.size / 1000).toFixed(0)}K</span>
+                    <span className="pd-mono text-xs" style={{ color: "var(--slate)" }}>{c.firmName || c.firm} · {c.templateName || c.template} · ${(c.size / 1000).toFixed(0)}K</span>
                   </span>
                   <StatusPill status={c.status} />
                 </button>

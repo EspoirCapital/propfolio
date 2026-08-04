@@ -27,10 +27,12 @@ const NAV = [
   { path: "/payouts", label: "Payouts", icon: Wallet },
   { path: "/certificates", label: "Certificates", icon: Award },
   { path: "/report", label: "Report", icon: BarChart3 },
-  { path: "/templates", label: "Firms & Rules", icon: SlidersHorizontal },
 ];
 
-const ADMIN_NAV = [{ path: "/people", label: "People", icon: Users }];
+const ADMIN_NAV = [
+  { path: "/people", label: "People", icon: Users },
+  { path: "/templates", label: "Firms & Rules", icon: SlidersHorizontal },
+];
 
 const PAGE_META = {
   "/": ["Overview", "Your prop trading performance, at a glance."],
@@ -208,13 +210,13 @@ function OverviewPage() {
 }
 
 function AccountsPage() {
-  const { derived, templates, editingAccount, setEditingAccount, createAccount, updateAccount, deleteAccount, setSelectedId, archiveAccount, unarchiveAccount } = useApp();
+  const { derived, templates, firms, editingAccount, setEditingAccount, createAccount, updateAccount, deleteAccount, setSelectedId, archiveAccount, unarchiveAccount } = useApp();
   const { firm, status } = useSearch({ from: "/accounts" });
   const navigate = useNavigate();
 
   return (
     <AccountsView
-      derived={derived} templates={templates}
+      derived={derived} templates={templates} firms={firms}
       createAccount={createAccount} updateAccount={updateAccount} deleteAccount={deleteAccount}
       editingAccount={editingAccount} setEditingAccount={setEditingAccount}
       filterFirm={firm} setFilterFirm={(v) => navigate({ search: (prev) => ({ ...prev, firm: v }) })}
@@ -272,8 +274,19 @@ function CertificatesPage() {
 }
 
 function TemplatesPage() {
-  const { templates, createTemplate, updateTemplate, deleteTemplate } = useApp();
-  return <TemplatesView templates={templates} createTemplate={createTemplate} updateTemplate={updateTemplate} deleteTemplate={deleteTemplate} />;
+  const { session, templates, firms, createTemplate, updateTemplate, deleteTemplate, createFirm, updateFirm, deleteFirm } = useApp();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!session?.isAdmin) navigate({ to: "/" });
+  }, [session, navigate]);
+  if (!session?.isAdmin) return null;
+  return (
+    <TemplatesView
+      templates={templates} firms={firms}
+      createTemplate={createTemplate} updateTemplate={updateTemplate} deleteTemplate={deleteTemplate}
+      createFirm={createFirm} updateFirm={updateFirm} deleteFirm={deleteFirm}
+    />
+  );
 }
 
 function CopytradingPage() {

@@ -1,25 +1,27 @@
 import { useState } from "react";
-import { FIRMS, STATUS_META } from "../constants";
+import { STATUS_META } from "../constants";
 import { DatePicker } from "../components/DatePicker";
 import { Select } from "../components/Select";
 
-export function AccountForm({ initial, templates, onSave, onCancel, saving }) {
+export function AccountForm({ initial, templates, firms, onSave, onCancel, saving }) {
+  const defaultFirmId = firms[0]?.id || "";
   const blank = {
-    firm: FIRMS[0], template: "", size: "", platform: "MatchTrader",
+    firmId: defaultFirmId, templateId: "", size: "", platform: "MatchTrader",
     creationDate: "", terminationDate: "", status: "phase_1", drawdown: "Static", maxLoss: "", dailyLoss: "",
     costs: [{ label: "Challenge fee", amount: "" }],
-    platformLogin: "", platformPassword: "", platformInvestorPassword: "", platformLink: "",
+    platformLogin: "", platformPassword: "", platformInvestorPassword: "",
   };
   const [form, setForm] = useState(initial ? { ...blank, ...initial, costs: initial.costs || blank.costs } : blank);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  function handleTemplateChange(name) {
-    set("template", name);
-    const tmpl = templates.find((t) => t.firm === form.firm && t.name === name);
+  function handleTemplateChange(templateId) {
+    set("templateId", templateId);
+    const tmpl = templates.find((t) => t.id === templateId);
     if (tmpl) {
       setForm((f) => ({
         ...f,
-        template: name,
+        templateId,
+        firmId: tmpl.firmId,
         maxLoss: tmpl.maxLoss || "",
         dailyLoss: tmpl.dailyLoss || "",
         drawdown: tmpl.drawdown || f.drawdown,
@@ -27,9 +29,14 @@ export function AccountForm({ initial, templates, onSave, onCancel, saving }) {
     }
   }
 
+  function handleFirmChange(firmId) {
+    set("firmId", firmId);
+    set("templateId", "");
+  }
+
   function submit(e) {
     e.preventDefault();
-    if (!form.firm || !form.template || !form.size) return;
+    if (!form.firmId || !form.templateId || !form.size) return;
     onSave({
       ...form,
       size: parseFloat(form.size) || 0,
@@ -37,22 +44,22 @@ export function AccountForm({ initial, templates, onSave, onCancel, saving }) {
     });
   }
 
-  const firmTemplates = templates.filter((t) => t.firm === form.firm);
+  const firmTemplates = templates.filter((t) => t.firmId === form.firmId);
 
   return (
     <form onSubmit={submit} className="rounded-lg p-4 mb-5" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
         <div>
           <div className="pd-label mb-1">Firm</div>
-          <Select value={form.firm} onChange={(e) => set("firm", e.target.value)}>
-            {FIRMS.map((f) => <option key={f}>{f}</option>)}
+          <Select value={form.firmId} onChange={(e) => handleFirmChange(e.target.value)}>
+            {firms.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
           </Select>
         </div>
         <div>
           <div className="pd-label mb-1">Template</div>
-          <Select value={form.template} onChange={(e) => handleTemplateChange(e.target.value)}>
+          <Select value={form.templateId} onChange={(e) => handleTemplateChange(e.target.value)}>
             <option value="">Select...</option>
-            {firmTemplates.map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}
+            {firmTemplates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </Select>
         </div>
         <div><div className="pd-label mb-1">Account size ($)</div><input required className="pd-input" placeholder="50000" value={form.size} onChange={(e) => set("size", e.target.value)} /></div>
@@ -78,7 +85,6 @@ export function AccountForm({ initial, templates, onSave, onCancel, saving }) {
         <div><div className="pd-label mb-1">Login ID</div><input className="pd-input" placeholder="FP-208471" value={form.platformLogin} onChange={(e) => set("platformLogin", e.target.value)} /></div>
         <div><div className="pd-label mb-1">Password</div><input className="pd-input" placeholder="••••••••" value={form.platformPassword} onChange={(e) => set("platformPassword", e.target.value)} /></div>
         <div><div className="pd-label mb-1">Investor Password</div><input className="pd-input" placeholder="••••••••" value={form.platformInvestorPassword} onChange={(e) => set("platformInvestorPassword", e.target.value)} /></div>
-        <div><div className="pd-label mb-1">Platform Link</div><input className="pd-input" placeholder="https://..." value={form.platformLink} onChange={(e) => set("platformLink", e.target.value)} /></div>
       </div>
 
       <div className="flex gap-2 justify-end">

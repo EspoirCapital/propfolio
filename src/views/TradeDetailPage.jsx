@@ -130,7 +130,7 @@ export function TradeDetailPage({ tradeId, trades, derived, settings, onBack }) 
                 {[
                   { label: "Size", value: `$${(account.size / 1000).toFixed(0)}K` },
                   { label: "Status", value: account.status },
-                  { label: "Firm", value: account.firm },
+                  { label: "Firm", value: account.firmName || account.firm },
                   { label: "Platform", value: account.platform },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between">

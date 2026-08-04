@@ -1,7 +1,10 @@
 import { useMemo } from "react";
 
-export function useDerived(accounts, trades, payouts, templates) {
+export function useDerived(accounts, trades, payouts, templates, firms) {
   return useMemo(() => {
+    const firmsById = new Map(firms.map((f) => [f.id, f]));
+    const templatesById = new Map(templates.map((t) => [t.id, t]));
+
     const withComputed = accounts.map((acc) => {
       const cost = acc.costs.reduce((s, c) => s + c.amount, 0);
       const accPayouts = payouts.filter((p) => p.accountId === acc.id);
@@ -10,18 +13,22 @@ export function useDerived(accounts, trades, payouts, templates) {
       const tradePnl = accTrades.reduce((s, t) => s + (t.pnl || 0), 0);
       const tradeCount = accTrades.length;
 
-      const tmpl = templates.find((t) => t.firm === acc.firm && t.name === acc.template);
+      const firm = firmsById.get(acc.firmId);
+      const template = templatesById.get(acc.templateId);
+      const firmName = firm?.name ?? acc.firm ?? "";
+      const templateName = template?.name ?? acc.template ?? "";
+
       const sortedPayouts = [...accPayouts].sort((a, b) => (a.requestedDate > b.requestedDate ? 1 : -1));
       const firstPayout = sortedPayouts[0];
-      const hasRefund = tmpl?.feeRefund && firstPayout;
+      const hasRefund = template?.feeRefund && firstPayout;
       const refund = hasRefund ? Math.abs(acc.costs[0]?.amount || 0) : 0;
       const refundDate = hasRefund ? firstPayout.requestedDate : null;
 
       let targetPct = null;
       let targetGoal = null;
       if (["phase_1", "phase_2", "phase_3"].includes(acc.status)) {
-        if (tmpl && tmpl.target && tmpl.target !== "—") {
-          const parts = tmpl.target.split("/").map((s) => s.trim());
+        if (template && template.target && template.target !== "—") {
+          const parts = template.target.split("/").map((s) => s.trim());
           const phaseIdx = { phase_1: 0, phase_2: 1, phase_3: 2 }[acc.status];
           const targetStr = parts[phaseIdx];
           if (targetStr) {
@@ -35,7 +42,7 @@ export function useDerived(accounts, trades, payouts, templates) {
         }
       }
 
-      return { ...acc, cost, received, refund, refundDate, net: received + refund - cost, tradePnl, tradeCount, targetPct, targetGoal };
+      return { ...acc, firm, template, firmName, templateName, cost, received, refund, refundDate, net: received + refund - cost, tradePnl, tradeCount, targetPct, targetGoal };
     });
     const totals = withComputed.reduce(
       (acc, a) => ({
@@ -49,5 +56,5 @@ export function useDerived(accounts, trades, payouts, templates) {
     const decidedCount = withComputed.filter((a) => ["funded", "passed", "breached"].includes(a.status)).length;
     const passRate = decidedCount ? Math.round((passCount / decidedCount) * 100) : 0;
     return { accounts: withComputed, totals, passRate };
-  }, [accounts, trades, payouts, templates]);
+  }, [accounts, trades, payouts, templates, firms]);
 }

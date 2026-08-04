@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Pencil, X, LayoutGrid, List, Plus, Archive } from "lucide-react";
-import { FIRMS, STATUS_META } from "../constants";
+import { STATUS_META } from "../constants";
 import { money, formatDateUK, friendlyError, groupAccountsByChain } from "../utils";
 import { KpiTile } from "../components/KpiTile";
 import { StatusPill } from "../components/StatusPill";
@@ -11,7 +11,7 @@ import { AccountForm } from "./AccountForm";
 import { TicketCard } from "./TicketCard";
 import { JourneyGroup } from "../components/JourneyGroup";
 
-export function AccountsView({ derived, templates, onRowClick, onOpen, createAccount, updateAccount, deleteAccount, editingAccount, setEditingAccount, filterFirm, setFilterFirm, filterStatus, setFilterStatus, archiveAccount, unarchiveAccount }) {
+export function AccountsView({ derived, templates, firms, onRowClick, onOpen, createAccount, updateAccount, deleteAccount, editingAccount, setEditingAccount, filterFirm, setFilterFirm, filterStatus, setFilterStatus, archiveAccount, unarchiveAccount }) {
   const [showForm, setShowForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [viewMode, setViewMode] = useState("card");
@@ -20,7 +20,7 @@ export function AccountsView({ derived, templates, onRowClick, onOpen, createAcc
   const [saving, setSaving] = useState(false);
 
   const filtered = derived.accounts.filter((a) => {
-    if (filterFirm !== "All" && a.firm !== filterFirm) return false;
+    if (filterFirm !== "All" && a.firmName !== filterFirm) return false;
     if (showArchived) return a.archived;
     if (filterStatus !== "All" && a.status !== filterStatus) return false;
     return !a.archived;
@@ -102,7 +102,7 @@ export function AccountsView({ derived, templates, onRowClick, onOpen, createAcc
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Select value={filterFirm} onChange={(e) => setFilterFirm(e.target.value)} style={{ width: "auto", minWidth: 120 }}>
             <option value="All">All firms</option>
-            {FIRMS.map((f) => <option key={f} value={f}>{f}</option>)}
+            {firms.map((f) => <option key={f.id} value={f.name}>{f.name}</option>)}
           </Select>
           <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ width: "auto", minWidth: 120 }} disabled={showArchived}>
             <option value="All">All statuses</option>
@@ -161,7 +161,7 @@ export function AccountsView({ derived, templates, onRowClick, onOpen, createAcc
       {showForm && (
         <div className="mb-5">
           {formError && <div className="mb-3"><ErrorBanner message={formError} onDismiss={() => setFormError("")} /></div>}
-          <AccountForm initial={editingAccount} templates={templates} onSave={handleSave} saving={saving}
+          <AccountForm initial={editingAccount} templates={templates} firms={firms} onSave={handleSave} saving={saving}
             onCancel={() => { setShowForm(false); setEditingAccount(null); setFormError(""); }} />
         </div>
       )}
@@ -201,8 +201,8 @@ export function AccountsView({ derived, templates, onRowClick, onOpen, createAcc
           {filtered.length === 0 && <div className="p-6 text-sm text-center" style={{ color: "var(--slate)" }}>No accounts match this filter.</div>}
           {filtered.map((a) => (
             <div key={a.id} className="pd-row grid items-center text-sm pd-mono" style={{ gridTemplateColumns: "1fr 1.2fr 80px 100px 100px 80px 90px 28px 28px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)", cursor: "pointer" }} onClick={() => onRowClick(a.id)}>
-              <span className="whitespace-nowrap" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{a.firm}</span>
-              <span className="whitespace-nowrap" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{a.template}</span>
+              <span className="whitespace-nowrap" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{a.firmName}</span>
+              <span className="whitespace-nowrap" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{a.templateName}</span>
               <span className="whitespace-nowrap">${(a.size / 1000).toFixed(0)}K</span>
               <span className="whitespace-nowrap"><StatusPill status={a.status} /></span>
               <span className="whitespace-nowrap" style={{ color: "var(--sand-dim)" }}>{a.platform}</span>

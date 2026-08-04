@@ -1,6 +1,6 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
-import { DEFAULT_SETTINGS, DEFAULT_TEMPLATES } from "./seed";
+import { DEFAULT_SETTINGS } from "./seed";
 
 // Code the very first user (the admin) enters to bootstrap the app.
 // Override via the ADMIN_INVITE_CODE environment variable if you want a
@@ -63,11 +63,9 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         await ctx.db.patch(invite._id, { usedById: userId, usedAt: Date.now() });
       }
 
-      // Seed a fresh user with defaults.
+      // Seed a fresh user with defaults. Templates and firms are global and
+      // admin-managed, so only a per-user settings row is created here.
       await ctx.db.insert("settings", { userId, ...DEFAULT_SETTINGS });
-      for (const template of DEFAULT_TEMPLATES) {
-        await ctx.db.insert("templates", { userId, ...template });
-      }
 
       return userId;
     },

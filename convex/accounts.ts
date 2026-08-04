@@ -1,11 +1,11 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, MutationCtx } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
 
 export const accountFields = v.object({
-  firm: v.string(),
-  template: v.string(),
+  firmId: v.id("firms"),
+  templateId: v.id("templates"),
   size: v.number(),
   platform: v.string(),
   creationDate: v.string(),
@@ -18,8 +18,14 @@ export const accountFields = v.object({
   platformLogin: v.string(),
   platformPassword: v.string(),
   platformInvestorPassword: v.string(),
-  platformLink: v.string(),
 });
+
+async function requireValidTemplate(ctx: MutationCtx, templateId: Id<"templates">, firmId: Id<"firms">) {
+  const template = await ctx.db.get(templateId);
+  if (!template) throw new Error("Template not found.");
+  if (template.firmId !== firmId) throw new Error("Template does not belong to that firm.");
+  return template;
+}
 
 export const list = query({
   args: {},
@@ -39,6 +45,7 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) throw new Error("Not signed in.");
+    await requireValidTemplate(ctx, args.templateId, args.firmId);
     const id = await ctx.db.insert("accounts", { ...args, userId, archived: false, notes: "" });
     return id;
   },
@@ -51,6 +58,7 @@ export const update = mutation({
     if (userId === null) throw new Error("Not signed in.");
     const existing = await ctx.db.get(args.id);
     if (!existing || existing.userId !== userId) throw new Error("Account not found.");
+    await requireValidTemplate(ctx, args.templateId, args.firmId);
     const { id, ...fields } = args;
     await ctx.db.patch(id, { ...fields, userId, archived: existing.archived });
     return id;
@@ -192,11 +200,7 @@ export const proceed = mutation({
     const account = await ctx.db.get(args.id);
     if (!account || account.userId !== userId) throw new Error("Account not found.");
 
-    const template = await ctx.db
-      .query("templates")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .filter((q) => q.and(q.eq(q.field("firm"), account.firm), q.eq(q.field("name"), account.template)))
-      .first();
+    const template = account.templateId ? await ctx.db.get(account.templateId) : null;
     const phaseCount = template?.phases ?? 0;
 
     const today = new Date().toISOString().slice(0, 10);
@@ -211,12 +215,12 @@ export const proceed = mutation({
       return null;
     };
     const next = nextStatus(account.status, phaseCount);
-    if (next === null) return args.id;
+    if (next === null || !account.firmId || !account.templateId) return args.id;
 
     const newId = await ctx.db.insert("accounts", {
       userId,
-      firm: account.firm,
-      template: account.template,
+      firmId: account.firmId,
+      templateId: account.templateId,
       size: account.size,
       platform: account.platform,
       drawdown: account.drawdown,
@@ -228,7 +232,6 @@ export const proceed = mutation({
       platformLogin: "",
       platformPassword: "",
       platformInvestorPassword: "",
-      platformLink: "",
       notes: "",
       costs: [],
       archived: false,

@@ -271,7 +271,7 @@ export function CopytradingView({ accounts, clusters, createCluster, updateClust
               <span>Account</span><span>Multiplier</span><span>Risk</span><span>At 1R</span><span>At 2R</span><span>At 3R</span>
             </div>
             <div className="grid items-center text-sm pd-mono" style={{ gridTemplateColumns: "1.2fr 70px 90px 90px 90px 90px", gap: "0 10px", padding: "8px 12px", borderBottom: "1px solid var(--line)", background: "rgba(206,159,82,0.06)" }}>
-              <span className="truncate min-w-0" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "var(--brass)" }}>Master · {simMaster.firm} · ${(simMaster.size / 1000).toFixed(0)}K</span>
+              <span className="truncate min-w-0" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "var(--brass)" }}>Master · {simMaster.firmName || simMaster.firm} · ${(simMaster.size / 1000).toFixed(0)}K</span>
               <span style={{ fontWeight: 600 }}>1x</span>
               <span style={{ color: "var(--sand)" }}>${simMasterRisk.toFixed(0)}</span>
               <span style={{ color: "var(--sage)" }}>${simMasterRisk.toFixed(0)}</span>

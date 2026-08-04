@@ -24,7 +24,7 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
   const accPayouts = payouts.filter((p) => p.accountId === account.id);
   const accCerts = certificates.filter((c) => c.accountId === account.id);
 
-  const template = templates.find((t) => t.firm === account.firm && t.name === account.template);
+  const template = account.template || templates.find((t) => t.id === account.templateId) || null;
   const phaseCount = template?.phases ?? 0;
   const challengeFee = account.costs?.[0]?.amount ?? 0;
 
