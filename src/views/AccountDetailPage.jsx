@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, ExternalLink, Award, Pencil, X, ArrowRight, AlertTriangle, PenLine, Archive, ArchiveRestore } from "lucide-react";
+import { ArrowLeft, ExternalLink, Award, Pencil, X, ArrowRight, AlertTriangle, PenLine, Archive, ArchiveRestore, Link2, Unlink } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useApp } from "../context";
 import { computeOutcome, money, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError, computeMfeMaeStats, computeEv, formatEv, computeHealth, healthAccent, computeDayProfile, computeDayEdge } from "../utils";
@@ -17,12 +17,14 @@ import { AccountPerformanceSummary } from "../components/AccountPerformanceSumma
 import { AiAnalysis } from "../components/AiAnalysis";
 
 export function AccountDetailPage({ accountId, derived, trades, payouts, certificates, settings, templates, updateAccount, onBack, onEdit, onDelete, archiveAccount, unarchiveAccount }) {
-  const { proceed: proceedFn, breach: breachFn } = useApp();
+  const { proceed: proceedFn, breach: breachFn, linkAccounts, unlinkAccount } = useApp();
   const navigate = useNavigate();
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [showProceedConfirm, setShowProceedConfirm] = useState(false);
   const [showBreachConfirm, setShowBreachConfirm] = useState(false);
+  const [showLinkPicker, setShowLinkPicker] = useState(false);
+  const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -65,6 +67,8 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
         .filter((a) => a.chainId === account.chainId)
         .sort((a, b) => (a.creationDate < b.creationDate ? -1 : 1))
     : null;
+
+  const linkCandidates = derived.accounts.filter((a) => a.id !== account.id && !a.archived);
 
   let running = 0;
   const sortedTrades = enrichedTrades.slice().reverse();
@@ -128,6 +132,33 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
     }
   }
 
+  async function handleLink(otherId) {
+    setBusy(true);
+    setActionError("");
+    try {
+      await linkAccounts({ id: account.id, otherId });
+      setShowLinkPicker(false);
+    } catch (err) {
+      setActionError(friendlyError(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleUnlink() {
+    setBusy(true);
+    setActionError("");
+    try {
+      await unlinkAccount(account.id);
+      setShowUnlinkConfirm(false);
+    } catch (err) {
+      setShowUnlinkConfirm(false);
+      setActionError(friendlyError(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function toggleArchive() {
     setBusy(true);
     setActionError("");
@@ -174,6 +205,11 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
             </button>
           )}
           <button className="pd-btn flex items-center gap-1.5" onClick={() => onEdit(account.id)}><Pencil size={13} /> Edit</button>
+          {account.chainId ? (
+            <button className="pd-btn flex items-center gap-1.5" style={{ borderColor: "var(--brass-dim)", color: "var(--brass)" }} onClick={() => setShowUnlinkConfirm(true)} disabled={busy}><Unlink size={13} /> Unlink</button>
+          ) : (
+            <button className="pd-btn flex items-center gap-1.5" onClick={() => setShowLinkPicker(true)} disabled={busy}><Link2 size={13} /> Link</button>
+          )}
           {account.archived ? (
             <button className="pd-btn flex items-center gap-1.5" style={{ borderColor: "var(--sage)", color: "var(--sage)" }} onClick={toggleArchive} disabled={busy}><ArchiveRestore size={13} /> Unarchive</button>
           ) : (
@@ -410,6 +446,48 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
           confirmLabel={busy ? "Working…" : "Confirm"}
           confirmStyle={{ background: "var(--brick)", color: "white", borderColor: "var(--brick)" }}
         />
+      )}
+      {showUnlinkConfirm && (
+        <ConfirmModal
+          title="Unlink from journey"
+          message="Remove this account from its phase journey? Its data stays, but it will no longer be grouped with the other phases."
+          onConfirm={handleUnlink}
+          onCancel={() => setShowUnlinkConfirm(false)}
+          confirmLabel={busy ? "Working…" : "Unlink"}
+          confirmStyle={{ borderColor: "var(--brass-dim)", color: "var(--brass)" }}
+        />
+      )}
+      {showLinkPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,11,15,0.6)" }} onClick={() => setShowLinkPicker(false)}>
+          <div className="rounded-lg p-6 w-full max-w-md" style={{ background: "var(--ink-2)", border: "1px solid var(--line)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="pd-display text-lg" style={{ fontWeight: 600 }}>Link into a journey</h3>
+              <button className="pd-btn" style={{ padding: "4px 6px" }} onClick={() => setShowLinkPicker(false)}><X size={14} /></button>
+            </div>
+            <p className="text-sm mb-4" style={{ color: "var(--slate)", lineHeight: 1.5 }}>
+              Pick another account to group with this one as one phase journey. Accounts already in a journey will merge with it.
+            </p>
+            <div className="max-h-72 overflow-y-auto pd-scrollbar flex flex-col gap-1.5">
+              {linkCandidates.length === 0 && (
+                <div className="p-6 text-center text-sm" style={{ color: "var(--slate)" }}>No other accounts to link.</div>
+              )}
+              {linkCandidates.map((c) => (
+                <button
+                  key={c.id}
+                  className="flex items-center justify-between gap-3 text-left rounded-lg px-3 py-2 transition-colors"
+                  style={{ background: "var(--ledger)", border: "1px solid var(--line)", cursor: "pointer" }}
+                  onClick={() => handleLink(c.id)}
+                >
+                  <span className="flex flex-col min-w-0">
+                    <span className="text-sm truncate">{getAccountLabel(c)}</span>
+                    <span className="pd-mono text-xs" style={{ color: "var(--slate)" }}>{c.firm} · {c.template} · ${(c.size / 1000).toFixed(0)}K</span>
+                  </span>
+                  <StatusPill status={c.status} />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

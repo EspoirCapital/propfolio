@@ -37,6 +37,8 @@ export function AppProvider({ children }) {
   const breachFn = useMutation(api.accounts.breach);
   const archiveFn = useMutation(api.accounts.archive);
   const unarchiveFn = useMutation(api.accounts.unarchive);
+  const linkAccountsFn = useMutation(api.accounts.link);
+  const unlinkAccountFn = useMutation(api.accounts.unlink);
 
   const createTradeFn = useMutation(api.trades.create);
   const updateTradeFn = useMutation(api.trades.update);
@@ -126,6 +128,7 @@ export function AppProvider({ children }) {
       certificates: certificates || [], templates: templates || [], clusters: clusters || [],
       createAccount, updateAccount, deleteAccount,
       proceed: proceedFn, breach: breachFn,
+      linkAccounts: linkAccountsFn, unlinkAccount: unlinkAccountFn,
       createTrade, updateTrade, deleteTrade,
       createPayout, updatePayout, deletePayout,
       createCertificate, updateCertificate, deleteCertificate,

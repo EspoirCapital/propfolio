@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { Id } from "./_generated/dataModel";
 
 export const accountFields = v.object({
   firm: v.string(),
@@ -126,6 +127,57 @@ export const unarchive = mutation({
       .withIndex("by_accountId", (q) => q.eq("accountId", args.id))
       .collect();
     for (const t of trades) await ctx.db.patch(t._id, { archived: false });
+    return args.id;
+  },
+});
+
+// Manually group two accounts (and anything already in either of their chains)
+// into one journey. The chainId is anchored to the earliest-created member so
+// the ordering shown in the UI is stable.
+export const link = mutation({
+  args: { id: v.id("accounts"), otherId: v.id("accounts") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) throw new Error("Not signed in.");
+    const a = await ctx.db.get(args.id);
+    const b = await ctx.db.get(args.otherId);
+    if (!a || a.userId !== userId || !b || b.userId !== userId) throw new Error("Account not found.");
+    if (a._id === b._id) throw new Error("Cannot link an account to itself.");
+
+    const all = await ctx.db
+      .query("accounts")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+    const wanted = new Set<string>();
+    const addChain = (acc: { _id: Id<"accounts">; chainId?: string }) => {
+      wanted.add(acc._id);
+      if (acc.chainId) {
+        for (const o of all) {
+          if (o.chainId === acc.chainId) wanted.add(o._id);
+        }
+      }
+    };
+    addChain(a);
+    addChain(b);
+    const members = all.filter((o) => wanted.has(o._id));
+    const anchor = members.reduce((min, m) => (m.creationDate < min.creationDate ? m : min))._id;
+    for (const m of members) {
+      if (m.chainId !== anchor) await ctx.db.patch(m._id, { chainId: anchor });
+    }
+    return anchor;
+  },
+});
+
+// Pull an account out of its journey, leaving its former chain-mates intact.
+export const unlink = mutation({
+  args: { id: v.id("accounts") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) throw new Error("Not signed in.");
+    const existing = await ctx.db.get(args.id);
+    if (!existing || existing.userId !== userId) throw new Error("Account not found.");
+    if (!existing.chainId) throw new Error("Account is not part of a journey.");
+    await ctx.db.patch(args.id, { chainId: undefined });
     return args.id;
   },
 });
