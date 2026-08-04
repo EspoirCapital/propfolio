@@ -124,4 +124,4 @@ export default defineSchema({
     slaves: v.array(v.object({ accountId: v.id("accounts"), riskMultiplier: v.number() })),
     createdAt: v.string(),
   }).index("by_userId", ["userId"]),
-}, { schemaValidation: false });
+});
