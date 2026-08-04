@@ -248,7 +248,7 @@ function AccountDetailPageRoute() {
 }
 
 function JournalPage() {
-  const { accounts, trades, createTrade, updateTrade, deleteTrade, settings, clusters, copyTrade } = useApp();
+  const { accounts, trades, createTrade, updateTrade, deleteTrade, settings, slavesByMaster, copyTrades } = useApp();
   const { account } = useSearch({ from: "/journal" });
   const navigate = useNavigate();
 
@@ -257,7 +257,7 @@ function JournalPage() {
       accounts={accounts} trades={trades}
       createTrade={createTrade} updateTrade={updateTrade} deleteTrade={deleteTrade}
       settings={settings}
-      clusters={clusters} copyTrade={copyTrade}
+      slavesByMaster={slavesByMaster} copyTrades={copyTrades}
       initialAccountId={account || null}
       onClearInitialAccount={() => navigate({ search: (prev) => { const next = { ...prev }; delete next.account; return next; } })}
     />
@@ -292,8 +292,8 @@ function TemplatesPage() {
 }
 
 function CopytradingPage() {
-  const { derived, clusters, createCluster, updateCluster, deleteCluster } = useApp();
-  return <CopyJournalingView accounts={derived.accounts} clusters={clusters} createCluster={createCluster} updateCluster={updateCluster} deleteCluster={deleteCluster} />;
+  const { accounts, trades, copyLinks, slavesByMaster, setSlaves, copyTrades } = useApp();
+  return <CopyJournalingView accounts={accounts} trades={trades} copyLinks={copyLinks} slavesByMaster={slavesByMaster} setSlaves={setSlaves} copyTrades={copyTrades} />;
 }
 
 function SettingsPage() {

@@ -88,16 +88,13 @@ export const remove = mutation({
       .withIndex("by_accountId", (q) => q.eq("accountId", args.id))
       .collect();
     for (const c of certificates) await ctx.db.delete(c._id);
-    const clusters = await ctx.db
-      .query("clusters")
+    const links = await ctx.db
+      .query("copyLinks")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .collect();
-    for (const cl of clusters) {
-      if (cl.masterAccountId === args.id) {
-        await ctx.db.delete(cl._id);
-      } else {
-        const slaves = cl.slaves.filter((s) => s.accountId !== args.id);
-        await ctx.db.patch(cl._id, { slaves });
+    for (const l of links) {
+      if (l.masterAccountId === args.id || l.slaveAccountId === args.id) {
+        await ctx.db.delete(l._id);
       }
     }
     await ctx.db.delete(args.id);

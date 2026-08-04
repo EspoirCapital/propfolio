@@ -27,7 +27,7 @@ export function AppProvider({ children }) {
   const certificates = useQuery(api.certificates.list);
   const templates = useQuery(api.templates.list);
   const firms = useQuery(api.firms.list);
-  const clusters = useQuery(api.clusters.list);
+  const copyLinks = useQuery(api.copies.list);
   const settingsRow = useQuery(api.settings.get);
   const users = useQuery(api.users.list);
   const invites = useQuery(api.invites.list);
@@ -62,10 +62,8 @@ export function AppProvider({ children }) {
   const updateFirmFn = useMutation(api.firms.update);
   const deleteFirmFn = useMutation(api.firms.remove);
 
-  const createClusterFn = useMutation(api.clusters.create);
-  const updateClusterFn = useMutation(api.clusters.update);
-  const deleteClusterFn = useMutation(api.clusters.remove);
-  const copyTradeFn = useMutation(api.clusters.copyTrade);
+  const setSlavesFn = useMutation(api.copies.setSlaves);
+  const copyTradesFn = useMutation(api.copies.copyTrades);
 
   const updateSettingsFn = useMutation(api.settings.update);
   const updateProfileFn = useMutation(api.users.updateProfile);
@@ -81,7 +79,7 @@ export function AppProvider({ children }) {
   const [editingAccount, setEditingAccount] = useState(null);
 
   const isLoading = authLoading || me === undefined;
-  const dataReady = !isLoading && accounts !== undefined && trades !== undefined && payouts !== undefined && certificates !== undefined && templates !== undefined && firms !== undefined && clusters !== undefined && settingsRow !== undefined;
+  const dataReady = !isLoading && accounts !== undefined && trades !== undefined && payouts !== undefined && certificates !== undefined && templates !== undefined && firms !== undefined && copyLinks !== undefined && settingsRow !== undefined;
 
   const session = useMemo(() => {
     if (!me) return null;
@@ -127,9 +125,16 @@ export function AppProvider({ children }) {
   const updateFirm = (id, data) => updateFirmFn({ id, ...pick(data, FIRM_FIELDS) });
   const deleteFirm = (id) => deleteFirmFn({ id });
 
-  const createCluster = (data) => createClusterFn(data);
-  const updateCluster = (id, data) => updateClusterFn({ id, ...data });
-  const deleteCluster = (id) => deleteClusterFn({ id });
+  const setSlaves = (masterAccountId, slaveAccountIds) => setSlavesFn({ masterAccountId, slaveAccountIds });
+  const copyTrades = (masterAccountId, tradeIds, slaveAccountIds) => copyTradesFn({ masterAccountId, tradeIds, slaveAccountIds });
+
+  const slavesByMaster = useMemo(() => {
+    const map = {};
+    for (const link of copyLinks || []) {
+      (map[link.masterAccountId] = map[link.masterAccountId] || []).push(link.slaveAccountId);
+    }
+    return map;
+  }, [copyLinks]);
 
   return (
     <AppContext.Provider value={{
@@ -137,7 +142,8 @@ export function AppProvider({ children }) {
       session, logout,
       settings, setSettings,
       accounts: accounts || [], trades: trades || [], payouts: payouts || [],
-      certificates: certificates || [], templates: templates || [], firms: firms || [], clusters: clusters || [],
+      certificates: certificates || [], templates: templates || [], firms: firms || [],
+      copyLinks: copyLinks || [], slavesByMaster,
       createAccount, updateAccount, deleteAccount,
       proceed: proceedFn, breach: breachFn,
       linkAccounts: linkAccountsFn, unlinkAccount: unlinkAccountFn,
@@ -146,8 +152,7 @@ export function AppProvider({ children }) {
       createCertificate, updateCertificate, deleteCertificate,
       createTemplate, updateTemplate, deleteTemplate,
       createFirm, updateFirm, deleteFirm,
-      createCluster, updateCluster, deleteCluster,
-      copyTrade: (tradeId, clusterId) => copyTradeFn({ tradeId, clusterId }),
+      setSlaves, copyTrades,
       updateProfile: (data) => updateProfileFn(data),
       changePassword: (currentPassword, newPassword) => changePasswordFn({ currentPassword, newPassword }),
       setUserRole: (id, isAdmin) => setRoleFn({ id, isAdmin }),

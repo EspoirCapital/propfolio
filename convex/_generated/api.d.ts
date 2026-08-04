@@ -13,7 +13,7 @@ import type * as ai from "../ai.js";
 import type * as auth from "../auth.js";
 import type * as bootstrap from "../bootstrap.js";
 import type * as certificates from "../certificates.js";
-import type * as clusters from "../clusters.js";
+import type * as copies from "../copies.js";
 import type * as firms from "../firms.js";
 import type * as http from "../http.js";
 import type * as invites from "../invites.js";
@@ -36,7 +36,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   bootstrap: typeof bootstrap;
   certificates: typeof certificates;
-  clusters: typeof clusters;
+  copies: typeof copies;
   firms: typeof firms;
   http: typeof http;
   invites: typeof invites;

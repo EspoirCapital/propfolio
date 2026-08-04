@@ -118,11 +118,11 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_accountId", ["accountId"]),
 
-  clusters: defineTable({
+  copyLinks: defineTable({
     userId: v.id("users"),
-    name: v.string(),
     masterAccountId: v.id("accounts"),
-    slaves: v.array(v.object({ accountId: v.id("accounts"), riskMultiplier: v.number() })),
-    createdAt: v.string(),
-  }).index("by_userId", ["userId"]),
+    slaveAccountId: v.id("accounts"),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_masterAccountId", ["masterAccountId"]),
 });

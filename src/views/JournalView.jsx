@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Plus, X, ExternalLink, Eye, EyeOff, ArrowRight, Copy } from "lucide-react";
+import { Plus, X, ExternalLink, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { marked } from "marked";
 import { computeOutcome, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, friendlyError } from "../utils";
@@ -9,7 +9,7 @@ import { DatePicker } from "../components/DatePicker";
 import { Select } from "../components/Select";
 import { ErrorBanner } from "../components/ErrorBanner";
 
-export function JournalView({ accounts, trades, createTrade, updateTrade, deleteTrade, settings, clusters = [], copyTrade, initialAccountId, onClearInitialAccount }) {
+export function JournalView({ accounts, trades, createTrade, updateTrade, deleteTrade, settings, slavesByMaster = {}, copyTrades, initialAccountId, onClearInitialAccount }) {
   const [filterAcc, setFilterAcc] = useState(initialAccountId || "All");
   const [showForm, setShowForm] = useState(false);
   const [editingTrade, setEditingTrade] = useState(null);
@@ -17,7 +17,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [copyCluster, setCopyCluster] = useState("");
+  const [copySlaves, setCopySlaves] = useState(false);
   const [copying, setCopying] = useState(false);
   const [copyMsg, setCopyMsg] = useState("");
 
@@ -37,7 +37,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
 
   const filtered = trades.filter((t) => !t.archived && (filterAcc === "All" || t.accountId === filterAcc)).sort((a, b) => (a.date < b.date ? 1 : -1));
 
-  const masterClusters = clusters.filter((cl) => cl.masterAccountId === form.accountId);
+  const masterSlaves = (slavesByMaster[form.accountId] || []).filter((id) => id !== form.accountId);
 
   const enrichedFiltered = useMemo(() => {
     return filtered.map((t) => {
@@ -79,11 +79,11 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
         await updateTrade(editingTrade.id, parsed);
       } else {
         const newTradeId = await createTrade(parsed);
-        if (copyCluster && copyTrade) {
+        if (copySlaves && copyTrades && masterSlaves.length > 0) {
           setCopying(true);
           try {
-            const res = await copyTrade(newTradeId, copyCluster);
-            setCopyMsg(`${res.copied} trade${res.copied === 1 ? "" : "s"} copied to the group.`);
+            const res = await copyTrades(form.accountId, [newTradeId], masterSlaves);
+            setCopyMsg(`${res.copied} copied trade${res.copied === 1 ? "" : "s"} added to slave accounts.`);
           } catch (err) {
             setCopyMsg("");
             setFormError(friendlyError(err));
@@ -95,7 +95,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
       setShowForm(false);
       setEditingTrade(null);
       setNotesMode("edit");
-      setCopyCluster("");
+      setCopySlaves(false);
       setCopyMsg("");
       setForm(defaultForm);
     } catch (err) {
@@ -134,7 +134,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
             </Link>
           )}
         </div>
-        <button className="pd-btn pd-btn-primary flex items-center gap-1.5" onClick={() => { setEditingTrade(null); setShowForm(true); setFormError(""); setCopyCluster(""); setCopyMsg(""); setForm({ ...defaultForm, accountId: filterAcc !== "All" ? filterAcc : accounts[0]?.id || "" }); setNotesMode("edit"); }}><Plus size={14} /> Log trade</button>
+        <button className="pd-btn pd-btn-primary flex items-center gap-1.5" onClick={() => { setEditingTrade(null); setShowForm(true); setFormError(""); setCopySlaves(false); setCopyMsg(""); setForm({ ...defaultForm, accountId: filterAcc !== "All" ? filterAcc : accounts[0]?.id || "" }); setNotesMode("edit"); }}><Plus size={14} /> Log trade</button>
       </div>
 
       {showForm && (
@@ -177,20 +177,17 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
             </div>
           </div>
 
-          {!editingTrade && masterClusters.length > 0 && (
+          {!editingTrade && masterSlaves.length > 0 && (
             <div className="rounded-md p-3 mb-3 flex items-center gap-4 justify-between flex-wrap" style={{ background: "var(--ink-2)", border: "1px solid var(--brass-dim)" }}>
               {copyMsg ? (
                 <span className="text-sm" style={{ color: "var(--sage)" }}>{copyMsg}</span>
               ) : (
                 <>
-                  <span className="pd-label flex items-center gap-1.5 shrink-0" style={{ color: "var(--brass)" }}><Copy size={12} /> Copy to cluster</span>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <Select style={{ width: "auto", minWidth: 190 }} value={copyCluster} onChange={(e) => setCopyCluster(e.target.value)}>
-                      <option value="">Don't copy</option>
-                      {masterClusters.map((cl) => <option key={cl.id} value={cl.id}>{cl.name} · {cl.slaves.length} slave{cl.slaves.length === 1 ? "" : "s"}</option>)}
-                    </Select>
-                    <span className="text-xs" style={{ color: "var(--slate)" }}>Risk, lots & P&L scale by size-ratio × multiplier</span>
-                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer shrink-0" style={{ color: "var(--brass)" }}>
+                    <input type="checkbox" checked={copySlaves} onChange={(e) => setCopySlaves(e.target.checked)} />
+                    <span className="pd-label" style={{ color: "inherit", margin: 0 }}>Copy to {masterSlaves.length} slave account{masterSlaves.length === 1 ? "" : "s"}</span>
+                  </label>
+                  <span className="text-xs" style={{ color: "var(--slate)" }}>scaled by slave ÷ master account size</span>
                 </>
               )}
             </div>
