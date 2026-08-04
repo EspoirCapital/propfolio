@@ -20,6 +20,13 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
     }),
   ],
   callbacks: {
+    // Runs right before every sign-in session is persisted (credentials,
+    // OAuth, etc.). Reject it here so a banned user can't get back in even
+    // with a correct password.
+    async beforeSessionCreation(ctx, { userId }) {
+      const user = await ctx.db.get(userId);
+      if (user?.banned) throw new Error("This account has been suspended.");
+    },
     // Only runs during sign-up (createAccount), never on a repeat sign-in.
     async createOrUpdateUser(ctx, args) {
       if (args.existingUserId) return args.existingUserId;

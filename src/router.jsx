@@ -305,13 +305,13 @@ function ReportPage() {
 }
 
 function PeoplePage() {
-  const { session, users, invites, generateInvite, revokeInvite, setUserRole } = useApp();
+  const { session, users, invites, generateInvite, revokeInvite, setUserRole, setUserBanned } = useApp();
   const navigate = useNavigate();
   useEffect(() => {
     if (!session?.isAdmin) navigate({ to: "/" });
   }, [session, navigate]);
   if (!session?.isAdmin) return null;
-  return <AdminView users={users} invites={invites} generateInvite={generateInvite} revokeInvite={revokeInvite} setUserRole={setUserRole} currentUserId={session?.userId} />;
+  return <AdminView users={users} invites={invites} generateInvite={generateInvite} revokeInvite={revokeInvite} setUserRole={setUserRole} setUserBanned={setUserBanned} currentUserId={session?.userId} />;
 }
 
 const rootRoute = createRootRoute({ component: Layout });

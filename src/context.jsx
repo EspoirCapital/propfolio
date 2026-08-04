@@ -69,6 +69,7 @@ export function AppProvider({ children }) {
   const updateSettingsFn = useMutation(api.settings.update);
   const updateProfileFn = useMutation(api.users.updateProfile);
   const setRoleFn = useMutation(api.users.setRole);
+  const setBannedFn = useAction(api.users.setBanned);
 
   const generateInviteFn = useMutation(api.invites.generate);
   const revokeInviteFn = useMutation(api.invites.revoke);
@@ -148,6 +149,7 @@ export function AppProvider({ children }) {
       updateProfile: (data) => updateProfileFn(data),
       changePassword: (currentPassword, newPassword) => changePasswordFn({ currentPassword, newPassword }),
       setUserRole: (id, isAdmin) => setRoleFn({ id, isAdmin }),
+      setUserBanned: (id, banned) => setBannedFn({ id, banned }),
       users: users || [], invites: invites || [],
       generateInvite: () => generateInviteFn(),
       revokeInvite: (id) => revokeInviteFn({ id }),

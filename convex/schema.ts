@@ -13,6 +13,7 @@ export default defineSchema({
     phoneVerificationTime: v.optional(v.number()),
     isAnonymous: v.optional(v.boolean()),
     isAdmin: v.optional(v.boolean()),
+    banned: v.optional(v.boolean()),
     inviteCode: v.optional(v.string()),
   })
     .index("email", ["email"])

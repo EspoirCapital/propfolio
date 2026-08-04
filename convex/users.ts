@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation, action, internalQuery } from "./_generated/server";
+import { query, mutation, action, internalQuery, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId, getAuthSessionId, retrieveAccount, modifyAccountCredentials, invalidateSessions } from "@convex-dev/auth/server";
 export const me = query({
@@ -38,6 +38,7 @@ export const list = query({
         name: r.name ?? "",
         email: r.email ?? "",
         isAdmin: r.isAdmin ?? false,
+        banned: r.banned ?? false,
         createdAt: r._creationTime,
       }))
       .sort((a, b) => a.createdAt - b.createdAt);
@@ -55,6 +56,34 @@ export const setRole = mutation({
     const target = await ctx.db.get(args.id);
     if (!target) throw new Error("User not found.");
     await ctx.db.patch(args.id, { isAdmin: args.isAdmin });
+    return args.id;
+  },
+});
+
+export const setBanned = action({
+  args: { id: v.id("users"), banned: v.boolean() },
+  handler: async (ctx, args) => {
+    // Validate + persist the flag first (so the ban holds even if the
+    // session-removal step below fails), then kick their active sessions.
+    await ctx.runMutation(internal.users.setBannedRecord, { id: args.id, banned: args.banned });
+    if (args.banned) {
+      await invalidateSessions(ctx, { userId: args.id });
+    }
+    return args.id;
+  },
+});
+
+export const setBannedRecord = internalMutation({
+  args: { id: v.id("users"), banned: v.boolean() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) throw new Error("Not signed in.");
+    const actor = await ctx.db.get(userId);
+    if (!actor?.isAdmin) throw new Error("Only admins can ban users.");
+    if (args.id === userId) throw new Error("You cannot ban yourself.");
+    const target = await ctx.db.get(args.id);
+    if (!target) throw new Error("User not found.");
+    await ctx.db.patch(args.id, { banned: args.banned });
     return args.id;
   },
 });
