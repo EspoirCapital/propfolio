@@ -379,6 +379,154 @@ select.pd-input {
   color: var(--slate);
 }
 
+/* ── People / access console ─────────────────────────── */
+.pd-btn-action {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--ledger-raised);
+  color: var(--slate);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.pd-btn-action:hover {
+  border-color: var(--brass-dim);
+  color: var(--sand);
+}
+.pd-btn-action.active-role {
+  background: rgba(206, 159, 82, 0.12);
+  border-color: var(--brass-dim);
+  color: var(--brass);
+}
+.pd-btn-danger {
+  border-color: var(--brick-dim);
+  color: var(--brick);
+  background: transparent;
+}
+.pd-btn-danger:hover {
+  background: rgba(193, 89, 75, 0.12);
+  border-color: var(--brick);
+  color: #e08a7c;
+}
+.pd-btn-restore {
+  border-color: var(--sage-dim);
+  color: var(--sage);
+  background: rgba(111, 176, 139, 0.08);
+}
+.pd-btn-restore:hover {
+  background: rgba(111, 176, 139, 0.16);
+  border-color: var(--sage);
+  color: #9fd0b4;
+}
+.pd-btn-action:disabled,
+.pd-btn-danger:disabled,
+.pd-btn-restore:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.pd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.pd-chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.pd-chip.chip-suspended { color: var(--brick); background: rgba(193, 89, 75, 0.1); }
+.pd-chip.chip-active { color: var(--sage); background: rgba(111, 176, 139, 0.1); }
+.pd-chip.chip-admin { color: var(--brass); background: rgba(206, 159, 82, 0.1); }
+.pd-chip.chip-guest { color: var(--slate); background: var(--ledger-raised); }
+.pd-chip.chip-admin::before { background: var(--brass); }
+.pd-chip.chip-active::before { background: var(--sage); }
+.pd-chip.chip-suspended::before { background: var(--brick); }
+.pd-chip.chip-guest::before { background: var(--slate); }
+
+.pd-search {
+  position: relative;
+}
+.pd-search svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.pd-search input {
+  padding-left: 30px;
+}
+
+/* ── Confirmation / dialog ──────────────────────────── */
+.pd-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(9, 10, 13, 0.66);
+  backdrop-filter: blur(2px);
+  animation: pd-fade-in 0.18s ease backwards;
+}
+@keyframes pd-pop {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pd-dialog {
+  width: 100%;
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.7);
+  animation: pd-pop 0.18s cubic-bezier(0.16, 0.84, 0.44, 1) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-backdrop, .pd-dialog { animation: none; }
+}
+.pd-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 0;
+}
+.pd-dialog-body {
+  padding: 14px 20px 6px;
+}
+.pd-dialog-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px 18px;
+}
+.pd-detail-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--line-soft);
+}
+.pd-detail-row:last-child { border-bottom: none; }
+
 .pd-markdown {
   color: var(--sand-dim);
   line-height: 1.55;

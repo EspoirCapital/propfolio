@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Copy, Check, X, ShieldCheck, Shield, Ban, RotateCcw } from "lucide-react";
+import { Plus, Copy, Check, X, Search, Ban, RotateCcw, ShieldCheck } from "lucide-react";
 import { friendlyError } from "../utils";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { ErrorBanner } from "../components/ErrorBanner";
@@ -216,17 +216,19 @@ export function AdminView({ users, userStats = [], invites, generateInvite, revo
       <div className="rounded-lg p-4" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
         <div className="pd-eyebrow mb-3">People</div>
         <div className="mb-3">
-          <input
-            className="pd-input"
-            placeholder="Search by name or email…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ maxWidth: 320 }}
-          />
+          <div className="pd-search" style={{ maxWidth: 320 }}>
+            <Search size={14} style={{ color: "var(--slate)" }} />
+            <input
+              className="pd-input"
+              placeholder="Search by name or email…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
         <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)", overflowX: "auto" }}>
-          <div className="grid pd-label items-center" style={{ gridTemplateColumns: "1.3fr 1.4fr 96px 92px 96px 74px 110px 110px 70px", gap: "0 12px", background: "var(--ledger-raised)", borderBottom: "1px solid var(--line)", padding: "10px 16px", minWidth: 980 }}>
-            <span>Name</span><span>Email</span><span>Role</span><span>Joined</span><span>Active</span><span>WR%</span><span>Payouts</span><span>Received</span><span>Net</span>
+          <div className="grid pd-label items-center" style={{ gridTemplateColumns: "minmax(180px,1.3fr) minmax(160px,1.4fr) 86px 92px 84px 78px 84px 104px 104px 96px", gap: "0 12px", background: "var(--ledger-raised)", borderBottom: "1px solid var(--line)", padding: "10px 16px", minWidth: 1020 }}>
+            <span>Name</span><span>Email</span><span>Role</span><span>Joined</span><span>Active</span><span>WR%</span><span>Payouts</span><span>Received</span><span>Net</span><span className="text-right">Access</span>
           </div>
           {users
             .filter((u) => {
@@ -239,61 +241,55 @@ export function AdminView({ users, userStats = [], invites, generateInvite, revo
             const st = statsByUser[u.id];
             const netColor = st && st.net < 0 ? "var(--brick)" : "var(--sage)";
             return (
-            <div key={u.id} className="pd-row grid items-center text-sm" style={{ gridTemplateColumns: "1.3fr 1.4fr 96px 92px 96px 74px 110px 110px 70px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)", opacity: u.banned ? 0.55 : 1, minWidth: 980 }}>
-              <span className="min-w-0 truncate" style={{ color: "var(--sand)", fontWeight: 500 }}>
+            <div key={u.id} className="pd-row grid items-center text-sm" style={{ gridTemplateColumns: "minmax(180px,1.3fr) minmax(160px,1.4fr) 86px 92px 84px 78px 84px 104px 104px 96px", gap: "0 12px", padding: "11px 16px", borderBottom: "1px solid var(--line)", background: u.banned ? "rgba(193,89,75,0.06)" : "transparent", minWidth: 1020 }}>
+              <span className="min-w-0 truncate" style={{ color: u.banned ? "var(--sand-dim)" : "var(--sand)", fontWeight: 500 }}>
                 {u.name || "—"}
-                {isSelf && <span className="pd-mono text-xs ml-1.5" style={{ color: "var(--brass)" }}>(you)</span>}
-                {u.banned && <span className="pd-mono text-xs ml-1.5" style={{ color: "var(--brick)" }}>BANNED</span>}
+                {isSelf && <span style={{ color: "var(--brass)" }}> (you)</span>}
               </span>
-              <span className="min-w-0 truncate pd-mono text-sm" style={{ color: "var(--slate)" }}>{u.email}</span>
+              <span className="min-w-0 truncate pd-mono text-[13px]" style={{ color: "var(--slate)" }}>{u.email}</span>
               <button
                 onClick={() => toggleRole(u)}
-                disabled={isSelf}
-                title={isSelf ? "You can't change your own role" : u.isAdmin ? "Remove admin" : "Make admin"}
-                className="flex items-center gap-1.5 justify-center pd-mono text-xs"
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: 6,
-                  cursor: isSelf ? "not-allowed" : "pointer",
-                  color: u.isAdmin ? "var(--brass)" : "var(--slate)",
-                  background: u.isAdmin ? "rgba(197,160,90,0.12)" : "transparent",
-                  border: `1px solid ${u.isAdmin ? "var(--brass-dim)" : "var(--line)"}`,
-                  opacity: isSelf ? 0.6 : 1,
-                }}
+                disabled={isSelf || u.banned}
+                title={isSelf ? "You can't change your own role" : "Toggle admin access"}
+                className={`pd-btn-action ${u.isAdmin ? "active-role" : ""}`}
               >
-                {u.isAdmin ? <ShieldCheck size={12} /> : <Shield size={12} />}
+                {u.isAdmin ? <ShieldCheck size={12} /> : null}
                 {u.isAdmin ? "ADMIN" : "USER"}
               </button>
-              <span className="whitespace-nowrap pd-mono text-sm" style={{ color: "var(--slate)" }}>{formatDate(u.createdAt)}</span>
-              <span className="whitespace-nowrap pd-mono text-sm" style={{ color: "var(--sand)" }}>{st ? st.activeAccounts : "—"}</span>
-              <span className="whitespace-nowrap pd-mono text-sm" style={{ color: st && st.winRate !== null ? "var(--sand)" : "var(--slate)" }}>{st && st.winRate !== null ? `${st.winRate}%` : "—"}</span>
-              <span className="whitespace-nowrap pd-mono text-sm" style={{ color: st ? "var(--sand)" : "var(--slate)" }}>{st ? st.payoutCount : "—"}</span>
-              <span className="whitespace-nowrap pd-mono text-sm" style={{ color: st ? "var(--sage)" : "var(--slate)" }}>{st ? money(st.totalReceived) : "—"}</span>
-              <span className="whitespace-nowrap pd-mono text-sm" style={{ color: st ? netColor : "var(--slate)" }}>{st ? money(st.net) : "—"}</span>
-              <button
-                onClick={() => setBanTarget({ id: u.id, name: u.name || u.email, banned: u.banned })}
-                disabled={isSelf}
-                title={isSelf ? "You can't ban yourself" : u.banned ? "Restore access" : "Ban this user"}
-                className="flex items-center gap-1.5 justify-center pd-mono text-xs"
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: 6,
-                  cursor: isSelf ? "not-allowed" : "pointer",
-                  color: u.banned ? "var(--sage)" : "var(--brick)",
-                  background: u.banned ? "rgba(126,157,108,0.12)" : "transparent",
-                  border: `1px solid ${u.banned ? "var(--sage-dim)" : "var(--brick-dim)"}`,
-                  opacity: isSelf ? 0 : 1,
-                  visibility: isSelf ? "hidden" : "visible",
-                }}
-              >
-                {u.banned ? <RotateCcw size={12} /> : <Ban size={12} />}
-                {u.banned ? "UNBAN" : "BAN"}
-              </button>
+              <span className="whitespace-nowrap pd-mono text-[13px]" style={{ color: "var(--slate)" }}>{formatDate(u.createdAt)}</span>
+              <span className="whitespace-nowrap pd-mono text-[13px]" style={{ color: "var(--sand)" }}>{st ? st.activeAccounts : "—"}</span>
+              <span className="whitespace-nowrap pd-mono text-[13px]" style={{ color: st && st.winRate !== null ? "var(--sand)" : "var(--slate)" }}>{st && st.winRate !== null ? `${st.winRate}%` : "—"}</span>
+              <span className="whitespace-nowrap pd-mono text-[13px]" style={{ color: st ? "var(--sand)" : "var(--slate)" }}>{st ? st.payoutCount : "—"}</span>
+              <span className="whitespace-nowrap pd-mono text-[13px]" style={{ color: st ? "var(--sage)" : "var(--slate)" }}>{st ? money(st.totalReceived) : "—"}</span>
+              <span className="whitespace-nowrap pd-mono text-[13px]" style={{ color: st ? netColor : "var(--slate)" }}>{st ? money(st.net) : "—"}</span>
+              <div className="flex items-center justify-end">
+                {u.banned ? (
+                  <div className="flex items-center gap-2">
+                    <span className="pd-chip chip-suspended">Suspended</span>
+                    <button
+                      onClick={() => setBanTarget({ id: u.id, name: u.name || u.email, email: u.email, role: u.isAdmin ? "Admin" : "User", joined: u.createdAt, banned: true })}
+                      className="pd-btn-action pd-btn-restore"
+                      title="Restore access"
+                    >
+                      <RotateCcw size={12} /> Restore
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setBanTarget({ id: u.id, name: u.name || u.email, email: u.email, role: u.isAdmin ? "Admin" : "User", joined: u.createdAt })}
+                    disabled={isSelf}
+                    title={isSelf ? "You can't ban yourself" : "Suspend this member"}
+                    className="pd-btn-action pd-btn-danger"
+                  >
+                    <Ban size={12} /> Ban
+                  </button>
+                )}
+              </div>
             </div>
           );
           })}
           {users.filter((u) => { const q = search.trim().toLowerCase(); return !q || (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q); }).length === 0 && (
-            <div className="text-sm pd-mono" style={{ padding: "10px 16px", color: "var(--slate)" }}>{users.length === 0 ? "No users found." : "No users match your search."}</div>
+            <div className="text-sm pd-mono" style={{ padding: "12px 16px", color: "var(--slate)" }}>{users.length === 0 ? "No users found." : "No users match your search."}</div>
           )}
         </div>
       </div>
@@ -310,12 +306,18 @@ export function AdminView({ users, userStats = [], invites, generateInvite, revo
 
       {banTarget && (
         <ConfirmModal
-          title={banTarget.banned ? "Restore access" : "Ban user"}
+          tone="danger"
+          eyebrow="Access control"
+          title={banTarget.banned ? "Restore member" : `Suspend ${banTarget.name}`}
+          detail={[
+            { label: "Member", value: banTarget.email },
+            { label: "Role", value: banTarget.role },
+            { label: "Joined", value: formatDate(banTarget.joined) },
+          ]}
           message={banTarget.banned
-            ? `Restore access for ${banTarget.name}? They'll be able to sign in again.`
-            : `Ban ${banTarget.name}? They'll be logged out immediately and can't sign back in until you unban them.`}
-          confirmLabel={banTarget.banned ? "Restore" : "Ban"}
-          confirmStyle={banTarget.banned ? { borderColor: "var(--sage-dim)", color: "var(--sage)" } : undefined}
+            ? `Reinstate access. They'll be able to sign in again immediately.`
+            : `They'll be logged out right away and barred from signing back in, while their data stays intact. You can restore access anytime.`}
+          confirmLabel={banTarget.banned ? "Restore access" : "Suspend member"}
           onConfirm={confirmBan}
           onCancel={() => setBanTarget(null)}
         />
