@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Plus, X, Pencil, Link as LinkIcon } from "lucide-react";
-import { useQuery, useMutation } from "convex/react";
+import { Plus, X, Pencil } from "lucide-react";
+import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { friendlyError } from "../utils";
 import { ConfirmModal } from "../components/ConfirmModal";
@@ -31,8 +31,7 @@ function buildTargetStr(targets) {
 const firmDefaultForm = { name: "", platformLink: "" };
 
 export function TemplatesView({ templates, firms, createTemplate, updateTemplate, deleteTemplate, createFirm, updateFirm, deleteFirm }) {
-  const migrationStatus = useQuery(api.migrations.status);
-  const runMigration = useMutation(api.migrations.migrateRefs);
+  const seedDefaults = useMutation(api.bootstrap.seedDefaults);
 
   const [showForm, setShowForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
@@ -44,8 +43,7 @@ export function TemplatesView({ templates, firms, createTemplate, updateTemplate
   const [editingFirm, setEditingFirm] = useState(null);
   const [firmForm, setFirmForm] = useState(firmDefaultForm);
   const [deleteFirmTarget, setDeleteFirmTarget] = useState(null);
-  const [migrating, setMigrating] = useState(false);
-  const [migrationMsg, setMigrationMsg] = useState("");
+  const [seeding, setSeeding] = useState(false);
 
   const defaultForm = { firmId: firms[0]?.id || "", name: "", phases: 2, target: "", dailyLoss: "", maxLoss: "", drawdown: "Static", consistency: "", feeRefund: false, platforms: "" };
   const [form, setForm] = useState(defaultForm);
@@ -133,17 +131,15 @@ export function TemplatesView({ templates, firms, createTemplate, updateTemplate
     }
   }
 
-  async function handleMigrate() {
-    setMigrating(true);
+  async function handleSeed() {
+    setSeeding(true);
     setFormError("");
-    setMigrationMsg("");
     try {
-      const res = await runMigration();
-      setMigrationMsg(`Migration complete: ${res.firms} firms, ${res.templates} plans, ${res.accounts} accounts re-linked.`);
+      await seedDefaults();
     } catch (err) {
       setFormError(friendlyError(err));
     } finally {
-      setMigrating(false);
+      setSeeding(false);
     }
   }
 
@@ -159,20 +155,14 @@ export function TemplatesView({ templates, firms, createTemplate, updateTemplate
         <button className="pd-btn pd-btn-primary flex items-center gap-1.5 shrink-0" onClick={() => { setEditingTemplate(null); setShowForm(true); setFormError(""); setForm(defaultForm); setTargets([8, 5]); }}><Plus size={14} /> Add template</button>
       </div>
 
-      {migrationStatus?.pending && (
+      {firms.length === 0 && (
         <div className="rounded-lg p-4 mb-5 flex items-center justify-between gap-3 flex-wrap" style={{ background: "var(--ledger)", border: "1px solid var(--brass-dim)" }}>
           <div className="text-sm" style={{ color: "var(--sand)" }}>
-            Legacy per-user rules detected ({migrationStatus.accounts} accounts still use the old string references).
-            Run the one-time migration to consolidate them into this single global set.
+            No firms yet. Seed the workspace with the default firms and plans to get started.
           </div>
-          <button className="pd-btn flex items-center gap-1.5" style={{ borderColor: "var(--brass)", color: "var(--brass)" }} onClick={handleMigrate} disabled={migrating}>
-            <LinkIcon size={13} /> {migrating ? "Migrating…" : "Run migration"}
+          <button className="pd-btn flex items-center gap-1.5" style={{ borderColor: "var(--brass)", color: "var(--brass)" }} onClick={handleSeed} disabled={seeding}>
+            <Plus size={13} /> {seeding ? "Seeding…" : "Seed defaults"}
           </button>
-        </div>
-      )}
-      {migrationMsg && (
-        <div className="rounded-lg p-4 mb-5 text-sm" style={{ background: "var(--ledger)", border: "1px solid var(--sage)", color: "var(--sage)" }}>
-          {migrationMsg}
         </div>
       )}
 
