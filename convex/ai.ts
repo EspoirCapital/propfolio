@@ -19,6 +19,7 @@ Rules:
 - A value of "—" means that stat was not logged. Ignore it, never comment on it, never ask for it.
 - Never dismiss the numbers as a small sample or call them inconclusive. In prop-firm challenges, 10-40 trades is a normal full sample and enough to act on.
 - Do not recommend trailing stops or partial-profit exits.
+- Position size is derived from the trader's fixed risk per trade and stop distance - they cannot change it without also changing risk or the stop. Never suggest changing position size or "risk more". Suggest concrete changes to entries, stop management, or take-profit placement instead.
 - "Missed" trades are trades that never reached the level, so they would be skipped, not taken.
 - Keep it under ~120 words. No markdown headers, no bullets.`;
 
