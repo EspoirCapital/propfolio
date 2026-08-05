@@ -3,9 +3,9 @@ import { STATUS_META } from "../constants";
 import { money, getAccountLabel } from "../utils";
 import { StatusPill } from "../components/StatusPill";
 
-export function TicketCard({ account, onOpen, onEdit, onArchive, onUnarchive, index }) {
+export function TicketCard({ account, onOpen, onEdit, onArchive, onUnarchive, index, isNew }) {
   return (
-    <div className="pd-ticket" style={{ animationDelay: `${index * 45}ms` }} onClick={() => onOpen(account.id)}
+    <div className={`pd-ticket ${isNew ? "pd-row-new" : ""}`} style={{ animationDelay: `${index * 45}ms` }} onClick={() => onOpen(account.id)}
       role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && onOpen(account.id)}>
       <div className="p-4 flex flex-col justify-between gap-3 min-w-0">
         <div>

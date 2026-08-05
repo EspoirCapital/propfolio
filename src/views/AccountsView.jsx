@@ -18,6 +18,7 @@ export function AccountsView({ derived, templates, firms, onRowClick, onOpen, cr
   const [showArchived, setShowArchived] = useState(false);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [justAdded, setJustAdded] = useState(null);
 
   const filtered = derived.accounts.filter((a) => {
     if (filterFirm !== "All" && a.firmName !== filterFirm) return false;
@@ -47,7 +48,9 @@ export function AccountsView({ derived, templates, firms, onRowClick, onOpen, cr
       if (editingAccount) {
         await updateAccount(editingAccount.id, data);
       } else {
-        await createAccount(data);
+        const id = await createAccount(data);
+        setJustAdded(id);
+        window.setTimeout(() => setJustAdded((cur) => (cur === id ? null : cur)), 1900);
       }
       setShowForm(false);
       setEditingAccount(null);
@@ -184,7 +187,7 @@ export function AccountsView({ derived, templates, firms, onRowClick, onOpen, cr
               )}
               {singles.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {singles.map((a, i) => <TicketCard key={a.id} account={a} onOpen={onOpen} onEdit={openEdit} onArchive={handleArchive} onUnarchive={handleUnarchive} index={i} />)}
+                  {singles.map((a, i) => <TicketCard key={a.id} account={a} onOpen={onOpen} onEdit={openEdit} onArchive={handleArchive} onUnarchive={handleUnarchive} index={i} isNew={a.id === justAdded} />)}
                 </div>
               )}
             </>
@@ -200,7 +203,7 @@ export function AccountsView({ derived, templates, firms, onRowClick, onOpen, cr
           </div>
           {filtered.length === 0 && <div className="p-6 text-sm text-center" style={{ color: "var(--slate)" }}>No accounts match this filter.</div>}
           {filtered.map((a) => (
-            <div key={a.id} className="pd-row grid items-center text-sm pd-mono" style={{ gridTemplateColumns: "1fr 1.2fr 80px 100px 100px 80px 90px 28px 28px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)", cursor: "pointer" }} onClick={() => onRowClick(a.id)}>
+            <div key={a.id} className={`pd-row grid items-center text-sm pd-mono ${a.id === justAdded ? "pd-row-new" : ""}`} style={{ gridTemplateColumns: "1fr 1.2fr 80px 100px 100px 80px 90px 28px 28px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)", cursor: "pointer" }} onClick={() => onRowClick(a.id)}>
               <span className="whitespace-nowrap" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{a.firmName}</span>
               <span className="whitespace-nowrap" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{a.templateName}</span>
               <span className="whitespace-nowrap">${(a.size / 1000).toFixed(0)}K</span>

@@ -20,6 +20,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
   const [copySlaves, setCopySlaves] = useState(false);
   const [copying, setCopying] = useState(false);
   const [copyMsg, setCopyMsg] = useState("");
+  const [justAdded, setJustAdded] = useState(null);
 
   useEffect(() => {
     if (initialAccountId) {
@@ -79,6 +80,8 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
         await updateTrade(editingTrade.id, parsed);
       } else {
         const newTradeId = await createTrade(parsed);
+        setJustAdded(newTradeId);
+        window.setTimeout(() => setJustAdded((cur) => (cur === newTradeId ? null : cur)), 1900);
         if (copySlaves && copyTrades && masterSlaves.length > 0) {
           setCopying(true);
           try {
@@ -224,7 +227,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
         </div>
         {enrichedFiltered.length === 0 && <div className="p-6 text-sm text-center" style={{ color: "var(--slate)" }}>No trades logged for this filter yet.</div>}
         {enrichedFiltered.map((t) => (
-          <div key={t.id} className="pd-row grid items-center text-sm pd-mono" style={{ gridTemplateColumns: "30px 100px 88px 42px 52px 82px 82px 62px 62px 38px 72px 110px 1fr 28px 28px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)", cursor: "pointer" }} onClick={() => openEdit(t)}>
+          <div key={t.id} className={`pd-row grid items-center text-sm pd-mono ${t.id === justAdded ? "pd-row-new" : ""}`} style={{ gridTemplateColumns: "30px 100px 88px 42px 52px 82px 82px 62px 62px 38px 72px 110px 1fr 28px 28px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)", cursor: "pointer" }} onClick={() => openEdit(t)}>
             <span className="flex items-center justify-center"><span style={{ width: 12, height: 12, borderRadius: "50%", background: RATING_META[t.rating]?.color || "var(--slate)", flexShrink: 0 }} title={RATING_META[t.rating]?.label} /></span>
             <span className="whitespace-nowrap" style={{ color: "var(--slate)" }}>{formatDateUK(t.date)}</span>
             <span className="whitespace-nowrap">{t.symbol}</span>

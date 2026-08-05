@@ -184,12 +184,14 @@ function Layout() {
             <BrandMark style={{ width: 120, height: 34 }} />
           </div>
 
-          <div className="mb-6 no-print">
-            <h1 className="pd-display text-4xl" style={{ fontWeight: 700 }}>{meta[0]}</h1>
-            <p className="text-sm mt-1" style={{ color: "var(--slate)" }}>{meta[1]}</p>
-          </div>
+          <div key={pathname} className="pd-route">
+            <div className="mb-6 no-print">
+              <h1 className="pd-display text-4xl" style={{ fontWeight: 700 }}>{meta[0]}</h1>
+              <p className="text-sm mt-1" style={{ color: "var(--slate)" }}>{meta[1]}</p>
+            </div>
 
-          <Outlet />
+            <Outlet />
+          </div>
         </main>
       </div>
 

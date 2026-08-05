@@ -314,6 +314,30 @@ body {
 .pd-row:hover {
   background: var(--ledger-raised);
 }
+@keyframes pd-row-flash {
+  0% { background: rgba(206, 159, 82, 0.16); }
+  100% { background: transparent; }
+}
+.pd-row-new {
+  animation: pd-row-flash 1.8s ease-out 1;
+}
+.pd-ticket.pd-row-new {
+  animation: pd-fade-in 0.4s ease backwards, pd-row-flash 1.8s ease-out 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-row-new { animation: none; }
+}
+
+.pd-route {
+  animation: pd-route-in 0.28s ease both;
+}
+@keyframes pd-route-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-route { animation: none; }
+}
 .pd-btn {
   font-family: "IBM Plex Mono", monospace;
   font-size: 12px;
