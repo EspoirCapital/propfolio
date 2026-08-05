@@ -25,13 +25,16 @@ export function TradeCalendar({ trades, beThreshold = 10 }) {
   const monthName = currentDate.toLocaleString("en-GB", { month: "long" });
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDay = new Date(year, month, 1).getDay();
-  const mondayOffset = firstDay === 0 ? 6 : firstDay - 1;
+  const firstWeekday = firstDay === 0 ? 7 : firstDay;
+  const mondayOffset = firstWeekday <= 5 ? firstWeekday - 1 : 0;
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   const days = [];
   for (let pad = 0; pad < mondayOffset; pad++) days.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
+    const dow = new Date(year, month, d).getDay();
+    if (dow === 0 || dow === 6) continue;
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
     const data = dayMap[dateStr];
     const isToday = dateStr === todayStr;
@@ -48,8 +51,8 @@ export function TradeCalendar({ trades, beThreshold = 10 }) {
         <div className="pd-label">{monthName} {year}</div>
         <button onClick={nextMonth} className="pd-btn flex items-center gap-1 text-xs">Next <ChevronRight size={14} /></button>
       </div>
-      <div className="grid grid-cols-7 gap-1">
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+      <div className="grid grid-cols-5 gap-1">
+        {["Mon", "Tue", "Wed", "Thu", "Fri"].map((d) => (
           <div key={d} className="text-center pd-mono pb-1" style={{ fontSize: 11, color: "var(--slate)" }}>{d}</div>
         ))}
         {days.map((cell, i) => {
