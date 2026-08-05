@@ -44,7 +44,7 @@ export function AiAnalysis({ scope, stats }) {
       ) : (
         !error && (
           <p className="text-sm" style={{ color: "var(--slate)" }}>
-            A plain-English read on your edge, risk, and results. Works with or without MFE/MAE data.
+            A plain-English read on your edge, risk, and results.
           </p>
         )
       )}
