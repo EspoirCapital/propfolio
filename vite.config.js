@@ -10,7 +10,6 @@ export default defineConfig({
           "vendor-react": ["react", "react-dom"],
           "vendor-router": ["@tanstack/react-router"],
           "vendor-convex": ["convex"],
-          "vendor-charts": ["recharts"],
           "vendor-icons": ["lucide-react"],
         },
       },
