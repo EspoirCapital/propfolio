@@ -1,19 +1,18 @@
 import {
-  AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip,
+  AreaChart, Area, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 
 const reduceMotion = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = true, tooltipFmt, title }) {
-  const uniqueDates = [...new Set(data.map((d) => d.date))];
 
   return (
     <div style={{ height: height || "100%", minHeight: height || 200, background: "var(--ledger)", border: "1px solid var(--line)", borderRadius: 8, display: "flex", flexDirection: "column", ...(title ? { padding: 16 } : {}) }}>
       {title && <div className="pd-label" style={{ marginBottom: 12 }}>{title}</div>}
       <div style={{ flex: 1, minHeight: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: showAxes ? 16 : 8, right: showAxes ? 16 : 8, left: 0, bottom: 0 }}>
+        <AreaChart data={data} margin={{ top: showAxes ? 16 : 8, right: showAxes ? 16 : 8, left: 0, bottom: showAxes ? 22 : 0 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="var(--brass)" stopOpacity={0.4} />
@@ -22,21 +21,26 @@ export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = tr
           </defs>
           {showAxes ? (
             <>
+              <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="date"
                 type="category"
-                ticks={uniqueDates}
+                minTickGap={32}
+                tickMargin={8}
                 tick={{ fontSize: 11, fill: "var(--slate)" }}
                 tickLine={false}
                 axisLine={false}
+                label={{ value: "Date", position: "insideBottom", offset: -4, style: { fontSize: 11, fill: "var(--slate)" } }}
               />
               <YAxis
                 tick={{ fontSize: 11, fill: "var(--slate)" }}
                 tickLine={false}
                 axisLine={false}
                 domain={["dataMin - 100", "dataMax + 100"]}
-                tickFormatter={(v) => `$${v}`}
-                width={60}
+                tickFormatter={(v) => `$${Number(v).toLocaleString()}`}
+                width={70}
+                tickMargin={6}
+                label={{ value: "P&L ($)", angle: -90, position: "insideLeft", offset: 8, style: { fontSize: 11, fill: "var(--slate)" } }}
               />
             </>
           ) : (
