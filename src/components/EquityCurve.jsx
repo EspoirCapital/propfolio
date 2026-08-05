@@ -10,7 +10,8 @@ const C = {
   ledger: "#191c24",
 };
 
-export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = true, tooltipFmt, title }) {
+export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = true, tooltipFmt, title, size }) {
+  const pct = (v) => (size > 0 ? (v / size) * 100 : null);
 
   return (
     <div style={{ height: height || "100%", minHeight: height || 200, background: "var(--ledger)", border: "1px solid var(--line)", borderRadius: 8, display: "flex", flexDirection: "column", ...(title ? { padding: 16 } : {}) }}>
@@ -35,17 +36,21 @@ export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = tr
                 tick={{ fontSize: 11, fill: C.slate }}
                 tickLine={false}
                 axisLine={false}
+                tickFormatter={(v) => v.slice(0, 5)}
                 label={{ value: "Date", position: "insideBottom", offset: -4, style: { fontSize: 11, fill: C.slate } }}
               />
               <YAxis
                 tick={{ fontSize: 11, fill: C.slate }}
                 tickLine={false}
                 axisLine={false}
-                domain={["dataMin - 100", "dataMax + 100"]}
-                tickFormatter={(v) => `$${Number(v).toLocaleString()}`}
-                width={70}
+                domain={[(min, max) => {
+                  const pad = Math.max((max - min) * 0.1, size ? size * 0.001 : 100);
+                  return [min - pad, max + pad];
+                }]}
+                tickFormatter={(v) => (size ? `${(v / size) * 100 >= 0 ? "+" : ""}${((v / size) * 100).toFixed(1)}%` : `$${Number(v).toLocaleString()}`)}
+                width={size ? 56 : 70}
                 tickMargin={6}
-                label={{ value: "P&L ($)", angle: -90, position: "insideLeft", offset: 8, style: { fontSize: 11, fill: C.slate } }}
+                label={{ value: size ? "P&L (%)" : "P&L ($)", angle: -90, position: "insideLeft", offset: 8, style: { fontSize: 11, fill: C.slate } }}
               />
             </>
           ) : (
@@ -62,7 +67,10 @@ export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = tr
               const date = payload[0].payload?.date;
               return (
                 <div style={{ background: C.ledgerRaised, border: `1px solid ${C.line}`, fontSize: showAxes ? 12 : 11, borderRadius: 6, padding: "6px 10px" }}>
-                  <div style={{ fontWeight: 600, marginBottom: 2 }}>${Number(val).toLocaleString()}</div>
+                  <div style={{ fontWeight: 600, marginBottom: 2 }}>
+                    {size ? `${((val / size) * 100).toFixed(2)}%` : `$${Number(val).toLocaleString()}`}
+                  </div>
+                  {size && <div style={{ color: C.slate, fontSize: 11 }}>${Number(val).toLocaleString()}</div>}
                   {date && <div style={{ color: C.slate, fontSize: 11 }}>{date}</div>}
                 </div>
               );
