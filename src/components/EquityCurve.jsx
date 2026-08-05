@@ -2,8 +2,13 @@ import {
   AreaChart, Area, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 
-const reduceMotion = () =>
-  typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+const C = {
+  slate: "#9a8e7a",
+  line: "#2a2f3a",
+  brass: "#ce9f52",
+  ledgerRaised: "#1f232e",
+  ledger: "#191c24",
+};
 
 export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = true, tooltipFmt, title }) {
 
@@ -15,32 +20,32 @@ export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = tr
         <AreaChart data={data} margin={{ top: showAxes ? 16 : 8, right: showAxes ? 16 : 8, left: 0, bottom: showAxes ? 22 : 0 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--brass)" stopOpacity={0.4} />
-              <stop offset="100%" stopColor="var(--brass)" stopOpacity={0} />
+              <stop offset="0%" stopColor={C.brass} stopOpacity={0.4} />
+              <stop offset="100%" stopColor={C.brass} stopOpacity={0} />
             </linearGradient>
           </defs>
           {showAxes ? (
             <>
-              <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid stroke={C.line} strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="date"
                 type="category"
                 minTickGap={32}
                 tickMargin={8}
-                tick={{ fontSize: 11, fill: "var(--slate)" }}
+                tick={{ fontSize: 11, fill: C.slate }}
                 tickLine={false}
                 axisLine={false}
-                label={{ value: "Date", position: "insideBottom", offset: -4, style: { fontSize: 11, fill: "var(--slate)" } }}
+                label={{ value: "Date", position: "insideBottom", offset: -4, style: { fontSize: 11, fill: C.slate } }}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "var(--slate)" }}
+                tick={{ fontSize: 11, fill: C.slate }}
                 tickLine={false}
                 axisLine={false}
                 domain={["dataMin - 100", "dataMax + 100"]}
                 tickFormatter={(v) => `$${Number(v).toLocaleString()}`}
                 width={70}
                 tickMargin={6}
-                label={{ value: "P&L ($)", angle: -90, position: "insideLeft", offset: 8, style: { fontSize: 11, fill: "var(--slate)" } }}
+                label={{ value: "P&L ($)", angle: -90, position: "insideLeft", offset: 8, style: { fontSize: 11, fill: C.slate } }}
               />
             </>
           ) : (
@@ -50,20 +55,20 @@ export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = tr
             </>
           )}
           <Tooltip
-            contentStyle={{ background: "var(--ledger-raised)", border: "1px solid var(--line)", fontSize: showAxes ? 12 : 11, borderRadius: 6 }}
+            contentStyle={{ background: C.ledgerRaised, border: `1px solid ${C.line}`, fontSize: showAxes ? 12 : 11, borderRadius: 6 }}
             content={({ active, payload }) => {
               if (!active || !payload || !payload[0]) return null;
               const val = payload[0].value;
               const date = payload[0].payload?.date;
               return (
-                <div style={{ background: "var(--ledger-raised)", border: "1px solid var(--line)", fontSize: showAxes ? 12 : 11, borderRadius: 6, padding: "6px 10px" }}>
+                <div style={{ background: C.ledgerRaised, border: `1px solid ${C.line}`, fontSize: showAxes ? 12 : 11, borderRadius: 6, padding: "6px 10px" }}>
                   <div style={{ fontWeight: 600, marginBottom: 2 }}>${Number(val).toLocaleString()}</div>
-                  {date && <div style={{ color: "var(--slate)", fontSize: 11 }}>{date}</div>}
+                  {date && <div style={{ color: C.slate, fontSize: 11 }}>{date}</div>}
                 </div>
               );
             }}
           />
-          <Area type="monotone" dataKey="pnl" stroke="var(--brass)" fill={`url(#${gradientId})`} strokeWidth={showAxes ? 2 : 1.5} isAnimationActive={!reduceMotion()} animationDuration={900} animationEasing="ease-out" animationBegin={100} />
+          <Area type="monotone" dataKey="pnl" stroke={C.brass} fill={`url(#${gradientId})`} strokeWidth={showAxes ? 2 : 1.5} isAnimationActive={false} />
         </AreaChart>
       </ResponsiveContainer>
       </div>

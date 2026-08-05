@@ -57,10 +57,12 @@ export function OverviewView({ derived, trades, payouts, settings }) {
       .map((a) => ({ date: a.refundDate, pnl: a.refund, isRefund: true, id: "refund-" + a.id }));
     const merged = [...sorted, ...refundEvents].sort((a, b) => (a.date > b.date ? 1 : -1));
     let running = 0;
-    return merged.map((t) => {
+    const points = merged.map((t) => {
       running += t.pnl;
       return { date: formatDateUK(t.date), pnl: Math.round(running), ...(t.isRefund ? { label: "Refund" } : {}) };
     });
+    if (points.length === 0) return [];
+    return [{ date: points[0].date, pnl: 0 }, ...points];
   }, [allTrades, derived.accounts]);
 
   const recentTrades = allTrades.slice(0, 10);

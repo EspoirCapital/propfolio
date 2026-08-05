@@ -75,10 +75,11 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const refundEvent = account.refund > 0 && account.refundDate
     ? [{ date: account.refundDate, pnl: account.refund, isRefund: true }] : [];
   const merged = [...sortedTrades, ...refundEvent].sort((a, b) => (a.date > b.date ? 1 : -1));
-  const curve = merged.map((t) => {
+  const points = merged.map((t) => {
     running += t.pnl;
     return { date: formatDateUK(t.date), pnl: Math.round(running) };
   });
+  const curve = points.length ? [{ date: points[0].date, pnl: 0 }, ...points] : [];
 
   const canProceed = (account.targetPct ?? 0) >= 100 && nextStatus(account.status, phaseCount);
   const nextDest = nextStatusLabel(account.status, phaseCount);

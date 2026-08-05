@@ -57,10 +57,11 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
   const refundEvent = account.refund > 0 && account.refundDate
     ? [{ date: account.refundDate, pnl: account.refund, isRefund: true }] : [];
   const mergedDrawer = [...sortedTrades, ...refundEvent].sort((a, b) => (a.date > b.date ? 1 : -1));
-  const curve = mergedDrawer.map((t) => {
+  const pointsDrawer = mergedDrawer.map((t) => {
     running += t.pnl;
     return { date: formatDateUK(t.date), pnl: Math.round(running) };
   });
+  const curve = pointsDrawer.length ? [{ date: pointsDrawer[0].date, pnl: 0 }, ...pointsDrawer] : [];
 
   const canProceed = (account.targetPct ?? 0) >= 100 && nextStatus(account.status, phaseCount);
   const nextDest = nextStatusLabel(account.status, phaseCount);
