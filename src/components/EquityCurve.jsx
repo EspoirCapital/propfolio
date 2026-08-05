@@ -1,4 +1,4 @@
-import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis } from "recharts";
 
 const C = {
   slate: "#9a8e7a",
@@ -31,7 +31,9 @@ function ChartTooltip({ active, payload, size, small }) {
   );
 }
 
-export function EquityCurve({ data, height = 200, title, size }) {
+export function EquityCurve({ data, height = 200, title, size, showY = false }) {
+  const fmtY = (v) => (size ? sign((v / size) * 100) : `$${Math.round(v).toLocaleString()}`);
+  const compact = height < 140;
   return (
     <div
       style={{
@@ -47,13 +49,23 @@ export function EquityCurve({ data, height = 200, title, size }) {
         </div>
       )}
       <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+        <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="pdAreaCurve" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={C.brass} stopOpacity={0.25} />
               <stop offset="100%" stopColor={C.brass} stopOpacity={0.02} />
             </linearGradient>
           </defs>
+          {showY && (
+            <YAxis
+              width={compact ? 48 : 62}
+              tick={{ fill: C.slate, fontSize: compact ? 10 : 11 }}
+              tickFormatter={fmtY}
+              tickLine={false}
+              axisLine={{ stroke: C.line }}
+              domain={["auto", "auto"]}
+            />
+          )}
           <Tooltip content={<ChartTooltip size={size} small={!title} />} />
           <Area
             type="monotone"

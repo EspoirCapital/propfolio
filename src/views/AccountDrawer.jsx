@@ -176,7 +176,7 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
           {curve.length > 1 && (
             <div className="mb-4">
               <div className="pd-label mb-1.5">Equity Curve</div>
-              <EquityCurve data={curve} height={90} gradientId="pdAreaDrawer" showAxes={false} size={account.size} />
+              <EquityCurve data={curve} height={90} gradientId="pdAreaDrawer" showAxes={false} size={account.size} showY />
             </div>
           )}
 
