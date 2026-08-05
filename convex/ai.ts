@@ -6,16 +6,20 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const MODEL = "openai/gpt-oss-20b:free";
 
 const SYSTEM_PROMPT = `You are a professional prop-firm trading performance analyst.
-The trader logs MFE (max favorable excursion, in R) and MAE (max adverse excursion, in R) per trade.
-Answer exactly two questions, briefly, in plain English:
+The trader logs MFE (max favorable excursion, in R) and MAE (max adverse excursion, in R) per trade, but often leaves them blank, so they may be missing entirely.
+
+If MFE/MAE data is present, answer exactly two questions, briefly, in plain English:
 1. Entry: should they keep taking market orders, or place a limit order at their average MAE depth?
 2. Target: should they keep their current take-profit, or set it at their average MFE?
 
+If MFE/MAE data is missing, instead give a plain-English read of their edge from the available stats: win rate, average RR on winners, EV per trade, how winners compare to losers, and risk behaviour. Give one concrete, actionable takeaway.
+
 Rules:
 - Base every claim strictly on the numbers provided. Do not invent statistics.
+- A value of "—" means that stat was not logged. Ignore it, never comment on it, never ask for it.
+- Never dismiss the numbers as a small sample or call them inconclusive. In prop-firm challenges, 10-40 trades is a normal full sample and enough to act on.
 - Do not recommend trailing stops or partial-profit exits.
 - "Missed" trades are trades that never reached the level, so they would be skipped, not taken.
-- If the trade count is under 20, say the numbers are inconclusive and recommend logging more trades before changing anything.
 - Keep it under ~120 words. No markdown headers, no bullets.`;
 
 export const analyze = action({
@@ -48,14 +52,21 @@ export const analyze = action({
       throw new Error("OpenRouter is not configured. Set the OPENROUTER_API_KEY environment variable.");
     }
 
+    const hasMfe = args.avgMfe !== "—" || args.avgMae !== "—";
+
     const userContent = [
       `Context: ${args.scope}`,
+      `MFE/MAE data: ${hasMfe ? "logged" : "not logged (fields left blank)"}`,
       `Trades: ${args.tradeCount} (${args.wins}W / ${args.losses}L), win rate ${args.winRate}%, avg RR on winners ${args.avgRR || "n/a"}, EV per trade ${args.ev || "n/a"}`,
-      `MFE minimum threshold: ${args.mfeThreshold}R (trades below it excluded from the average)`,
-      `Avg MFE: ${args.avgMfe}R | Avg MAE: ${args.avgMae}R | Capture: ${args.capture} (giveback ${args.giveback}R)`,
-      `WR w/ limit @ avg MAE: ${args.limitWr} | ${args.limitSub}`,
-      `WR @ avg MFE: ${args.wrAtAvgMfe} | ${args.wrSub}`,
-      `WR limit MAE + TP MFE: ${args.comboWr} | ${args.comboSub}`,
+      hasMfe
+        ? [
+            `MFE minimum threshold: ${args.mfeThreshold}R (trades below it excluded from the average)`,
+            `Avg MFE: ${args.avgMfe}R | Avg MAE: ${args.avgMae}R | Capture: ${args.capture} (giveback ${args.giveback}R)`,
+            `WR w/ limit @ avg MAE: ${args.limitWr} | ${args.limitSub}`,
+            `WR @ avg MFE: ${args.wrAtAvgMfe} | ${args.wrSub}`,
+            `WR limit MAE + TP MFE: ${args.comboWr} | ${args.comboSub}`,
+          ].join("\n")
+        : "No MFE/MAE figures available; base the read on the base stats above.",
     ].join("\n");
 
     const res = await fetch(OPENROUTER_URL, {
