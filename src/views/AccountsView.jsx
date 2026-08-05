@@ -88,8 +88,8 @@ export function AccountsView({ derived, templates, firms, onRowClick, onOpen, cr
   return (
     <div>
       {/* KPI Tiles */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
-        <KpiTile label="Total Invested" value={money(derived.totals.invested)} sub={`${derived.accounts.filter((a) => a.cost > 0).length} accounts`} />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <KpiTile label="Total Invested" value={money(derived.totals.invested)} sub={`${derived.accounts.length} accounts`} />
         <KpiTile label="Total Received" value={money(derived.totals.received)} accent="var(--sage)" sub="from paid payouts" />
         <KpiTile
           label="Net Position"
@@ -98,12 +98,6 @@ export function AccountsView({ derived, templates, firms, onRowClick, onOpen, cr
           sub="lifetime, all firms"
         />
         <KpiTile label="Pass Rate" value={`${derived.passRate}%`} accent="var(--brass)" sub="of decided evaluations" />
-        <KpiTile
-          label="Ruin Rate"
-          value={derived.ruinRate !== null ? `${derived.ruinRate}%` : "—"}
-          accent={derived.ruinRate !== null && derived.ruinRate > 50 ? "var(--brick)" : "var(--sage)"}
-          sub={derived.ruinAccountCount > 0 ? `avg across ${derived.ruinAccountCount} active challenge${derived.ruinAccountCount === 1 ? "" : "s"}` : "log trades to estimate"}
-        />
       </div>
 
       {/* Toolbar */}
