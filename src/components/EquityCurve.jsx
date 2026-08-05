@@ -2,6 +2,9 @@ import {
   AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip,
 } from "recharts";
 
+const reduceMotion = () =>
+  typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
 export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = true, tooltipFmt, title }) {
   const uniqueDates = [...new Set(data.map((d) => d.date))];
 
@@ -56,7 +59,7 @@ export function EquityCurve({ data, height, gradientId = "pdArea", showAxes = tr
               );
             }}
           />
-          <Area type="monotone" dataKey="pnl" stroke="var(--brass)" fill={`url(#${gradientId})`} strokeWidth={showAxes ? 2 : 1.5} />
+          <Area type="monotone" dataKey="pnl" stroke="var(--brass)" fill={`url(#${gradientId})`} strokeWidth={showAxes ? 2 : 1.5} isAnimationActive={!reduceMotion()} animationDuration={900} animationEasing="ease-out" animationBegin={100} />
         </AreaChart>
       </ResponsiveContainer>
       </div>

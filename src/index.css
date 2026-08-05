@@ -340,6 +340,19 @@ body {
   background: #dcae5f;
   color: #1a1508;
 }
+.pd-btn svg {
+  transition: transform 0.16s ease;
+}
+.pd-btn-primary:hover svg {
+  transform: translateX(2px);
+}
+.pd-btn-back:hover svg {
+  transform: translateX(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-btn svg { transition: none; }
+  .pd-btn-primary:hover svg, .pd-btn-back:hover svg { transform: none; }
+}
 .pd-input {
   background: var(--ink-2);
   border: 1px solid var(--line);

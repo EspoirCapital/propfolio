@@ -141,17 +141,19 @@ export function OverviewView({ derived, trades, payouts, settings }) {
     <div>
       {/* Row 1 — KPI Tiles */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        <KpiTile label="Total Invested" value={money(derived.totals.invested)} sub={`${derived.accounts.length} accounts`} />
-        <KpiTile label="Total Received" value={money(derived.totals.received + derived.totals.refunds)} accent="var(--sage)" sub="payouts + refunds" />
+        <KpiTile label="Total Invested" animate={derived.totals.invested} fmt={money} delay={0} sub={`${derived.accounts.length} accounts`} />
+        <KpiTile label="Total Received" animate={derived.totals.received + derived.totals.refunds} fmt={money} delay={70} accent="var(--sage)" sub="payouts + refunds" />
         <KpiTile
           label="Net Position"
-          value={money(derived.totals.received + derived.totals.refunds - derived.totals.invested)}
+          animate={derived.totals.received + derived.totals.refunds - derived.totals.invested}
+          fmt={money}
+          delay={140}
           accent={derived.totals.received + derived.totals.refunds - derived.totals.invested >= 0 ? "var(--sage)" : "var(--brick)"}
           sub="lifetime, all firms"
         />
-        <KpiTile label="Win Rate" value={`${winRate}%`} accent="var(--sage)" sub={`${wins}W / ${losses}L`} />
-        <KpiTile label="Total Trades" value={totalTrades} accent="var(--sand)" sub="across all accounts" />
-        <KpiTile label="Active Accounts" value={activeAccounts} accent="var(--brass)" sub={`of ${derived.accounts.length} total`} />
+        <KpiTile label="Win Rate" animate={winRate} fmt={(n) => `${Math.round(n)}%`} delay={210} accent="var(--sage)" sub={`${wins}W / ${losses}L`} />
+        <KpiTile label="Total Trades" animate={totalTrades} fmt={(n) => Math.round(n)} delay={280} accent="var(--sand)" sub="across all accounts" />
+        <KpiTile label="Active Accounts" animate={activeAccounts} fmt={(n) => Math.round(n)} delay={350} accent="var(--brass)" sub={`of ${derived.accounts.length} total`} />
       </div>
 
       {/* Row 1b — MFE/MAE stats */}

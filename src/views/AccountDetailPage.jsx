@@ -177,7 +177,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
 
   return (
     <div>
-      <button onClick={onBack} className="pd-btn flex items-center gap-2 mb-5">
+      <button onClick={onBack} className="pd-btn pd-btn-back flex items-center gap-2 mb-5">
         <ArrowLeft size={14} /> Back
       </button>
 
