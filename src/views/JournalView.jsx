@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
-import { Plus, X, ExternalLink, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Plus, X, ExternalLink, ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { marked } from "marked";
 import { computeOutcome, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, friendlyError } from "../utils";
 import { RatingPicker } from "../components/RatingPicker";
 import { SymbolPicker } from "../components/SymbolPicker";
@@ -13,7 +12,6 @@ import { ErrorBanner } from "../components/ErrorBanner";
 export function JournalView({ accounts, trades, createTrade, updateTrade, deleteTrade, settings, slavesByMaster = {}, copyTrades, account, onAccountChange, accountProgress }) {
   const [showForm, setShowForm] = useState(false);
   const [editingTrade, setEditingTrade] = useState(null);
-  const [notesMode, setNotesMode] = useState("edit");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -65,7 +63,6 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
       mfeR: t.mfeR != null ? String(t.mfeR) : "", maeR: t.maeR != null ? String(t.maeR) : "",
     });
     setShowForm(true);
-    setNotesMode("edit");
     setFormError("");
   }
 
@@ -104,7 +101,6 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
       }
       setShowForm(false);
       setEditingTrade(null);
-      setNotesMode("edit");
       setCopySlaves(false);
       setCopyMsg("");
       setForm(defaultForm);
@@ -153,7 +149,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
             </span>
           )}
         </div>
-        <button className="pd-btn pd-btn-primary flex items-center gap-1.5" onClick={() => { setEditingTrade(null); setShowForm(true); setFormError(""); setCopySlaves(false); setCopyMsg(""); setForm({ ...defaultForm, accountId: filterAcc !== "All" ? filterAcc : accounts[0]?.id || "" }); setNotesMode("edit"); }}><Plus size={14} /> Log trade</button>
+        <button className="pd-btn pd-btn-primary flex items-center gap-1.5" onClick={() => { setEditingTrade(null); setShowForm(true); setFormError(""); setCopySlaves(false); setCopyMsg(""); setForm({ ...defaultForm, accountId: filterAcc !== "All" ? filterAcc : accounts[0]?.id || "" }); }}><Plus size={14} /> Log trade</button>
       </div>
 
       {showForm && (
@@ -213,25 +209,16 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
           )}
 
           <div className="mb-3">
-            <div className="flex items-center justify-between mb-1">
+            <div className="mb-1">
               <span className="pd-label">Notes</span>
-              <button type="button" className="pd-btn" style={{ padding: "2px 8px", fontSize: 11 }}
-                onClick={() => setNotesMode(notesMode === "edit" ? "preview" : "edit")}>
-                {notesMode === "edit" ? <><Eye size={11} /> Preview</> : <><EyeOff size={11} /> Edit</>}
-              </button>
             </div>
-            {notesMode === "edit" ? (
-              <textarea className="pd-input" rows={3} placeholder="Context, mistakes, mindset... (markdown supported)"
-                style={{ fontFamily: "monospace", fontSize: 13, resize: "vertical" }}
-                value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-            ) : (
-              <div className="rounded-md p-3 text-sm pd-markdown" style={{ background: "var(--ink)", border: "1px solid var(--line)", minHeight: 68 }}
-                dangerouslySetInnerHTML={{ __html: marked.parse(form.notes || "*Nothing to preview.*") }} />
-            )}
+            <textarea className="pd-input" rows={3} placeholder="Context, mistakes, mindset..."
+              style={{ fontFamily: "monospace", fontSize: 13, resize: "vertical" }}
+              value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
 
           <div className="flex gap-2 justify-end">
-            <button type="button" className="pd-btn" onClick={() => { setShowForm(false); setEditingTrade(null); setNotesMode("edit"); }}>Cancel</button>
+            <button type="button" className="pd-btn" onClick={() => { setShowForm(false); setEditingTrade(null); }}>Cancel</button>
             <button type="submit" className="pd-btn pd-btn-primary" disabled={saving}>{saving ? "Saving…" : (editingTrade ? "Update trade" : "Save trade")}</button>
           </div>
         </form>

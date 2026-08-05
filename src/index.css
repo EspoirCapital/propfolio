@@ -623,56 +623,6 @@ select.pd-input {
 }
 .pd-detail-row:last-child { border-bottom: none; }
 
-.pd-markdown {
-  color: var(--sand-dim);
-  line-height: 1.55;
-}
-.pd-markdown p { margin: 0 0 0.5em; }
-.pd-markdown p:last-child { margin-bottom: 0; }
-.pd-markdown strong { color: var(--sand); font-weight: 600; }
-.pd-markdown em { color: var(--sand-dim); font-style: italic; }
-.pd-markdown code {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 12px;
-  background: var(--ledger-raised);
-  padding: 1px 5px;
-  border-radius: 4px;
-  color: var(--brass);
-}
-.pd-markdown pre {
-  background: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 10px;
-  overflow-x: auto;
-  margin: 0.5em 0;
-}
-.pd-markdown pre code {
-  background: none;
-  padding: 0;
-  color: var(--sand-dim);
-}
-.pd-markdown ul, .pd-markdown ol {
-  padding-left: 1.4em;
-  margin: 0.4em 0;
-}
-.pd-markdown li { margin: 0.15em 0; }
-.pd-markdown blockquote {
-  border-left: 2px solid var(--brass);
-  padding-left: 10px;
-  margin: 0.5em 0;
-  color: var(--slate);
-}
-.pd-markdown a { color: var(--brass); }
-.pd-markdown h1, .pd-markdown h2, .pd-markdown h3 {
-  color: var(--sand);
-  font-weight: 600;
-  margin: 0.6em 0 0.3em;
-}
-.pd-markdown h1 { font-size: 1.1em; }
-.pd-markdown h2 { font-size: 1em; }
-.pd-markdown h3 { font-size: 0.9em; }
-
 /* ── Print styles ─────────────────────────────────────── */
 @media print {
   body { background: #fff !important; color: #000 !important; }
