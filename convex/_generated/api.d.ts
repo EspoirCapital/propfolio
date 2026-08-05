@@ -20,6 +20,7 @@ import type * as invites from "../invites.js";
 import type * as payouts from "../payouts.js";
 import type * as seed from "../seed.js";
 import type * as settings from "../settings.js";
+import type * as symbols from "../symbols.js";
 import type * as templates from "../templates.js";
 import type * as trades from "../trades.js";
 import type * as users from "../users.js";
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   payouts: typeof payouts;
   seed: typeof seed;
   settings: typeof settings;
+  symbols: typeof symbols;
   templates: typeof templates;
   trades: typeof trades;
   users: typeof users;

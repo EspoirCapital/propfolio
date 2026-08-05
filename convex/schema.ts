@@ -127,4 +127,10 @@ export default defineSchema({
   })
     .index("by_userId", ["userId"])
     .index("by_masterAccountId", ["masterAccountId"]),
+
+  symbols: defineTable({
+    name: v.string(),
+    category: v.string(),
+    aliases: v.optional(v.array(v.string())),
+  }).index("by_name", ["name"]),
 });

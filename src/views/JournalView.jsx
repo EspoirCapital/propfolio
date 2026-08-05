@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { marked } from "marked";
 import { computeOutcome, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, friendlyError } from "../utils";
 import { RatingPicker } from "../components/RatingPicker";
+import { SymbolPicker } from "../components/SymbolPicker";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { DatePicker } from "../components/DatePicker";
 import { Select } from "../components/Select";
@@ -154,7 +155,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
               </Select>
             </div>
             <div><div className="pd-label mb-1">Date</div><DatePicker value={form.date} onChange={(v) => setForm({ ...form, date: v })} required /></div>
-            <div><div className="pd-label mb-1">Symbol</div><input required className="pd-input" placeholder="XAUUSD" value={form.symbol} onChange={(e) => setForm({ ...form, symbol: e.target.value })} /></div>
+            <div><div className="pd-label mb-1">Symbol</div><SymbolPicker value={form.symbol} onChange={(v) => setForm({ ...form, symbol: v })} /></div>
             <div>
               <div className="pd-label mb-1">Side</div>
               <Select value={form.side} onChange={(e) => setForm({ ...form, side: e.target.value })}>
