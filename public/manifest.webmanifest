@@ -1,0 +1,14 @@
+{
+  "name": "EC Propfolio",
+  "short_name": "EC Propfolio",
+  "description": "Prop firm trading portfolio tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#14161c",
+  "theme_color": "#14161c",
+  "icons": [
+    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/logo-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

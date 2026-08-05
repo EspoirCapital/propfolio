@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect x="56" y="56" width="400" height="400" rx="88" fill="#ce9f52"/>
+  <text x="256" y="258" text-anchor="middle" dominant-baseline="central"
+    font-family="'IBM Plex Mono', monospace" font-size="172" font-weight="600" letter-spacing="3" fill="#14161c">EC</text>
+</svg>
