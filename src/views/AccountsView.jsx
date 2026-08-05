@@ -181,7 +181,7 @@ export function AccountsView({ derived, templates, firms, onRowClick, onOpen, cr
               {journeys.length > 0 && (
                 <div className="mb-6 space-y-4">
                   {journeys.map((j) => (
-                    <JourneyGroup key={j.chainId} chain={j.accounts} onOpen={onRowClick} />
+                    <JourneyGroup key={j.chainId} chain={j.accounts} onOpen={onRowClick} onEdit={openEdit} onArchive={handleArchive} onUnarchive={handleUnarchive} newId={justAdded} />
                   ))}
                 </div>
               )}

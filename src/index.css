@@ -429,94 +429,52 @@ select.pd-input {
   border-color: var(--brass-dim);
   box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.55);
 }
-.pd-journey {
-  display: flex;
-  align-items: stretch;
-  width: 100%;
-}
-.pd-jnode {
-  flex: 1 1 0;
-  min-width: 0;
+.pd-journey-cards {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 12px 14px;
-  border-radius: 9px;
-  border: 1px solid var(--line);
-  background: var(--ink);
-  color: var(--sand);
-  cursor: pointer;
-  text-align: left;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  gap: 10px;
+  align-items: stretch;
+  padding: 14px 16px;
 }
-.pd-jnode:hover {
-  border-color: var(--brass-dim);
+@media (min-width: 768px) {
+  .pd-journey-cards {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0;
+  }
 }
-.pd-jnode.done {
-  border-color: var(--sage-dim);
-  background: rgba(111, 176, 139, 0.07);
+.pd-jcard {
+  flex: 1 1 0;
+  min-width: 0;
 }
-.pd-jnode.done:hover {
-  border-color: var(--sage);
+.pd-jcard .pd-ticket {
+  height: 100%;
 }
-.pd-jnode.active {
-  border-color: var(--brass);
-  background: rgba(206, 159, 82, 0.08);
+.pd-jcard-active .pd-ticket {
+  box-shadow: 0 0 0 1px var(--brass);
 }
-.pd-jnode.bad {
-  border-color: var(--brick-dim);
-  background: rgba(193, 89, 75, 0.08);
-}
-.pd-jnode.bad:hover {
-  border-color: var(--brick);
-}
-.pd-jnode-top {
-  width: 100%;
+.pd-jconn-cards {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-.pd-jnode-label {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--slate);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.pd-jnode.done .pd-jnode-label { color: var(--sage); }
-.pd-jnode.active .pd-jnode-label { color: var(--brass); }
-.pd-jnode.bad .pd-jnode-label { color: var(--brick); }
-.pd-jnode-pnl {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-.pd-jnode-date {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10.5px;
-  color: var(--slate);
-}
-.pd-jconn {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  padding: 0 5px;
+  justify-content: center;
   color: var(--line);
+  flex-shrink: 0;
+  padding: 4px 0;
 }
-.pd-jconn-line {
-  width: 14px;
-  height: 2px;
-  border-radius: 1px;
-  background: currentColor;
+.pd-jconn-cards-icon {
+  transform: rotate(90deg);
 }
-.pd-jconn.done { color: var(--sage-dim); }
-
+@media (min-width: 768px) {
+  .pd-jconn-cards {
+    padding: 0 8px;
+  }
+  .pd-jconn-cards-icon {
+    transform: rotate(0deg);
+  }
+}
+.pd-jconn-cards.done {
+  color: var(--sage-dim);
+}
 /* ── People / access console ─────────────────────────── */
 .pd-btn-action {
   font-family: "IBM Plex Mono", monospace;

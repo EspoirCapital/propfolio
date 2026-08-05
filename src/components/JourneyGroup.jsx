@@ -1,16 +1,9 @@
 import { Fragment } from "react";
-import { Check, X, ChevronRight, ChevronsRight } from "lucide-react";
-import { STATUS_META } from "../constants";
-import { money, formatDateUK, activeChainMember } from "../utils";
+import { ChevronRight, ChevronsRight } from "lucide-react";
+import { money, activeChainMember } from "../utils";
+import { TicketCard } from "../views/TicketCard";
 
-function stateClass(a, activeId) {
-  if (a.id === activeId) return "active";
-  if (a.status === "passed" || a.status === "funded") return "done";
-  if (a.status === "breached") return "bad";
-  return "";
-}
-
-export function JourneyGroup({ chain, onOpen }) {
+export function JourneyGroup({ chain, onOpen, onEdit, onArchive, onUnarchive, newId }) {
   const firm = chain[0].firmName || chain[0].firm;
   const template = chain[0].templateName || chain[0].template;
   const size = chain[0].size;
@@ -30,27 +23,20 @@ export function JourneyGroup({ chain, onOpen }) {
         <ChevronsRight size={16} style={{ color: "var(--slate)", flexShrink: 0 }} />
       </div>
 
-      <div className="pd-journey" style={{ padding: "14px 16px" }}>
+      <div className="pd-journey-cards">
         {chain.map((a, i) => {
-          const cls = stateClass(a, activeId);
-          const label = STATUS_META[a.status]?.label || a.status;
+          const prev = chain[i - 1];
+          const prevDone = prev && (prev.status === "passed" || prev.status === "funded");
           return (
             <Fragment key={a.id}>
-              {i > 0 && <div className={`pd-jconn ${cls === "done" ? "done" : ""}`}><span className="pd-jconn-line" /><ChevronRight size={14} /></div>}
-              <button
-                onClick={() => onOpen(a.id)}
-                className={`pd-jnode ${cls}`}
-                title={`Open ${label} account`}
-              >
-                <span className="pd-jnode-top">
-                  <span className="pd-jnode-label">{label}</span>
-                  {cls === "done" && <Check size={12} style={{ color: "var(--sage)", flexShrink: 0 }} />}
-                  {cls === "bad" && <X size={12} style={{ color: "var(--brick)", flexShrink: 0 }} />}
-                  {cls === "active" && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--brass)", flexShrink: 0 }} />}
-                </span>
-                <span className="pd-jnode-pnl" style={{ color: a.tradePnl >= 0 ? "var(--sage)" : "var(--brick)" }}>{money(a.tradePnl)}</span>
-                <span className="pd-jnode-date">{formatDateUK(a.creationDate)}</span>
-              </button>
+              {i > 0 && (
+                <div className={`pd-jconn-cards ${prevDone ? "done" : ""}`} aria-hidden="true">
+                  <ChevronRight size={16} className="pd-jconn-cards-icon" />
+                </div>
+              )}
+              <div className={`pd-jcard ${a.id === activeId ? "pd-jcard-active" : ""}`}>
+                <TicketCard account={a} onOpen={onOpen} onEdit={onEdit} onArchive={onArchive} onUnarchive={onUnarchive} index={i} isNew={a.id === newId} />
+              </div>
             </Fragment>
           );
         })}
