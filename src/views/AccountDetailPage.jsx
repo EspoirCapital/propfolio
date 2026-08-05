@@ -84,6 +84,8 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const nextDest = nextStatusLabel(account.status, phaseCount);
 
   const totalPnl = enrichedTrades.reduce((s, t) => s + t.pnl, 0);
+  const rrMade = enrichedTrades.reduce((s, t) => (t.risk > 0 ? s + t.pnl / t.risk : s), 0);
+  const pnlPct = account.size > 0 ? (totalPnl / account.size) * 100 : null;
   const maxLossBreached = account.maxLoss > 0 && totalPnl <= -account.maxLoss;
   const dailyPnlByDate = {};
   enrichedTrades.forEach((t) => { dailyPnlByDate[t.date] = (dailyPnlByDate[t.date] || 0) + t.pnl; });
@@ -191,6 +193,13 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
           <div className="text-sm mt-1" style={{ color: "var(--sand-dim)" }}>
             Created {formatDateUK(account.creationDate)}
             <span className="ml-3">Terminated {account.terminationDate ? formatDateUK(account.terminationDate) : "—"}</span>
+          </div>
+          <div className="pd-mono text-sm flex items-center gap-3 mt-1.5" style={{ color: "var(--slate)" }}>
+            {account.targetPct !== null && (
+              <span>Progress <span style={{ color: "var(--brass)" }}>{account.targetPct}%</span></span>
+            )}
+            <span>RR <span style={{ color: rrMade >= 0 ? "var(--sage)" : "var(--brick)" }}>{rrMade >= 0 ? "+" : ""}{rrMade.toFixed(1)}R</span>
+              {pnlPct !== null && <span style={{ color: pnlPct >= 0 ? "var(--sage)" : "var(--brick)" }}> ({pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(1)}%)</span>}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
