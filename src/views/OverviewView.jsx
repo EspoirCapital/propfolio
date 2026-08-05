@@ -141,7 +141,7 @@ export function OverviewView({ derived, trades, payouts, settings }) {
     <div>
       {/* Row 1 — KPI Tiles */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        <KpiTile label="Total Invested" animate={derived.totals.invested} fmt={money} delay={0} sub={`${derived.accounts.length} accounts`} />
+        <KpiTile label="Total Invested" animate={derived.totals.invested} fmt={money} delay={0} sub={`${derived.accounts.filter((a) => a.cost > 0).length} accounts`} />
         <KpiTile label="Total Received" animate={derived.totals.received + derived.totals.refunds} fmt={money} delay={70} accent="var(--sage)" sub="payouts + refunds" />
         <KpiTile
           label="Net Position"
