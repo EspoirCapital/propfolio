@@ -250,7 +250,7 @@ function AccountDetailPageRoute() {
 }
 
 function JournalPage() {
-  const { accounts, trades, createTrade, updateTrade, deleteTrade, settings, slavesByMaster, copyTrades } = useApp();
+  const { accounts, trades, derived, createTrade, updateTrade, deleteTrade, settings, slavesByMaster, copyTrades } = useApp();
   const { account } = useSearch({ from: "/journal" });
   const navigate = useNavigate();
 
@@ -262,6 +262,7 @@ function JournalPage() {
       slavesByMaster={slavesByMaster} copyTrades={copyTrades}
       account={account}
       onAccountChange={(acc) => navigate({ search: (prev) => ({ ...prev, account: acc === "All" ? undefined : acc }) })}
+      accountProgress={derived.accounts.find((a) => a.id === account)?.targetPct ?? null}
     />
   );
 }

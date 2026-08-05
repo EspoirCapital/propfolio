@@ -10,7 +10,7 @@ import { DatePicker } from "../components/DatePicker";
 import { Select } from "../components/Select";
 import { ErrorBanner } from "../components/ErrorBanner";
 
-export function JournalView({ accounts, trades, createTrade, updateTrade, deleteTrade, settings, slavesByMaster = {}, copyTrades, account, onAccountChange }) {
+export function JournalView({ accounts, trades, createTrade, updateTrade, deleteTrade, settings, slavesByMaster = {}, copyTrades, account, onAccountChange, accountProgress }) {
   const [showForm, setShowForm] = useState(false);
   const [editingTrade, setEditingTrade] = useState(null);
   const [notesMode, setNotesMode] = useState("edit");
@@ -23,6 +23,10 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
   const [justAdded, setJustAdded] = useState(null);
 
   const filterAcc = accounts.some((a) => a.id === account) ? account : "All";
+
+  const rrMade = filterAcc === "All"
+    ? null
+    : trades.reduce((sum, t) => (!t.archived && t.accountId === filterAcc && t.risk > 0 ? sum + t.pnl / t.risk : sum), 0);
 
   const defaultForm = {
     accountId: accounts[0]?.id || "", date: "", symbol: "", side: "Long", lots: "",
@@ -130,6 +134,14 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
             <Link to="/accounts/$accountId" params={{ accountId: filterAcc }} className="pd-btn flex items-center gap-1.5 no-underline">
               <ArrowRight size={12} /> View account
             </Link>
+          )}
+          {filterAcc !== "All" && (
+            <span className="pd-mono text-sm flex items-center gap-3" style={{ color: "var(--slate)" }}>
+              {accountProgress !== null && (
+                <span>Progress <span style={{ color: "var(--brass)" }}>{accountProgress}%</span></span>
+              )}
+              <span>RR <span style={{ color: rrMade >= 0 ? "var(--sage)" : "var(--brick)" }}>{rrMade >= 0 ? "+" : ""}{rrMade.toFixed(1)}R</span></span>
+            </span>
           )}
         </div>
         <button className="pd-btn pd-btn-primary flex items-center gap-1.5" onClick={() => { setEditingTrade(null); setShowForm(true); setFormError(""); setCopySlaves(false); setCopyMsg(""); setForm({ ...defaultForm, accountId: filterAcc !== "All" ? filterAcc : accounts[0]?.id || "" }); setNotesMode("edit"); }}><Plus size={14} /> Log trade</button>
