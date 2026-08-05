@@ -35,7 +35,7 @@ export function OverviewView({ derived, trades, payouts, settings }) {
   const losses = allTrades.filter((t) => t.outcome === "L").length;
   const decisionTrades = wins + losses;
   const winRate = decisionTrades ? Math.round((wins / decisionTrades) * 100) : 0;
-  const activeAccounts = derived.accounts.filter((a) => !a.archived && a.status !== "breached").length;
+  const activeAccounts = derived.accounts.filter((a) => !a.archived && ["phase_1", "phase_2", "funded"].includes(a.status)).length;
 
   const mfeStats = useMemo(() => computeMfeMaeStats(allTrades, settings.mfeThreshold), [allTrades, settings.mfeThreshold]);
 
