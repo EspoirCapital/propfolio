@@ -315,7 +315,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <div className="flex flex-col">
                   <div className="pd-label mb-2">Equity Curve</div>
                   <div className="flex-1">
-                    <EquityCurve data={curve} gradientId="pdAreaDetail" size={account.size} showY />
+                    <EquityCurve data={curve} height={300} gradientId="pdAreaDetail" size={account.size} showY />
                   </div>
                 </div>
               )}

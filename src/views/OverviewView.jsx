@@ -200,7 +200,7 @@ export function OverviewView({ derived, trades, payouts, settings }) {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
         <div className="lg:col-span-3">
           {curve.length > 1 ? (
-            <EquityCurve data={curve} height={260} gradientId="pdAreaOverview" title="Cumulative P&L" />
+            <EquityCurve data={curve} height={300} gradientId="pdAreaOverview" title="Cumulative P&L" />
           ) : (
             <div className="rounded-lg" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
               <div className="pd-label" style={{ padding: "16px 16px 0" }}>Cumulative P&L</div>

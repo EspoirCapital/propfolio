@@ -1,4 +1,4 @@
-import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const C = {
   slate: "#9a8e7a",
@@ -8,10 +8,11 @@ const C = {
 };
 
 const sign = (v) => (v >= 0 ? "+" : "") + v.toFixed(1) + "%";
+const round2 = (v) => Math.round(v * 100) / 100;
 
 function ChartTooltip({ active, payload, size, small }) {
   if (!active || !payload || !payload.length) return null;
-  const p = payload[0];
+  const v = payload[0].value;
   return (
     <div
       style={{
@@ -22,18 +23,24 @@ function ChartTooltip({ active, payload, size, small }) {
         fontSize: small ? 11 : 12,
       }}
     >
-      {size && <div style={{ fontWeight: 600 }}>{sign((p.value / size) * 100)}</div>}
+      {size && <div style={{ fontWeight: 600 }}>{sign(v)}</div>}
       <div style={{ fontWeight: size ? 400 : 600, color: size ? C.slate : undefined }}>
-        ${Math.round(p.value).toLocaleString()}
+        ${Math.round(size ? (v / 100) * size : v).toLocaleString()}
       </div>
-      <div style={{ color: C.slate, fontSize: (small ? 11 : 12) - 1 }}>{p.payload.date}</div>
+      <div style={{ color: C.slate, fontSize: (small ? 11 : 12) - 1 }}>{payload[0].payload.date}</div>
     </div>
   );
 }
 
 export function EquityCurve({ data, height = 200, title, size, showY = false }) {
-  const fmtY = (v) => (size ? sign((v / size) * 100) : `$${Math.round(v).toLocaleString()}`);
-  const compact = height < 140;
+  const compact = height < 160;
+  const pctOf = (v) => (v / size) * 100;
+  const chartData = size ? data.map((d) => ({ ...d, v: round2(pctOf(d.pnl)) })) : data.map((d) => ({ ...d, v: d.pnl }));
+  const minPct = size ? Math.min(0, ...data.map((d) => pctOf(d.pnl))) : 0;
+  const maxPct = size ? Math.max(0, ...data.map((d) => pctOf(d.pnl))) : 0;
+  const yTicks = [...new Set([round2(minPct), 0, round2(maxPct)])].sort((a, b) => a - b);
+  const domain = minPct === maxPct ? [minPct - 1, maxPct + 1] : [minPct, maxPct];
+
   return (
     <div
       style={{
@@ -49,27 +56,36 @@ export function EquityCurve({ data, height = 200, title, size, showY = false }) 
         </div>
       )}
       <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="pdAreaCurve" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={C.brass} stopOpacity={0.25} />
               <stop offset="100%" stopColor={C.brass} stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          {showY && (
+          <XAxis
+            dataKey="date"
+            tick={{ fill: C.slate, fontSize: compact ? 10 : 11 }}
+            tickFormatter={(v) => v.slice(0, 5)}
+            minTickGap={compact ? 32 : 24}
+            tickLine={false}
+            axisLine={{ stroke: C.line }}
+          />
+          {showY && size && (
             <YAxis
               width={compact ? 48 : 62}
               tick={{ fill: C.slate, fontSize: compact ? 10 : 11 }}
-              tickFormatter={fmtY}
+              ticks={yTicks}
+              domain={domain}
+              tickFormatter={sign}
               tickLine={false}
               axisLine={{ stroke: C.line }}
-              domain={["auto", "auto"]}
             />
           )}
           <Tooltip content={<ChartTooltip size={size} small={!title} />} />
           <Area
             type="monotone"
-            dataKey="pnl"
+            dataKey="v"
             stroke={C.brass}
             strokeWidth={title ? 2 : 1.5}
             fill="url(#pdAreaCurve)"
