@@ -149,7 +149,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
     setBusy(true);
     setActionError("");
     try {
-      await unlinkAccount(account.id);
+      await unlinkAccount({ id: account.id });
       setShowUnlinkConfirm(false);
     } catch (err) {
       setShowUnlinkConfirm(false);
