@@ -260,8 +260,8 @@ function JournalPage() {
       createTrade={createTrade} updateTrade={updateTrade} deleteTrade={deleteTrade}
       settings={settings}
       slavesByMaster={slavesByMaster} copyTrades={copyTrades}
-      initialAccountId={account || null}
-      onClearInitialAccount={() => navigate({ search: (prev) => { const next = { ...prev }; delete next.account; return next; } })}
+      account={account}
+      onAccountChange={(acc) => navigate({ search: (prev) => ({ ...prev, account: acc === "All" ? undefined : acc }) })}
     />
   );
 }

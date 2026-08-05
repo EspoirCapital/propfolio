@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Plus, X, ExternalLink, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { marked } from "marked";
@@ -10,8 +10,7 @@ import { DatePicker } from "../components/DatePicker";
 import { Select } from "../components/Select";
 import { ErrorBanner } from "../components/ErrorBanner";
 
-export function JournalView({ accounts, trades, createTrade, updateTrade, deleteTrade, settings, slavesByMaster = {}, copyTrades, initialAccountId, onClearInitialAccount }) {
-  const [filterAcc, setFilterAcc] = useState(initialAccountId || "All");
+export function JournalView({ accounts, trades, createTrade, updateTrade, deleteTrade, settings, slavesByMaster = {}, copyTrades, account, onAccountChange }) {
   const [showForm, setShowForm] = useState(false);
   const [editingTrade, setEditingTrade] = useState(null);
   const [notesMode, setNotesMode] = useState("edit");
@@ -23,12 +22,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
   const [copyMsg, setCopyMsg] = useState("");
   const [justAdded, setJustAdded] = useState(null);
 
-  useEffect(() => {
-    if (initialAccountId) {
-      setFilterAcc(initialAccountId);
-      onClearInitialAccount?.();
-    }
-  }, [initialAccountId]);
+  const filterAcc = accounts.some((a) => a.id === account) ? account : "All";
 
   const defaultForm = {
     accountId: accounts[0]?.id || "", date: "", symbol: "", side: "Long", lots: "",
@@ -128,7 +122,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="pd-label">Account</span>
-          <Select style={{ width: "auto" }} value={filterAcc} onChange={(e) => setFilterAcc(e.target.value)}>
+          <Select style={{ width: "auto" }} value={filterAcc} onChange={(e) => onAccountChange(e.target.value)}>
             <option value="All">All accounts</option>
             {accounts.map((a) => <option key={a.id} value={a.id}>{getAccountLabel(a)}</option>)}
           </Select>
