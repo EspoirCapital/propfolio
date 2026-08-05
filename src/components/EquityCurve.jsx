@@ -1,4 +1,4 @@
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 const C = {
   slate: "#9a8e7a",
@@ -32,14 +32,10 @@ function ChartTooltip({ active, payload, size, small }) {
   );
 }
 
-export function EquityCurve({ data, height = 200, title, size, showY = false }) {
+export function EquityCurve({ data, height = 200, title, size, showX = false }) {
   const compact = height < 160;
   const pctOf = (v) => (v / size) * 100;
   const chartData = size ? data.map((d) => ({ ...d, v: round2(pctOf(d.pnl)) })) : data.map((d) => ({ ...d, v: d.pnl }));
-  const minPct = size ? Math.min(0, ...data.map((d) => pctOf(d.pnl))) : 0;
-  const maxPct = size ? Math.max(0, ...data.map((d) => pctOf(d.pnl))) : 0;
-  const yTicks = [...new Set([round2(minPct), 0, round2(maxPct)])].sort((a, b) => a - b);
-  const domain = minPct === maxPct ? [minPct - 1, maxPct + 1] : [minPct, maxPct];
 
   return (
     <div
@@ -63,21 +59,12 @@ export function EquityCurve({ data, height = 200, title, size, showY = false }) 
               <stop offset="100%" stopColor={C.brass} stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <XAxis
-            dataKey="date"
-            tick={{ fill: C.slate, fontSize: compact ? 10 : 11 }}
-            tickFormatter={(v) => v.slice(0, 5)}
-            minTickGap={compact ? 32 : 24}
-            tickLine={false}
-            axisLine={{ stroke: C.line }}
-          />
-          {showY && size && (
-            <YAxis
-              width={compact ? 48 : 62}
+          {showX && (
+            <XAxis
+              dataKey="date"
               tick={{ fill: C.slate, fontSize: compact ? 10 : 11 }}
-              ticks={yTicks}
-              domain={domain}
-              tickFormatter={sign}
+              tickFormatter={(v) => v.slice(0, 5)}
+              minTickGap={compact ? 32 : 24}
               tickLine={false}
               axisLine={{ stroke: C.line }}
             />
