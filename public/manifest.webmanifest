@@ -2,6 +2,8 @@
   "name": "EC Propfolio",
   "short_name": "EC Propfolio",
   "description": "Prop firm trading portfolio tracker",
+  "lang": "en",
+  "categories": ["finance", "productivity"],
   "start_url": "/",
   "display": "standalone",
   "background_color": "#14161c",
