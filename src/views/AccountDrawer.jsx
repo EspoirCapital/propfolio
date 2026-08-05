@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, ChevronRight, PenLine, ArrowRight, AlertTriangle, Archive, ArchiveRestore } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useApp } from "../context";
 import { computeOutcome, money, getAccountLabel, formatDateUK, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError, computeHealth, healthAccent } from "../utils";
 import { StatusPill } from "../components/StatusPill";
+import { ConfirmModal } from "../components/ConfirmModal";
 import { ProgressionStepper } from "../components/ProgressionStepper";
 import { CredentialReveal } from "../components/CredentialReveal";
 import { EquityCurve } from "../components/EquityCurve";
@@ -249,34 +251,32 @@ export function AccountDrawer({ account, trades, payouts, certificates, settings
         </div>
       </div>
 
-      {showProceedConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,11,15,0.7)" }} onClick={() => setShowProceedConfirm(false)}>
-          <div className="pd-panel p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="pd-display text-xl mb-2">Pass to {nextDest}</div>
-            <div className="text-sm mb-5" style={{ color: "var(--sand-dim)" }}>
-              Mark this account as passed and create a new {nextDest} account?
-            </div>
-            <div className="flex justify-end gap-2">
-              <button className="pd-btn" onClick={() => setShowProceedConfirm(false)}>Cancel</button>
-              <button className="pd-btn" style={{ background: "var(--sage)", color: "var(--ink)", borderColor: "var(--sage)" }} onClick={handleProceed} disabled={busy}>{busy ? "Working…" : "Confirm"}</button>
-            </div>
-          </div>
-        </div>
+      {createPortal(
+        showProceedConfirm && (
+          <ConfirmModal
+            title={`Pass to ${nextDest}`}
+            message={`Mark this account as passed and create a new ${nextDest} account?`}
+            onConfirm={handleProceed}
+            onCancel={() => setShowProceedConfirm(false)}
+            confirmLabel={busy ? "Working…" : "Confirm"}
+            confirmStyle={{ background: "var(--sage)", color: "var(--ink)", borderColor: "var(--sage)" }}
+          />
+        ),
+        document.body
       )}
 
-      {showBreachConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(10,11,15,0.7)" }} onClick={() => setShowBreachConfirm(false)}>
-          <div className="pd-panel p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="pd-display text-xl mb-2">Mark as Breached</div>
-            <div className="text-sm mb-5" style={{ color: "var(--sand-dim)" }}>
-              Mark this account as breached? This cannot be undone.
-            </div>
-            <div className="flex justify-end gap-2">
-              <button className="pd-btn" onClick={() => setShowBreachConfirm(false)}>Cancel</button>
-              <button className="pd-btn" style={{ background: "var(--brick)", color: "white", borderColor: "var(--brick)" }} onClick={handleBreach} disabled={busy}>{busy ? "Working…" : "Confirm"}</button>
-            </div>
-          </div>
-        </div>
+      {createPortal(
+        showBreachConfirm && (
+          <ConfirmModal
+            title="Mark as Breached"
+            message="Mark this account as breached? This cannot be undone."
+            onConfirm={handleBreach}
+            onCancel={() => setShowBreachConfirm(false)}
+            confirmLabel={busy ? "Working…" : "Confirm"}
+            confirmStyle={{ background: "var(--brick)", color: "white", borderColor: "var(--brick)" }}
+          />
+        ),
+        document.body
       )}
     </div>
   );
