@@ -4,6 +4,15 @@ import { money, formatDateUK, computeOutcome } from "../utils";
 
 export function TradeCalendar({ trades, beThreshold = 10 }) {
   const [currentDate, setCurrentDate] = useState(() => {
+    const latest = trades
+      .map((t) => t.date)
+      .filter(Boolean)
+      .sort()
+      .pop();
+    if (latest) {
+      const [y, m] = latest.split("-").map(Number);
+      return new Date(y, m - 1, 1);
+    }
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
