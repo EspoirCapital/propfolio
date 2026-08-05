@@ -28,6 +28,14 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
     ? null
     : trades.reduce((sum, t) => (!t.archived && t.accountId === filterAcc && t.risk > 0 ? sum + t.pnl / t.risk : sum), 0);
 
+  const pnlPct = filterAcc === "All"
+    ? null
+    : (() => {
+        const pnl = trades.reduce((sum, t) => (!t.archived && t.accountId === filterAcc ? sum + t.pnl : sum), 0);
+        const size = accounts.find((a) => a.id === filterAcc)?.size || 0;
+        return size > 0 ? (pnl / size) * 100 : null;
+      })();
+
   const defaultForm = {
     accountId: accounts[0]?.id || "", date: "", symbol: "", side: "Long", lots: "",
     risk: "", pnl: "", session: "London", tag: "", tvLink: "", rating: "green", notes: "",
@@ -140,7 +148,8 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
               {accountProgress !== null && (
                 <span>Progress <span style={{ color: "var(--brass)" }}>{accountProgress}%</span></span>
               )}
-              <span>RR <span style={{ color: rrMade >= 0 ? "var(--sage)" : "var(--brick)" }}>{rrMade >= 0 ? "+" : ""}{rrMade.toFixed(1)}R</span></span>
+              <span>RR <span style={{ color: rrMade >= 0 ? "var(--sage)" : "var(--brick)" }}>{rrMade >= 0 ? "+" : ""}{rrMade.toFixed(1)}R</span>
+                {pnlPct !== null && <span style={{ color: pnlPct >= 0 ? "var(--sage)" : "var(--brick)" }}> ({pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(1)}%)</span>}</span>
             </span>
           )}
         </div>
