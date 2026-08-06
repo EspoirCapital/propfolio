@@ -4,6 +4,8 @@ import { getAccountLabel } from "./utils.js";
 const OAT_MIN_POOL = 3;
 const OAT_ACTIVE_PCT = 0.3;
 const OAT_RISK_PCT = 1;
+const OAT_STANDARD_SIZE = 50000;
+const OAT_MONTHLY_GOAL = 10000;
 
 export function useDerived(accounts, trades, payouts, templates, firms) {
   return useMemo(() => derive(accounts, trades, payouts, templates, firms), [accounts, trades, payouts, templates, firms]);
@@ -118,9 +120,7 @@ export function derive(accounts, trades, payouts, templates, firms) {
     const outstandingViolations = riskViolations.filter((v) => !v.acked).length;
 
     const avgPayout = locked.length ? payoutsSecured / locked.length : null;
-    const floorSizes = withComputed.filter((a) => !a.archived).map((a) => Number(a.size) || 0);
-    const floorSize = floorSizes.length ? Math.min(...floorSizes) : 0;
-    const assumedPayout = floorSize ? Math.round(0.01 * floorSize) : 500;
+    const assumedPayout = Math.round(0.01 * OAT_STANDARD_SIZE);
     const perAccountPayout = avgPayout !== null ? Math.round(avgPayout) : assumedPayout;
     const payoutCycle = {
       perAccount: perAccountPayout,
@@ -154,6 +154,8 @@ export function derive(accounts, trades, payouts, templates, firms) {
       ladder,
       payoutCycle,
       payoutFloor: assumedPayout,
+      standardSize: OAT_STANDARD_SIZE,
+      monthlyGoal: OAT_MONTHLY_GOAL,
     };
 
     return { accounts: withComputed, totals, passRate, oat };

@@ -170,7 +170,7 @@ const EMPTY_OAT = {
   payoutsSecured: 0, tradableCount: 0, riskPct: 1, outstandingViolations: 0,
   ladder: { stage: 0, lockedCount: 0 },
   payoutCycle: { perAccount: 500, perCycle: 500, assumed: true },
-  payoutFloor: 500,
+  payoutFloor: 500, monthlyGoal: 10000,
 };
 
 function ScalingLadder({ oat }) {
@@ -182,7 +182,7 @@ function ScalingLadder({ oat }) {
     {
       n: 1,
       title: "Single-account lock-in",
-      desc: `Start with one funded account and trade it conservatively until its first payout locks (${payoutFloor} = 1% of the smallest account).`,
+      desc: `Start with one funded account and trade it conservatively until its first payout locks (${payoutFloor} = 1% of a $50k account).`,
       tag: poolCount >= 2 ? "done" : poolCount === 1 ? "active" : "next",
     },
     {
@@ -217,7 +217,7 @@ function ScalingLadder({ oat }) {
   } else if (poolCount === 1 && lockedCount >= 1) {
     status = { tone: "var(--sage)", lead: "First payout locked", rest: " - the base is now risk-free. Stop trading it and fund challenge #2." };
   } else {
-    status = { tone: "var(--brass)", lead: "One funded account", rest: ` - trade it conservatively until the first payout locks (${payoutFloor} = 1% of the account).` };
+    status = { tone: "var(--brass)", lead: "One funded account", rest: ` - trade it conservatively until the first payout locks (${payoutFloor} = 1% of a $50k account).` };
   }
 
   return (
@@ -277,7 +277,7 @@ export function OatView({ derived, setBatch, onAcknowledge }) {
   const cycleCount = Math.max(1, oat.active.length);
   const accountWord = cycleCount === 1 ? "account" : "accounts";
   const payoutCycleText = pc.assumed
-    ? `${cycleCount} ${accountWord} × ~${money(pc.perAccount)} ≈ ${money(pc.perCycle)} per payout cycle (1% of the smallest account), stacked safely.`
+    ? `${cycleCount} ${accountWord} × ~${money(pc.perAccount)} ≈ ${money(pc.perCycle)} per payout cycle (1% of a $50k account), stacked safely.`
     : `${cycleCount} ${accountWord} × ${money(pc.perAccount)} ≈ ${money(pc.perCycle)} per payout cycle (from your locked payouts), stacked safely.`;
 
   const poolFees = oat.pool.reduce((s, a) => s + a.cost, 0);
@@ -520,8 +520,8 @@ export function OatView({ derived, setBatch, onAcknowledge }) {
           <p className="text-sm leading-relaxed" style={{ color: "var(--slate)", maxWidth: 720 }}>
             The O.A.T. System decouples portfolio growth from active exposure. Instead of chasing one massive payout by
             risking every account at once, it stacks <span style={{ color: "var(--sand)" }}>smaller, repeatable payouts</span>{" "}
-            — from {money(oat.payoutFloor)} per account (1% of the smallest funded size), ratcheting as accounts grow —
-            across distinct batches, while the reserve{" "}
+            — from {money(oat.payoutFloor)} per $50k account (1% of the standard funded size), ratcheting as accounts grow —
+            toward a {money(oat.monthlyGoal)}/month objective — across distinct batches, while the reserve{" "}
             <span style={{ color: "var(--sand)" }}>stays untouched</span>.{" "}
           </p>
 
@@ -532,7 +532,8 @@ export function OatView({ derived, setBatch, onAcknowledge }) {
                 {[
                   ["Active / Reserve", "30% / 70%", "max variance buffer / standby backup"],
                   ["Minimum Pool", "3 funded", "to start the split"],
-                  ["Payout Floor", `~${money(oat.payoutFloor)}`, "1% of smallest account"],
+                  ["Payout Floor", `~${money(oat.payoutFloor)}`, "1% of a $50k account"],
+                  ["Monthly Objective", `~${money(oat.monthlyGoal)}`, "stacked payouts across batches"],
                   ["Evaluation Risk", "high %", "fast-pass phase"],
                   ["Funded Risk", "~1% / trade", "capital preservation"],
                   ["Rotation Trigger", "payout secured", "switch immediately"],
