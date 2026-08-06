@@ -77,10 +77,14 @@ export function derive(accounts, trades, payouts, templates, firms) {
       });
     const tradable = byAcquired(pool.filter((a) => a.received <= 0));
     const locked = byAcquired(pool.filter((a) => a.received > 0));
-    const active = tradable.slice(0, activeCount);
-    const reserve = [...tradable.slice(activeCount), ...locked];
+    const manualQueue = byAcquired(tradable.filter((a) => a.oatBatch === "active"));
+    const autoQueue = byAcquired(tradable.filter((a) => a.oatBatch !== "active" && a.oatBatch !== "reserve"));
+    const heldBack = byAcquired(tradable.filter((a) => a.oatBatch === "reserve"));
+    const rotationQueue = [...manualQueue, ...autoQueue];
+    const active = rotationQueue.slice(0, activeCount);
+    const reserve = [...rotationQueue.slice(activeCount), ...heldBack, ...locked];
     const fullyLocked = pool.length > 0 && tradable.length === 0;
-    const nextUp = tradable[activeCount] || null;
+    const nextUp = rotationQueue[activeCount] || null;
     const riskViolations = [];
     pool.forEach((acc) => {
       const size = Number(acc.size) || 0;

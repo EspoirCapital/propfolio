@@ -40,6 +40,7 @@ export function AppProvider({ children }) {
   const breachFn = useMutation(api.accounts.breach);
   const archiveFn = useMutation(api.accounts.archive);
   const unarchiveFn = useMutation(api.accounts.unarchive);
+  const setBatchFn = useMutation(api.accounts.setBatch);
   const linkAccountsFn = useMutation(api.accounts.link);
   const unlinkAccountFn = useMutation(api.accounts.unlink);
 
@@ -166,6 +167,7 @@ export function AppProvider({ children }) {
       editingAccount, setEditingAccount,
       derived,
       archiveAccount: (id) => archiveFn({ id }), unarchiveAccount: (id) => unarchiveFn({ id }),
+      setBatch: (id, role) => setBatchFn({ id, role }),
     }}>
       {children}
     </AppContext.Provider>

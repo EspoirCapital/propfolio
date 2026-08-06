@@ -1,6 +1,6 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { CheckCircle2, Circle, Check, AlertTriangle } from "lucide-react";
+import { CheckCircle2, Circle, Check, AlertTriangle, ArrowLeft, ArrowRight } from "lucide-react";
 import { money, getAccountLabel, formatDateUK } from "../utils";
 import { KpiTile } from "../components/KpiTile";
 
@@ -11,6 +11,7 @@ const ROLE_COLOR = {
   drawdown: { color: "var(--brick)", bg: "rgba(193,89,75,0.14)" },
   done: { color: "var(--sage)", bg: "rgba(111,176,139,0.12)" },
   next: { color: "var(--slate)", bg: "rgba(137,146,163,0.12)" },
+  manual: { color: "var(--brass)", bg: "rgba(206,159,82,0.10)" },
 };
 
 function Tag({ kind, children }) {
@@ -22,13 +23,19 @@ function Tag({ kind, children }) {
   );
 }
 
-function AccountList({ title, subtitle, accounts, drawdownIds }) {
+function AccountList({ title, subtitle, accounts, drawdownIds, role, onDrop, draggingId, onDraggingChange }) {
+  const isOverlaid = onDrop != null;
   return (
-    <div>
+    <div
+      onDragOver={(e) => { e.preventDefault(); }}
+      onDrop={isOverlaid ? onDrop : undefined}
+      style={isOverlaid ? { minHeight: 120, borderRadius: 8, border: "1px dashed var(--line)", padding: 1, transition: "border-color .15s, background .15s" } : undefined}
+      data-oat-drop={role}
+    >
       <div className="pd-label mb-2">{title}{subtitle ? ` · ${subtitle}` : ""}</div>
       {accounts.length === 0 ? (
         <div className="rounded-lg p-6 text-center text-sm" style={{ border: "1px dashed var(--line)", color: "var(--slate)" }}>
-          None yet
+          None yet{isOverlaid ? " — drop an account from the other batch here" : ""}
         </div>
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)" }}>
@@ -42,32 +49,40 @@ function AccountList({ title, subtitle, accounts, drawdownIds }) {
               : acc.payoutGap > 0
               ? `≈ ${money(acc.payoutGap)} more to lock a payout`
               : "at payout threshold — lock it in";
+            const dragDisabled = maintenance || !isOverlayed;
             return (
-              <Link
+              <div
                 key={acc.id}
-                to="/accounts/$accountId"
-                params={{ accountId: acc.id }}
-                className="pd-row flex items-center gap-3 px-4 py-3 no-underline"
-                style={{ borderBottom: "1px solid var(--line)", color: "var(--sand)", textDecoration: "none" }}
+                draggable={!dragDisabled}
+                onDragStart={(e) => { e.dataTransfer.setData("text/oat", acc.id); e.dataTransfer.effectAllowed = "move"; onDraggingChange?.(acc.id); }}
+                onDragEnd={() => onDraggingChange?.(null)}
+                style={{ opacity: draggingId === acc.id ? 0.4 : 1, borderBottom: "1px solid var(--line-soft)", background: acc.oatBatch ? "rgba(206,159,82,0.05)" : undefined }}
               >
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm truncate">{getAccountLabel(acc)}</div>
-                  <div className="pd-mono text-xs mt-0.5 truncate" style={{ color: acc.tradePnl < 0 && !maintenance ? "var(--brick)" : "var(--slate)" }}>
-                    {nextMove}
-                    {maintenance && (
-                      <span className="ml-2"><Tag kind="maintenance">maintenance</Tag></span>
+                <Link
+                  to="/accounts/$accountId"
+                  params={{ accountId: acc.id }}
+                  className="pd-row flex items-center gap-3 px-4 py-3 no-underline"
+                  style={{ color: "var(--sand)", textDecoration: "none" }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm truncate">{getAccountLabel(acc)}{acc.oatBatch && <span className="ml-2"><Tag kind="manual">pinned</Tag></span>}</div>
+                    <div className="pd-mono text-xs mt-0.5 truncate" style={{ color: acc.tradePnl < 0 && !maintenance ? "var(--brick)" : "var(--slate)" }}>
+                      {nextMove}
+                      {maintenance && (
+                        <span className="ml-2"><Tag kind="maintenance">maintenance</Tag></span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="pd-mono text-sm" style={{ color: acc.tradePnl >= 0 ? "var(--sage)" : "var(--brick)" }}>
+                      {acc.tradePnl > 0 ? "+" : ""}{money(acc.tradePnl)}
+                    </div>
+                    {inDD && (
+                      <div className="mt-1"><Tag kind="drawdown">drawdown</Tag></div>
                     )}
                   </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="pd-mono text-sm" style={{ color: acc.tradePnl >= 0 ? "var(--sage)" : "var(--brick)" }}>
-                    {acc.tradePnl > 0 ? "+" : ""}{money(acc.tradePnl)}
-                  </div>
-                  {inDD && (
-                    <div className="mt-1"><Tag kind="drawdown">drawdown</Tag></div>
-                  )}
-                </div>
-              </Link>
+                </Link>
+              </div>
             );
           })}
         </div>
@@ -202,8 +217,9 @@ function ScalingLadder({ oat }) {
   );
 }
 
-export function OatView({ derived }) {
+export function OatView({ derived, setBatch }) {
   const oat = derived.oat || EMPTY_OAT;
+  const [draggingId, setDraggingId] = useState(null);
   const activeShare = oat.poolCount ? Math.round((oat.active.length / oat.poolCount) * 100) : 0;
   const reserveShare = 100 - activeShare;
   const drawdownIds = oat.drawdown ? new Set([oat.drawdown.id]) : new Set();
@@ -224,6 +240,29 @@ export function OatView({ derived }) {
     `Next batch payout (${batchSize} × ${money(oat.payoutFloor)}): +${money(nextPayout)}`,
     `Net: ${nextPayout > blowFees ? "+" : ""}${money(nextPayout - blowFees)} — asymmetric by design`,
   ];
+
+  const assignRole = (e, role) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/oat");
+    if (!id || !setBatch) return;
+    setDraggingId(null);
+    setBatch(id, role);
+  };
+
+  const rotate = (dir) => {
+    if (!setBatch || oat.poolCount < 2) return;
+    if (dir === "next") {
+      const reserveTradable = oat.reserve.filter((a) => a.received <= 0);
+      if (!oat.active.length || !reserveTradable.length) return;
+      setBatch(oat.active[0].id, "reserve");
+      setBatch(reserveTradable[0].id, "active");
+    } else {
+      const reserveCurrent = oat.reserve.filter((a) => a.received <= 0);
+      if (!oat.active.length || !reserveCurrent.length) return;
+      setBatch(oat.active[oat.active.length - 1].id, "reserve");
+      setBatch(reserveCurrent[reserveCurrent.length - 1].id, "active");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -288,9 +327,43 @@ export function OatView({ derived }) {
                 The 30/70 split fully engages at 3 funded accounts. You are in the build-up ladder above.
               </div>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <AccountList title="Active" subtitle="trading now" accounts={oat.active} drawdownIds={drawdownIds} />
-              <AccountList title="Reserve" subtitle="idle" accounts={oat.reserve} drawdownIds={drawdownIds} />
+
+            <div className="flex items-center gap-2 mb-3" style={oat.poolCount < 2 ? { opacity: 0.5, pointerEvents: "none" } : undefined}>
+              <button className="pd-btn" onClick={() => rotate("prev")} disabled={!setBatch} title="Previous batch — swap the newest active account with the newest reserve" aria-label="Previous batch">
+                <ArrowLeft size={13} /> Previous
+              </button>
+              <span className="text-xs" style={{ color: "var(--slate)" }}>
+                rotate the active batch, or drag accounts between batches
+              </span>
+              <button className="pd-btn" onClick={() => rotate("next")} disabled={!setBatch} title="Next batch — oldest active account to reserve, oldest reserve into the active slot" aria-label="Next batch">
+                Next <ArrowRight size={13} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+              <AccountList
+                title="Active"
+                subtitle="trading now"
+                accounts={oat.active}
+                drawdownIds={drawdownIds}
+                role="active"
+                onDrop={(e) => assignRole(e, "active")}
+                draggingId={draggingId}
+                onDraggingChange={setDraggingId}
+              />
+              <AccountList
+                title="Reserve"
+                subtitle="idle"
+                accounts={oat.reserve}
+                drawdownIds={drawdownIds}
+                role="reserve"
+                onDrop={(e) => assignRole(e, "reserve")}
+                draggingId={draggingId}
+                onDraggingChange={setDraggingId}
+              />
+            </div>
+            <div className="mt-2 text-xs" style={{ color: "var(--sand-dim)" }}>
+              Pinned accounts keep their batch until you drag them back; unassigned ones follow the automatic rotation.
             </div>
           </>
         )}

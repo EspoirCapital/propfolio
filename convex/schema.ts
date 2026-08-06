@@ -74,6 +74,7 @@ export default defineSchema({
     notes: v.optional(v.string()),
     archived: v.boolean(),
     chainId: v.optional(v.string()),
+    oatBatch: v.optional(v.string()),
   }).index("by_userId", ["userId"]),
 
   trades: defineTable({

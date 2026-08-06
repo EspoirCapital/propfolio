@@ -136,6 +136,20 @@ export const unarchive = mutation({
   },
 });
 
+// Assign an OAT batch role (active / reserve) manually. Passing null clears the
+// manual role so the automatic rotation rules take over again.
+export const setBatch = mutation({
+  args: { id: v.id("accounts"), role: v.optional(v.union(v.literal("active"), v.literal("reserve"))) },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) throw new Error("Not signed in.");
+    const existing = await ctx.db.get(args.id);
+    if (!existing || existing.userId !== userId) throw new Error("Account not found.");
+    await ctx.db.patch(args.id, { oatBatch: args.role });
+    return args.id;
+  },
+});
+
 // Manually group two accounts (and anything already in either of their chains)
 // into one journey. The chainId is anchored to the earliest-created member so
 // the ordering shown in the UI is stable.

@@ -313,8 +313,8 @@ function ReportPage() {
 }
 
 function OatPage() {
-  const { derived } = useApp();
-  return <OatView derived={derived} />;
+  const { derived, setBatch } = useApp();
+  return <OatView derived={derived} setBatch={setBatch} />;
 }
 
 function PeoplePage() {
