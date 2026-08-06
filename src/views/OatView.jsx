@@ -49,7 +49,7 @@ function AccountList({ title, subtitle, accounts, drawdownIds, role, onDrop, dra
               : acc.payoutGap > 0
               ? `≈ ${money(acc.payoutGap)} more to lock a payout`
               : "at payout threshold — lock it in";
-            const dragDisabled = maintenance || !isOverlayed;
+            const dragDisabled = maintenance || !isOverlaid;
             return (
               <div
                 key={acc.id}
