@@ -94,6 +94,7 @@ export default defineSchema({
     mfeR: v.optional(v.union(v.number(), v.null())),
     maeR: v.optional(v.union(v.number(), v.null())),
     archived: v.boolean(),
+    riskAcked: v.optional(v.boolean()),
   })
     .index("by_userId", ["userId"])
     .index("by_accountId", ["accountId"]),

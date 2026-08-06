@@ -47,6 +47,7 @@ export function AppProvider({ children }) {
   const createTradeFn = useMutation(api.trades.create);
   const updateTradeFn = useMutation(api.trades.update);
   const deleteTradeFn = useMutation(api.trades.remove);
+  const acknowledgeTradeFn = useMutation(api.trades.acknowledge);
 
   const createPayoutFn = useMutation(api.payouts.create);
   const updatePayoutFn = useMutation(api.payouts.update);
@@ -110,6 +111,7 @@ export function AppProvider({ children }) {
   const createTrade = (data) => createTradeFn(pick(data, TRADE_FIELDS));
   const updateTrade = (id, data) => updateTradeFn({ id, ...pick(data, TRADE_FIELDS) });
   const deleteTrade = (id) => deleteTradeFn({ id });
+  const acknowledgeRisk = (id) => acknowledgeTradeFn({ id });
 
   const createPayout = (data) => createPayoutFn(pick(data, PAYOUT_FIELDS));
   const updatePayout = (id, data) => updatePayoutFn({ id, ...pick(data, PAYOUT_FIELDS) });
@@ -149,7 +151,7 @@ export function AppProvider({ children }) {
       createAccount, updateAccount, deleteAccount,
       proceed: proceedFn, breach: breachFn,
       linkAccounts: linkAccountsFn, unlinkAccount: unlinkAccountFn,
-      createTrade, updateTrade, deleteTrade,
+      createTrade, updateTrade, deleteTrade, acknowledgeRisk,
       createPayout, updatePayout, deletePayout,
       createCertificate, updateCertificate, deleteCertificate,
       createTemplate, updateTemplate, deleteTemplate,

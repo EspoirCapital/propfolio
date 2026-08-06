@@ -59,6 +59,18 @@ export const update = mutation({
   },
 });
 
+export const acknowledge = mutation({
+  args: { id: v.id("trades") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) throw new Error("Not signed in.");
+    const existing = await ctx.db.get(args.id);
+    if (!existing || existing.userId !== userId) throw new Error("Trade not found.");
+    await ctx.db.patch(args.id, { riskAcked: true });
+    return args.id;
+  },
+});
+
 export const remove = mutation({
   args: { id: v.id("trades") },
   handler: async (ctx, args) => {

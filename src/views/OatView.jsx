@@ -144,7 +144,7 @@ function GuideChecklist({ oat }) {
   const checks = [
     { label: "Minimum pool of 3 funded accounts", done: oat.ready },
     { label: "30/70 split in place", done: oat.poolCount >= 3 },
-    { label: "≤1% risk per trade on funded accounts", done: oat.riskViolations.length === 0 },
+    { label: "≤1% risk per trade on funded accounts", done: oat.outstandingViolations === 0 },
     { label: "At least one payout secured", done: oat.locked.length > 0 },
     { label: "Active batch not in drawdown", done: oat.active.length > 0 && !oat.drawdown },
     { label: "Next-rotation account standing by", done: !!oat.nextUp },
@@ -167,7 +167,7 @@ const EMPTY_OAT = {
   pool: [], active: [], reserve: [], locked: [], riskViolations: [],
   fullyLocked: false, nextUp: null, drawdown: null,
   poolCount: 0, activeCount: 0, ready: false, minPool: 3, activePct: 30,
-  payoutsSecured: 0, tradableCount: 0, riskPct: 1,
+  payoutsSecured: 0, tradableCount: 0, riskPct: 1, outstandingViolations: 0,
   ladder: { stage: 0, lockedCount: 0 },
   payoutCycle: { perAccount: 500, perCycle: 500, assumed: true },
   payoutFloor: 500,
@@ -266,7 +266,7 @@ function ScalingLadder({ oat }) {
   );
 }
 
-export function OatView({ derived, setBatch }) {
+export function OatView({ derived, setBatch, onAcknowledge }) {
   const oat = derived.oat || EMPTY_OAT;
   const [draggingId, setDraggingId] = useState(null);
   const activeShare = oat.poolCount ? Math.round((oat.active.length / oat.poolCount) * 100) : 0;
@@ -468,18 +468,25 @@ export function OatView({ derived, setBatch }) {
 
       {/* Risk guard */}
       <div className="rounded-lg" style={{ background: "var(--ledger)", border: "1px solid var(--line)", padding: 16 }}>
-        <div className="pd-label mb-2">Risk Guard · max {oat.riskPct}% per trade</div>
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="pd-label">Risk Guard · max {oat.riskPct}% per trade</div>
+          {oat.riskViolations.length > 0 && (
+            <span className="pd-mono text-xs" style={{ color: oat.outstandingViolations === 0 ? "var(--sage)" : "var(--brass)" }}>
+              {oat.outstandingViolations} outstanding · {oat.riskViolations.length - oat.outstandingViolations} acknowledged
+            </span>
+          )}
+        </div>
         {oat.riskViolations.length === 0 ? (
           <div className="text-sm" style={{ color: "var(--sage)" }}>
             No funded-account trade has risked more than {oat.riskPct}% of its account size.
           </div>
         ) : (
           <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)" }}>
-            <div className="grid pd-label items-center" style={{ gridTemplateColumns: "1.5fr 90px 70px 100px 100px", gap: "0 12px", background: "var(--ledger-raised)", borderBottom: "1px solid var(--line)", padding: "8px 14px" }}>
-              <span>Account</span><span>Date</span><span>Symbol</span><span>Risk</span><span>% of size</span>
+            <div className="grid pd-label items-center" style={{ gridTemplateColumns: "1.5fr 90px 70px 100px 100px 110px", gap: "0 12px", background: "var(--ledger-raised)", borderBottom: "1px solid var(--line)", padding: "8px 14px" }}>
+              <span>Account</span><span>Date</span><span>Symbol</span><span>Risk</span><span>% of size</span><span className="text-right">Status</span>
             </div>
             {oat.riskViolations.slice(0, 40).map((v) => (
-              <div key={`${v.accountId}-${v.date}-${v.symbol}-${v.risk}`} className="grid pd-mono items-center text-sm" style={{ gridTemplateColumns: "1.5fr 90px 70px 100px 100px", gap: "0 12px", padding: "8px 14px", borderBottom: "1px solid var(--line-soft)" }}>
+              <div key={`${v.accountId}-${v.date}-${v.symbol}-${v.risk}`} className="grid pd-mono items-center text-sm" style={{ gridTemplateColumns: "1.5fr 90px 70px 100px 100px 110px", gap: "0 12px", padding: "8px 14px", borderBottom: "1px solid var(--line-soft)" }}>
                 <Link to="/accounts/$accountId" params={{ accountId: v.accountId }} className="truncate no-underline" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "var(--sand-dim)" }}>
                   {v.accountLabel}
                 </Link>
@@ -487,6 +494,17 @@ export function OatView({ derived, setBatch }) {
                 <span className="truncate" style={{ color: "var(--sand)" }}>{v.symbol}</span>
                 <span className="truncate" style={{ color: "var(--sand)" }}>{money(v.risk)}</span>
                 <span className="text-right" style={{ color: v.pct >= 2 ? "var(--brick)" : "var(--brass)" }}>{v.pct.toFixed(2)}%</span>
+                <span className="text-right">
+                  {v.acked ? (
+                    <span className="pd-mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--sage)", background: "rgba(111,176,139,0.12)", padding: "2px 6px", borderRadius: 4 }}>acknowledged</span>
+                  ) : (
+                    <button
+                      onClick={() => onAcknowledge(v.tradeId)}
+                      className="pd-mono"
+                      style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--brass)", background: "rgba(206,159,82,0.12)", border: "1px solid rgba(206,159,82,0.35)", padding: "3px 8px", borderRadius: 4, cursor: "pointer" }}
+                    >acknowledge</button>
+                  )}
+                </span>
               </div>
             ))}
           </div>

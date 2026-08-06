@@ -97,6 +97,7 @@ export function derive(accounts, trades, payouts, templates, firms) {
             const pct = (risk / base) * 100;
             if (pct > OAT_RISK_PCT) {
               riskViolations.push({
+                tradeId: t.id,
                 accountId: acc.id,
                 accountLabel: getAccountLabel(acc) || "",
                 date: t.date,
@@ -104,6 +105,7 @@ export function derive(accounts, trades, payouts, templates, firms) {
                 risk,
                 size: base,
                 pct,
+                acked: !!t.riskAcked,
               });
             }
           }
@@ -113,6 +115,7 @@ export function derive(accounts, trades, payouts, templates, firms) {
 
     const drawdownAccount = active.find((a) => a.tradePnl < 0) || null;
     const payoutsSecured = pool.reduce((s, a) => s + a.received, 0);
+    const outstandingViolations = riskViolations.filter((v) => !v.acked).length;
 
     const avgPayout = locked.length ? payoutsSecured / locked.length : null;
     const floorSizes = withComputed.filter((a) => !a.archived).map((a) => Number(a.size) || 0);
@@ -144,6 +147,7 @@ export function derive(accounts, trades, payouts, templates, firms) {
       nextUp,
       drawdown: drawdownAccount,
       riskViolations,
+      outstandingViolations,
       riskPct: OAT_RISK_PCT,
       payoutsSecured,
       tradableCount: tradable.length,
