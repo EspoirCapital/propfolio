@@ -1,0 +1,457 @@
+import { Fragment } from "react";
+import { Link } from "@tanstack/react-router";
+import { CheckCircle2, Circle, Check, AlertTriangle } from "lucide-react";
+import { money, getAccountLabel, formatDateUK } from "../utils";
+import { KpiTile } from "../components/KpiTile";
+
+const ROLE_COLOR = {
+  active: { color: "var(--brass)", bg: "rgba(206,159,82,0.12)" },
+  reserve: { color: "var(--slate)", bg: "rgba(137,146,163,0.12)" },
+  maintenance: { color: "var(--sage)", bg: "rgba(111,176,139,0.12)" },
+  drawdown: { color: "var(--brick)", bg: "rgba(193,89,75,0.14)" },
+  done: { color: "var(--sage)", bg: "rgba(111,176,139,0.12)" },
+  next: { color: "var(--slate)", bg: "rgba(137,146,163,0.12)" },
+};
+
+function Tag({ kind, children }) {
+  const c = ROLE_COLOR[kind] || ROLE_COLOR.reserve;
+  return (
+    <span className="pd-mono" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.04em", color: c.color, background: c.bg, padding: "2px 6px", borderRadius: 4 }}>
+      {children}
+    </span>
+  );
+}
+
+function AccountList({ title, subtitle, accounts, drawdownIds }) {
+  return (
+    <div>
+      <div className="pd-label mb-2">{title}{subtitle ? ` · ${subtitle}` : ""}</div>
+      {accounts.length === 0 ? (
+        <div className="rounded-lg p-6 text-center text-sm" style={{ border: "1px dashed var(--line)", color: "var(--slate)" }}>
+          None yet
+        </div>
+      ) : (
+        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)" }}>
+          {accounts.map((acc) => {
+            const inDD = drawdownIds.has(acc.id);
+            const maintenance = acc.received > 0;
+            const nextMove = maintenance
+              ? `payout held · ${money(acc.received)} secured`
+              : acc.tradePnl < 0
+              ? "in drawdown — hold, no batch-hopping"
+              : acc.payoutGap > 0
+              ? `≈ ${money(acc.payoutGap)} more to lock a payout`
+              : "at payout threshold — lock it in";
+            return (
+              <Link
+                key={acc.id}
+                to="/accounts/$accountId"
+                params={{ accountId: acc.id }}
+                className="pd-row flex items-center gap-3 px-4 py-3 no-underline"
+                style={{ borderBottom: "1px solid var(--line)", color: "var(--sand)", textDecoration: "none" }}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm truncate">{getAccountLabel(acc)}</div>
+                  <div className="pd-mono text-xs mt-0.5 truncate" style={{ color: acc.tradePnl < 0 && !maintenance ? "var(--brick)" : "var(--slate)" }}>
+                    {nextMove}
+                    {maintenance && (
+                      <span className="ml-2"><Tag kind="maintenance">maintenance</Tag></span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="pd-mono text-sm" style={{ color: acc.tradePnl >= 0 ? "var(--sage)" : "var(--brick)" }}>
+                    {acc.tradePnl > 0 ? "+" : ""}{money(acc.tradePnl)}
+                  </div>
+                  {inDD && (
+                    <div className="mt-1"><Tag kind="drawdown">drawdown</Tag></div>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GuideChecklist({ oat }) {
+  const checks = [
+    { label: "Minimum pool of 3 funded accounts", done: oat.ready },
+    { label: "30/70 split in place", done: oat.poolCount >= 3 },
+    { label: "≤1% risk per trade on funded accounts", done: oat.riskViolations.length === 0 },
+    { label: "At least one payout secured", done: oat.locked.length > 0 },
+    { label: "Active batch not in drawdown", done: oat.active.length > 0 && !oat.drawdown },
+    { label: "Next-rotation account standing by", done: !!oat.nextUp },
+  ];
+  return (
+    <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)", flex: 1 }}>
+      {checks.map((c, i) => (
+        <div key={c.label} className="flex items-center gap-2.5 px-4 py-2" style={{ borderBottom: i < checks.length - 1 ? "1px solid var(--line-soft)" : "none", padding: "8px 14px" }}>
+          <span style={{ color: c.done ? "var(--sage)" : "var(--slate)", display: "flex" }}>
+            {c.done ? <CheckCircle2 size={15} /> : <Circle size={15} />}
+          </span>
+          <span className="text-sm" style={{ color: c.done ? "var(--sand)" : "var(--sand-dim)" }}>{c.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const EMPTY_OAT = {
+  pool: [], active: [], reserve: [], locked: [], riskViolations: [],
+  fullyLocked: false, nextUp: null, drawdown: null,
+  poolCount: 0, activeCount: 0, ready: false, minPool: 3, activePct: 30,
+  payoutsSecured: 0, tradableCount: 0, riskPct: 1,
+  ladder: { stage: 0, lockedCount: 0 },
+  payoutCycle: { perAccount: 500, perCycle: 500, assumed: true },
+};
+
+function ScalingLadder({ oat }) {
+  const poolCount = oat.poolCount;
+  const lockedCount = oat.ladder.lockedCount;
+
+  const stages = [
+    {
+      n: 1,
+      title: "Single-account lock-in",
+      desc: "Start with one funded account and trade it conservatively until its first payout locks (e.g., $500).",
+      tag: poolCount >= 2 ? "done" : poolCount === 1 ? "active" : "next",
+    },
+    {
+      n: 2,
+      title: "Two-account rotation",
+      desc: "Fund the second challenge. Rotate: lock in Account 1, switch to Account 2, lock that too. Two locked payouts build surplus capital.",
+      tag: poolCount >= 3 ? "done" : poolCount === 2 ? "active" : "next",
+    },
+    {
+      n: 3,
+      title: "Three-account threshold",
+      desc: "Reinvest the surplus into a third challenge. At 3 funded accounts the full architecture unlocks: 1 active (30%), 2 in reserve (70%).",
+      tag: poolCount >= 3 ? "active" : "next",
+    },
+    {
+      n: "4+",
+      title: "Full batch scaling",
+      desc: "Payouts keep funding new challenges. The pool scales in 30% slots: 6 accounts = 2 active / 4 reserve, 9 accounts = 3 active / 6 reserve.",
+      tag: poolCount >= 3 ? "active" : "next",
+    },
+  ];
+
+  let status;
+  if (poolCount >= 3) {
+    status = { tone: "var(--sage)", lead: "Full 30/70 architecture live", rest: ` - ${oat.active.length} active, ${oat.reserve.length} reserve. Payouts keep funding new challenges as the pool scales.` };
+  } else if (poolCount === 2 && lockedCount >= 2) {
+    status = { tone: "var(--sage)", lead: "Both accounts locked", rest: " - surplus secured. Fund the third challenge." };
+  } else if (poolCount === 2 && lockedCount === 1) {
+    status = { tone: "var(--brass)", lead: "Account 1 locked", rest: " - rotate to Account 2 and lock it in." };
+  } else if (poolCount === 2) {
+    status = { tone: "var(--brass)", lead: "Two accounts funded", rest: " - trade Account 1 to lock-in, then rotate to Account 2." };
+  } else if (poolCount === 1 && lockedCount >= 1) {
+    status = { tone: "var(--sage)", lead: "First payout locked", rest: " - the base is now risk-free. Stop trading it and fund challenge #2." };
+  } else {
+    status = { tone: "var(--brass)", lead: "One funded account", rest: " - trade it conservatively until the first payout locks (e.g. $500)." };
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-2" style={{ padding: "0 10px" }}>
+        {stages.map((s, i) => {
+          const bg = s.tag === "done" ? "var(--sage)" : s.tag === "active" ? "var(--brass)" : "transparent";
+          const fg = s.tag === "done" || s.tag === "active" ? "var(--ink)" : "var(--sand-dim)";
+          return (
+            <Fragment key={`${s.n}-${i}`}>
+              {i > 0 && (
+                <div className="flex-1" style={{ height: 2, borderRadius: 999, background: (i === 1 ? poolCount >= 2 : poolCount >= 3) ? "var(--sage)" : "var(--line)" }} />
+              )}
+              <div
+                className="pd-mono flex items-center justify-center"
+                title={`Stage ${s.n} - ${s.title}`}
+                style={{ width: 30, height: 30, borderRadius: "50%", background: bg, color: fg, border: s.tag === "next" ? "1px solid var(--line)" : "none", flexShrink: 0, fontSize: s.tag === "done" ? undefined : 11, fontWeight: 600 }}
+              >
+                {s.tag === "done" ? <Check size={13} strokeWidth={2.5} /> : s.n}
+              </div>
+            </Fragment>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <span className="text-sm" style={{ color: "var(--sand-dim)", lineHeight: 1.55, maxWidth: 720 }}>
+          <strong style={{ color: status.tone }}>{status.lead}</strong>
+          {status.rest}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+        {stages.map((s) => (
+          <div key={s.n} className="rounded-lg p-4" style={{ background: "var(--ledger-raised)" }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="pd-mono text-xs" style={{ color: "var(--slate)" }}>stage {s.n === "4+" ? "4+" : s.n}</span>
+              <Tag kind={s.tag}>{s.tag}</Tag>
+            </div>
+            <div className="text-sm font-semibold mb-1" style={{ color: "var(--sand)" }}>{s.title}</div>
+            <p className="text-sm leading-relaxed" style={{ color: "var(--slate)" }}>{s.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function OatView({ derived }) {
+  const oat = derived.oat || EMPTY_OAT;
+  const activeShare = oat.poolCount ? Math.round((oat.active.length / oat.poolCount) * 100) : 0;
+  const reserveShare = 100 - activeShare;
+  const drawdownIds = oat.drawdown ? new Set([oat.drawdown.id]) : new Set();
+
+  const pc = oat.payoutCycle;
+  const cycleCount = Math.max(1, oat.active.length);
+  const accountWord = cycleCount === 1 ? "account" : "accounts";
+  const payoutCycleText = pc.assumed
+    ? `${cycleCount} ${accountWord} × ~${money(pc.perAccount)} ≈ ${money(pc.perCycle)} per payout cycle (1% of the smallest account), stacked safely.`
+    : `${cycleCount} ${accountWord} × ${money(pc.perAccount)} ≈ ${money(pc.perCycle)} per payout cycle (from your locked payouts), stacked safely.`;
+
+  return (
+    <div className="space-y-6">
+      <p className="text-sm" style={{ color: "var(--slate)", maxWidth: 660, lineHeight: 1.65 }}>
+        One At a Time decouples portfolio growth from market exposure. A small active batch is traded at ~1% risk until a
+        payout locks in — roughly 1% of each funded size — then it goes to maintenance and the next batch takes over.
+        Reserve capital stays untouched.
+      </p>
+
+      {/* Status KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KpiTile
+          label="Funded Pool"
+          value={`${oat.poolCount} / ${oat.minPool}`}
+          accent={oat.ready ? "var(--sage)" : "var(--brass)"}
+          sub={oat.ready ? "minimum met" : (
+            <Link to="/accounts" className="no-underline" style={{ color: "var(--brass)", textDecoration: "none" }}>pass a challenge to grow it</Link>
+          )}
+        />
+        <KpiTile label="Active Batch" value={oat.poolCount ? oat.active.length : "—"} accent="var(--brass)" sub={oat.poolCount ? `${oat.activeCount} slot${oat.activeCount === 1 ? "" : "s"} · trading now` : "no funded accounts"} />
+        <KpiTile label="Reserve" value={oat.reserve.length} accent="var(--slate)" sub={oat.locked.length ? `${oat.locked.length} locked · rest idle` : "idle backup"} />
+        <KpiTile
+          label="Payouts Secured"
+          animate={oat.payoutsSecured}
+          fmt={money}
+          accent="var(--sage)"
+          sub={`${oat.locked.length} account${oat.locked.length === 1 ? "" : "s"} locked in`}
+        />
+      </div>
+
+      {/* Initial scaling ladder */}
+      {oat.poolCount > 0 && (
+        <div className="rounded-lg" style={{ background: "var(--ledger)", border: "1px solid var(--line)", padding: 16 }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="pd-label">Scaling ladder</div>
+            <span className="pd-mono text-xs" style={{ color: "var(--slate)" }}>
+              {oat.poolCount >= 3 ? "ladder complete" : `stage ${Math.min(3, oat.poolCount)} of 3`}
+            </span>
+          </div>
+          <ScalingLadder oat={oat} />
+        </div>
+      )}
+
+      {/* Allocation */}
+      <div className="rounded-lg" style={{ background: "var(--ledger)", border: "1px solid var(--line)", padding: 16 }}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="pd-label">Allocation</div>
+          <span className="pd-mono text-xs" style={{ color: "var(--slate)" }}>{activeShare}% / {reserveShare}%</span>
+        </div>
+        {oat.poolCount === 0 ? (
+          <Link to="/accounts" className="block rounded-lg p-8 text-center text-sm no-underline" style={{ border: "1px dashed var(--line)", color: "var(--slate)", textDecoration: "none" }}>
+            No funded accounts yet. <span style={{ color: "var(--brass)" }}>Pass a challenge to build the pool.</span>
+          </Link>
+        ) : (
+          <>
+            <div className="flex h-2 rounded overflow-hidden" style={{ gap: 2, marginBottom: oat.poolCount < 3 ? 8 : 20 }}>
+              <div style={{ width: `${activeShare}%`, background: "var(--brass)", minWidth: activeShare > 0 ? 8 : 0, flexShrink: 0 }} />
+              <div style={{ width: `${reserveShare}%`, background: "var(--line)" }} />
+            </div>
+            {oat.poolCount < 3 && (
+              <div className="text-xs mb-5" style={{ color: "var(--slate)" }}>
+                The 30/70 split fully engages at 3 funded accounts. You are in the build-up ladder above.
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <AccountList title="Active" subtitle="trading now" accounts={oat.active} drawdownIds={drawdownIds} />
+              <AccountList title="Reserve" subtitle="idle" accounts={oat.reserve} drawdownIds={drawdownIds} />
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Rotation + drawdown state */}
+      {oat.poolCount > 0 && (
+        <div className="rounded-lg" style={{ background: "var(--ledger)", border: "1px solid var(--line)", padding: 16 }}>
+          <div className="pd-label mb-2">Rotation</div>
+          {oat.fullyLocked ? (
+            <span className="text-sm" style={{ color: "var(--sand-dim)" }}>
+              Every pool account has locked in a payout. Expand the pool or start a fresh cycle once the next reserve slot is ready.
+            </span>
+          ) : oat.drawdown ? (
+            <div className="flex items-start gap-3 text-sm">
+              <span style={{ color: "var(--brick)", marginTop: 1 }}><AlertTriangle size={16} /></span>
+              <span style={{ color: "var(--sand-dim)" }}>
+                <strong style={{ color: "var(--brick)" }}>Protocol 1</strong> · the active batch is in drawdown
+                ({money(oat.drawdown.tradePnl)} on {getAccountLabel(oat.drawdown)}). Stay on this batch until it recovers
+                into profit or blows. Do not batch-hop.
+              </span>
+            </div>
+          ) : oat.nextUp ? (
+            <div className="flex items-start gap-3 text-sm">
+              <span style={{ color: "var(--brass)", marginTop: 1 }}><CheckCircle2 size={16} /></span>
+              <span style={{ color: "var(--sand-dim)" }}>
+                Active batch in progress. When it locks in a payout,{" "}
+                <strong style={{ color: "var(--sand)" }}>{getAccountLabel(oat.nextUp)}</strong> rotates into the active slot —
+                repeat at the ~{oat.riskPct}% risk level.
+              </span>
+            </div>
+          ) : (
+            <span className="text-sm" style={{ color: "var(--sand-dim)" }}>
+              Active batch in progress. Expand the pool to open the next reserve slot after this batch locks in.
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Risk guard */}
+      <div className="rounded-lg" style={{ background: "var(--ledger)", border: "1px solid var(--line)", padding: 16 }}>
+        <div className="pd-label mb-2">Risk Guard · max {oat.riskPct}% per trade</div>
+        {oat.riskViolations.length === 0 ? (
+          <div className="text-sm" style={{ color: "var(--sage)" }}>
+            No funded-account trade has risked more than {oat.riskPct}% of its account size.
+          </div>
+        ) : (
+          <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)" }}>
+            <div className="grid pd-label items-center" style={{ gridTemplateColumns: "1.5fr 90px 70px 100px 100px", gap: "0 12px", background: "var(--ledger-raised)", borderBottom: "1px solid var(--line)", padding: "8px 14px" }}>
+              <span>Account</span><span>Date</span><span>Symbol</span><span>Risk</span><span>% of size</span>
+            </div>
+            {oat.riskViolations.slice(0, 40).map((v) => (
+              <div key={`${v.accountId}-${v.date}-${v.symbol}-${v.risk}`} className="grid pd-mono items-center text-sm" style={{ gridTemplateColumns: "1.5fr 90px 70px 100px 100px", gap: "0 12px", padding: "8px 14px", borderBottom: "1px solid var(--line-soft)" }}>
+                <Link to="/accounts/$accountId" params={{ accountId: v.accountId }} className="truncate no-underline" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "var(--sand-dim)" }}>
+                  {v.accountLabel}
+                </Link>
+                <span className="truncate" style={{ color: "var(--slate)" }}>{formatDateUK(v.date)}</span>
+                <span className="truncate" style={{ color: "var(--sand)" }}>{v.symbol}</span>
+                <span className="truncate" style={{ color: "var(--sand)" }}>{money(v.risk)}</span>
+                <span className="text-right" style={{ color: v.pct >= 2 ? "var(--brick)" : "var(--brass)" }}>{v.pct.toFixed(2)}%</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Guide reference */}
+      <div className="space-y-6">
+        <div className="pd-label">The Guide</div>
+
+        <div className="rounded-lg" style={{ background: "var(--ledger)", border: "1px solid var(--line)", padding: 16 }}>
+          <div className="pd-display" style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>One At A Time</div>
+          <p className="text-sm leading-relaxed" style={{ color: "var(--slate)", maxWidth: 720 }}>
+            The O.A.T. System decouples portfolio growth from active exposure. Instead of chasing one massive payout by
+            risking every account at once, it stacks <span style={{ color: "var(--sand)" }}>smaller, repeatable payouts</span>{" "}
+            — typically $400 to $1,000 per account — across distinct batches, aiming for a consistent{" "}
+            <span style={{ color: "var(--sand)" }}>$10,000+ per month</span> while keeping capital reserves.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 items-stretch">
+            <div className="flex flex-col">
+              <div className="pd-label mb-2">Parameters</div>
+              <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)", flex: 1 }}>
+                {[
+                  ["Active / Reserve", "30% / 70%", "max variance buffer / standby backup"],
+                  ["Minimum Pool", "3 funded", "to start the split"],
+                  ["Payout Floor", "~1% of size", "minimum to lock in"],
+                  ["Evaluation Risk", "high %", "fast-pass phase"],
+                  ["Funded Risk", "~1% / trade", "capital preservation"],
+                  ["Rotation Trigger", "payout secured", "switch immediately"],
+                ].map(([k, v, note], i) => (
+                  <div key={k} className="grid items-center" style={{ gridTemplateColumns: "1.2fr 1fr 1.6fr", gap: "0 12px", padding: "8px 14px", borderBottom: i < 5 ? "1px solid var(--line-soft)" : "none" }}>
+                    <span className="text-sm" style={{ color: "var(--sand-dim)" }}>{k}</span>
+                    <span className="pd-mono text-sm" style={{ color: "var(--brass)" }}>{v}</span>
+                    <span className="text-xs" style={{ color: "var(--slate)" }}>{note}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <div className="pd-label mb-2">Checklist</div>
+              <GuideChecklist oat={oat} />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg" style={{ background: "var(--ledger)", border: "1px solid var(--line)", padding: 16 }}>
+          <div className="pd-label mb-3">Workflow — three phases</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              {
+                phase: "Phase 1 · Capital recycling",
+                lines: [
+                  "Pass evaluations fast by risking higher on challenge accounts.",
+                  "The first payout refunds the evaluation fee — everything after is risk-free.",
+                  "Repeat until the pool holds 3 funded accounts.",
+                ],
+              },
+              {
+                phase: "Phase 2 · Active batch",
+                lines: [
+                  "Trade only the active batch at ~1% risk, mirrored across the batch.",
+                  "The other 70% of accounts stay idle — pure backup.",
+                  "The moment the batch hits its payout target, stop trading it.",
+                  "Hold maintenance: small days / micro-lots if the firm requires them.",
+                ],
+              },
+              {
+                phase: "Phase 3 · Rotation",
+                lines: [
+                  "Lock in Batch 1, rotate trading to the next batch.",
+                  "Each locked batch holds its payout while the next one trades.",
+                  payoutCycleText,
+                ],
+              },
+            ].map((ph) => (
+              <div key={ph.phase} className="rounded-lg p-4" style={{ background: "var(--ledger-raised)" }}>
+                <div className="text-sm font-semibold mb-2" style={{ color: "var(--sand)" }}>{ph.phase}</div>
+                <ul className="space-y-2" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                  {ph.lines.map((line) => (
+                    <li key={line} className="text-sm leading-relaxed" style={{ color: "var(--slate)" }}>{line}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-lg" style={{ background: "var(--ledger)", border: "1px solid var(--line)", padding: 16 }}>
+          <div className="pd-label mb-3">Drawdown rules</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-lg p-4" style={{ background: "rgba(111,176,139,0.07)", border: "1px solid var(--line)" }}>
+              <div className="text-sm font-semibold mb-1" style={{ color: "var(--sage)" }}>Conservative — recommended</div>
+              <p className="text-sm leading-relaxed" style={{ color: "var(--sand-dim)" }}>
+                If the active batch enters drawdown, stay on it. Keep trading that batch until it either recovers into payout
+                or blows completely. Switching to a fresh batch while negative is batch-hopping, and it feeds a gambling cycle.
+              </p>
+            </div>
+            <div className="rounded-lg p-4" style={{ background: "rgba(193,89,75,0.07)", border: "1px solid var(--line)" }}>
+              <div className="text-sm font-semibold mb-1" style={{ color: "var(--brick)" }}>Aggressive — high risk</div>
+              <p className="text-sm leading-relaxed" style={{ color: "var(--sand-dim)" }}>
+                Leave the drawn-down batch and jump to the next one for an A+ setup. This risks the whole portfolio, but the
+                structure still wins if a single batch blows:
+              </p>
+              <div className="pd-mono text-xs mt-3 space-y-1" style={{ color: "var(--slate)" }}>
+                <div>Blown batch (3 accounts): -$3,000 in fees</div>
+                <div>Next batch payout (3 × $2,000): +$6,000</div>
+                <div style={{ color: "var(--sage)" }}>Net: +$3,000 — asymmetric by design</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

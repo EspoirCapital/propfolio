@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createRouter, createRoute, createRootRoute, Link, Outlet, useRouterState, useNavigate, useSearch, useParams } from "@tanstack/react-router";
-import { LayoutGrid, NotebookPen, Award, SlidersHorizontal, List, Wallet, Settings, Copy, BarChart3, LogOut, Users, Menu, X } from "lucide-react";
+import { LayoutGrid, NotebookPen, Award, SlidersHorizontal, List, Wallet, Settings, Copy, BarChart3, LogOut, Users, Menu, X, Target } from "lucide-react";
 
 import { useApp } from "./context";
 import { BrandMark } from "./components/BrandMark";
@@ -18,6 +18,7 @@ import { TemplatesView } from "./views/TemplatesView";
 import { CopyJournalingView } from "./views/CopyJournalingView";
 import { SettingsView } from "./views/SettingsView";
 import { ReportView } from "./views/ReportView";
+import { OatView } from "./views/OatView";
 import { AdminView } from "./views/AdminView";
 
 const NAV = [
@@ -28,6 +29,7 @@ const NAV = [
   { path: "/payouts", label: "Payouts", icon: Wallet },
   { path: "/certificates", label: "Certificates", icon: Award },
   { path: "/report", label: "Report", icon: BarChart3 },
+  { path: "/oat", label: "OAT System", icon: Target },
 ];
 
 const ADMIN_NAV = [
@@ -44,6 +46,7 @@ const PAGE_META = {
   "/templates": ["Firms & Rules", "How each firm's challenges are structured."],
   "/copytrading": ["Copy Journaling", "Copy a master account's trades into its slave accounts, scaled by size and multiplier."],
   "/report": ["Performance Report", "Monthly fees, refunds, payouts, and net position."],
+  "/oat": ["OAT System", "One At a Time — batch allocation for prop firm accounts."],
   "/settings": ["Settings", "How risk and P&L display in the journal."],
   "/people": ["People", "Invites and admin access for your workspace."],
 };
@@ -309,6 +312,11 @@ function ReportPage() {
   return <ReportView accounts={derived.accounts} trades={trades} payouts={payouts} settings={settings} />;
 }
 
+function OatPage() {
+  const { derived } = useApp();
+  return <OatView derived={derived} />;
+}
+
 function PeoplePage() {
   const { session, users, userStats, invites, generateInvite, revokeInvite, setUserRole, setUserBanned } = useApp();
   const navigate = useNavigate();
@@ -384,6 +392,12 @@ const reportRoute = createRoute({
   component: ReportPage,
 });
 
+const oatRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/oat",
+  component: OatPage,
+});
+
 const peopleRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/people",
@@ -401,6 +415,7 @@ const routeTree = rootRoute.addChildren([
   copytradingRoute,
   settingsRoute,
   reportRoute,
+  oatRoute,
   peopleRoute,
 ]);
 
