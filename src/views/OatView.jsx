@@ -66,28 +66,23 @@ function AccountList({ title, subtitle, accounts, drawdownIds, role, onDrop, dra
                 : "at payout threshold — lock it in";
               const dragDisabled = maintenance || !isOverlaid;
               const buildGhost = (e) => {
-                const ghost = document.createElement("div");
-                ghost.textContent = getAccountLabel(acc);
+                const source = e.currentTarget;
+                const ghost = source.cloneNode(true);
                 ghost.style.cssText = [
-                  "background:var(--ink-2)",
+                  "boxShadow:0 14px 30px -10px rgba(0,0,0,.6)",
                   "border:1px solid var(--brass)",
-                  "color:var(--sand)",
-                  "font:600 13px 'IBM Plex Mono',monospace",
-                  "padding:10px 14px",
                   "borderRadius:8px",
-                  "boxShadow:0 10px 24px -8px rgba(0,0,0,.55), 0 0 0 0 rgba(206,159,82,.0)",
                   "transform:rotate(-1.5deg)",
-                  "letterSpacing:.02em",
-                  "whiteSpace:nowrap",
+                  "background:var(--ink-2)",
+                  "pointerEvents:none",
                 ].join(";");
-                ghost.style.pointerEvents = "none";
                 ghost.style.position = "absolute";
                 ghost.style.top = "-1000px";
                 ghost.style.left = "0";
+                ghost.style.opacity = "0.96";
                 document.body.appendChild(ghost);
-                // offset so the ghost anchors near where the row was picked up
-                const r = e.currentTarget.getBoundingClientRect();
-                e.dataTransfer.setDragImage(ghost, Math.min(28, r.width / 2), 14);
+                const r = source.getBoundingClientRect();
+                e.dataTransfer.setDragImage(ghost, Math.min(40, r.width / 2), Math.min(16, r.height / 2));
                 window.setTimeout(() => ghost.remove(), 0);
               };
               return (
