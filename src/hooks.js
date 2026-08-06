@@ -66,7 +66,7 @@ export function derive(accounts, trades, payouts, templates, firms) {
     const decidedCount = withComputed.filter((a) => ["funded", "passed", "breached"].includes(a.status)).length;
     const passRate = decidedCount ? Math.round((passCount / decidedCount) * 100) : 0;
 
-    const pool = withComputed.filter((a) => ["funded", "passed"].includes(a.status) && !a.archived);
+    const pool = withComputed.filter((a) => a.status === "funded" && !a.archived);
     const activeCount = Math.max(1, Math.round(pool.length * OAT_ACTIVE_PCT));
     const byAcquired = (list) =>
       [...list].sort((a, b) => {
