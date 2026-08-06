@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { getAccountLabel } from "./utils.js";
 
 const OAT_MIN_POOL = 3;
 const OAT_ACTIVE_PCT = 0.3;
@@ -93,7 +94,7 @@ export function derive(accounts, trades, payouts, templates, firms) {
             if (pct > OAT_RISK_PCT) {
               riskViolations.push({
                 accountId: acc.id,
-                accountLabel: acc.firmName ? acc.firmName : "",
+                accountLabel: getAccountLabel(acc) || "",
                 date: t.date,
                 symbol: t.symbol || "—",
                 risk,
@@ -110,7 +111,9 @@ export function derive(accounts, trades, payouts, templates, firms) {
     const payoutsSecured = pool.reduce((s, a) => s + a.received, 0);
 
     const avgPayout = locked.length ? payoutsSecured / locked.length : null;
-    const assumedPayout = pool.length ? Math.round(0.01 * Math.min(...pool.map((a) => a.size || 0))) : 500;
+    const floorSizes = withComputed.filter((a) => !a.archived).map((a) => Number(a.size) || 0);
+    const floorSize = floorSizes.length ? Math.min(...floorSizes) : 0;
+    const assumedPayout = floorSize ? Math.round(0.01 * floorSize) : 500;
     const perAccountPayout = avgPayout !== null ? Math.round(avgPayout) : assumedPayout;
     const payoutCycle = {
       perAccount: perAccountPayout,
@@ -142,6 +145,7 @@ export function derive(accounts, trades, payouts, templates, firms) {
       tradableCount: tradable.length,
       ladder,
       payoutCycle,
+      payoutFloor: assumedPayout,
     };
 
     return { accounts: withComputed, totals, passRate, oat };

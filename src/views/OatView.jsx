@@ -106,17 +106,19 @@ const EMPTY_OAT = {
   payoutsSecured: 0, tradableCount: 0, riskPct: 1,
   ladder: { stage: 0, lockedCount: 0 },
   payoutCycle: { perAccount: 500, perCycle: 500, assumed: true },
+  payoutFloor: 500,
 };
 
 function ScalingLadder({ oat }) {
   const poolCount = oat.poolCount;
   const lockedCount = oat.ladder.lockedCount;
+  const payoutFloor = money(oat.payoutFloor);
 
   const stages = [
     {
       n: 1,
       title: "Single-account lock-in",
-      desc: "Start with one funded account and trade it conservatively until its first payout locks (e.g., $500).",
+      desc: `Start with one funded account and trade it conservatively until its first payout locks (${payoutFloor} = 1% of the smallest account).`,
       tag: poolCount >= 2 ? "done" : poolCount === 1 ? "active" : "next",
     },
     {
@@ -151,7 +153,7 @@ function ScalingLadder({ oat }) {
   } else if (poolCount === 1 && lockedCount >= 1) {
     status = { tone: "var(--sage)", lead: "First payout locked", rest: " - the base is now risk-free. Stop trading it and fund challenge #2." };
   } else {
-    status = { tone: "var(--brass)", lead: "One funded account", rest: " - trade it conservatively until the first payout locks (e.g. $500)." };
+    status = { tone: "var(--brass)", lead: "One funded account", rest: ` - trade it conservatively until the first payout locks (${payoutFloor} = 1% of the account).` };
   }
 
   return (
@@ -212,6 +214,16 @@ export function OatView({ derived }) {
   const payoutCycleText = pc.assumed
     ? `${cycleCount} ${accountWord} × ~${money(pc.perAccount)} ≈ ${money(pc.perCycle)} per payout cycle (1% of the smallest account), stacked safely.`
     : `${cycleCount} ${accountWord} × ${money(pc.perAccount)} ≈ ${money(pc.perCycle)} per payout cycle (from your locked payouts), stacked safely.`;
+
+  const poolFees = oat.pool.reduce((s, a) => s + a.cost, 0);
+  const batchSize = Math.max(1, oat.poolCount || 1);
+  const blowFees = poolFees * Math.max(1, batchSize);
+  const nextPayout = batchSize * oat.payoutFloor;
+  const aggressiveLines = [
+    `Blown batch (${batchSize} account${batchSize === 1 ? "" : "s"}): -${money(blowFees)} in fees`,
+    `Next batch payout (${batchSize} × ${money(oat.payoutFloor)}): +${money(nextPayout)}`,
+    `Net: ${nextPayout > blowFees ? "+" : ""}${money(nextPayout - blowFees)} — asymmetric by design`,
+  ];
 
   return (
     <div className="space-y-6">
@@ -354,8 +366,9 @@ export function OatView({ derived }) {
           <p className="text-sm leading-relaxed" style={{ color: "var(--slate)", maxWidth: 720 }}>
             The O.A.T. System decouples portfolio growth from active exposure. Instead of chasing one massive payout by
             risking every account at once, it stacks <span style={{ color: "var(--sand)" }}>smaller, repeatable payouts</span>{" "}
-            — typically $400 to $1,000 per account — across distinct batches, aiming for a consistent{" "}
-            <span style={{ color: "var(--sand)" }}>$10,000+ per month</span> while keeping capital reserves.
+            — from {money(oat.payoutFloor)} per account (1% of the smallest funded size), ratcheting as accounts grow —
+            across distinct batches, while the reserve{" "}
+            <span style={{ color: "var(--sand)" }}>stays untouched</span>.{" "}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 items-stretch">
@@ -365,7 +378,7 @@ export function OatView({ derived }) {
                 {[
                   ["Active / Reserve", "30% / 70%", "max variance buffer / standby backup"],
                   ["Minimum Pool", "3 funded", "to start the split"],
-                  ["Payout Floor", "~1% of size", "minimum to lock in"],
+                  ["Payout Floor", `~${money(oat.payoutFloor)}`, "1% of smallest account"],
                   ["Evaluation Risk", "high %", "fast-pass phase"],
                   ["Funded Risk", "~1% / trade", "capital preservation"],
                   ["Rotation Trigger", "payout secured", "switch immediately"],
@@ -444,9 +457,9 @@ export function OatView({ derived }) {
                 structure still wins if a single batch blows:
               </p>
               <div className="pd-mono text-xs mt-3 space-y-1" style={{ color: "var(--slate)" }}>
-                <div>Blown batch (3 accounts): -$3,000 in fees</div>
-                <div>Next batch payout (3 × $2,000): +$6,000</div>
-                <div style={{ color: "var(--sage)" }}>Net: +$3,000 — asymmetric by design</div>
+                <div>{aggressiveLines[0]}</div>
+                <div>{aggressiveLines[1]}</div>
+                <div style={{ color: "var(--sage)" }}>{aggressiveLines[2]}</div>
               </div>
             </div>
           </div>
