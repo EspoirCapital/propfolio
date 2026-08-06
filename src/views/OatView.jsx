@@ -24,69 +24,93 @@ function Tag({ kind, children }) {
 }
 
 function AccountList({ title, subtitle, accounts, drawdownIds, role, onDrop, draggingId, onDraggingChange }) {
+  const [dragOver, setDragOver] = useState(false);
   const isOverlaid = onDrop != null;
   return (
-    <div
-      onDragOver={(e) => { e.preventDefault(); }}
-      onDrop={isOverlaid ? onDrop : undefined}
-      style={isOverlaid ? { minHeight: 120, borderRadius: 8, border: "1px dashed var(--line)", padding: 1, transition: "border-color .15s, background .15s" } : undefined}
-      data-oat-drop={role}
-    >
-      <div className="pd-label mb-2">{title}{subtitle ? ` · ${subtitle}` : ""}</div>
-      {accounts.length === 0 ? (
-        <div className="rounded-lg p-6 text-center text-sm" style={{ border: "1px dashed var(--line)", color: "var(--slate)" }}>
-          None yet{isOverlaid ? " — drop an account from the other batch here" : ""}
-        </div>
-      ) : (
-        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)" }}>
-          {accounts.map((acc) => {
-            const inDD = drawdownIds.has(acc.id);
-            const maintenance = acc.received > 0;
-            const nextMove = maintenance
-              ? `payout held · ${money(acc.received)} secured`
-              : acc.tradePnl < 0
-              ? "in drawdown — hold, no batch-hopping"
-              : acc.payoutGap > 0
-              ? `≈ ${money(acc.payoutGap)} more to lock a payout`
-              : "at payout threshold — lock it in";
-            const dragDisabled = maintenance || !isOverlaid;
-            return (
-              <div
-                key={acc.id}
-                draggable={!dragDisabled}
-                onDragStart={(e) => { e.dataTransfer.setData("text/oat", acc.id); e.dataTransfer.effectAllowed = "move"; onDraggingChange?.(acc.id); }}
-                onDragEnd={() => onDraggingChange?.(null)}
-                style={{ opacity: draggingId === acc.id ? 0.4 : 1, borderBottom: "1px solid var(--line-soft)", background: acc.oatBatch ? "rgba(206,159,82,0.05)" : undefined }}
-              >
-                <Link
-                  to="/accounts/$accountId"
-                  params={{ accountId: acc.id }}
-                  className="pd-row flex items-center gap-3 px-4 py-3 no-underline"
-                  style={{ color: "var(--sand)", textDecoration: "none" }}
+    <div>
+      <div className="flex items-baseline justify-between gap-2 mb-2">
+        <div className="pd-label">{title}{subtitle ? ` · ${subtitle}` : ""}</div>
+        <span className="pd-mono text-xs" style={{ color: "var(--slate)" }}>{accounts.length}</span>
+      </div>
+      <div
+        onDragOver={(e) => { if (isOverlaid) { e.preventDefault(); setDragOver(true); } }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={isOverlaid ? (e) => { setDragOver(false); onDrop(e); } : undefined}
+        data-oat-drop={role}
+        style={{
+          minHeight: 120,
+          borderRadius: 8,
+          border: "1px dashed var(--line)",
+          borderColor: dragOver ? "var(--brass)" : "var(--line)",
+          background: dragOver ? "rgba(206,159,82,0.06)" : "transparent",
+          padding: 6,
+          transition: "border-color .15s ease, background .15s ease",
+          opacity: draggingId && !dragOver ? 0.6 : 1,
+        }}
+      >
+        {accounts.length === 0 ? (
+          <div className="flex items-center justify-center min-h-[90px] text-center text-sm px-3" style={{ color: dragOver ? "var(--brass)" : "var(--slate)" }}>
+            {isOverlaid ? (dragOver ? "Release to drop here" : "None — drop an account here") : "None yet"}
+          </div>
+        ) : (
+          <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)", background: "var(--ledger)", padding: 2 }}>
+            {accounts.map((acc) => {
+              const inDD = drawdownIds.has(acc.id);
+              const maintenance = acc.received > 0;
+              const nextMove = maintenance
+                ? `payout held · ${money(acc.received)} secured`
+                : acc.tradePnl < 0
+                ? "in drawdown — hold, no batch-hopping"
+                : acc.payoutGap > 0
+                ? `≈ ${money(acc.payoutGap)} more to lock a payout`
+                : "at payout threshold — lock it in";
+              const dragDisabled = maintenance || !isOverlaid;
+              return (
+                <div
+                  key={acc.id}
+                  draggable={!dragDisabled}
+                  onDragStart={(e) => { e.dataTransfer.setData("text/oat", acc.id); e.dataTransfer.effectAllowed = "move"; onDraggingChange?.(acc.id); }}
+                  onDragEnd={() => onDraggingChange?.(null)}
+                  style={{
+                    opacity: draggingId === acc.id ? 0.35 : 1,
+                    borderRadius: 6,
+                    marginBottom: 2,
+                    border: "1px solid transparent",
+                    borderColor: acc.oatBatch ? "rgba(206,159,82,0.22)" : "transparent",
+                    background: acc.oatBatch ? "rgba(206,159,82,0.05)" : "transparent",
+                    cursor: dragDisabled ? "default" : "grab",
+                  }}
                 >
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm truncate">{getAccountLabel(acc)}{acc.oatBatch && <span className="ml-2"><Tag kind="manual">pinned</Tag></span>}</div>
-                    <div className="pd-mono text-xs mt-0.5 truncate" style={{ color: acc.tradePnl < 0 && !maintenance ? "var(--brick)" : "var(--slate)" }}>
-                      {nextMove}
-                      {maintenance && (
-                        <span className="ml-2"><Tag kind="maintenance">maintenance</Tag></span>
+                  <Link
+                    to="/accounts/$accountId"
+                    params={{ accountId: acc.id }}
+                    className="pd-row flex items-center gap-3 px-3 py-2.5 no-underline"
+                    style={{ color: "var(--sand)", textDecoration: "none" }}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm truncate">{getAccountLabel(acc)}{acc.oatBatch && <span className="ml-2"><Tag kind="manual">pinned</Tag></span>}</div>
+                      <div className="pd-mono text-xs mt-0.5 truncate" style={{ color: acc.tradePnl < 0 && !maintenance ? "var(--brick)" : "var(--slate)" }}>
+                        {nextMove}
+                        {maintenance && (
+                          <span className="ml-2"><Tag kind="maintenance">maintenance</Tag></span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="pd-mono text-sm" style={{ color: acc.tradePnl >= 0 ? "var(--sage)" : "var(--brick)" }}>
+                        {acc.tradePnl > 0 ? "+" : ""}{money(acc.tradePnl)}
+                      </div>
+                      {inDD && (
+                        <div className="mt-1"><Tag kind="drawdown">drawdown</Tag></div>
                       )}
                     </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <div className="pd-mono text-sm" style={{ color: acc.tradePnl >= 0 ? "var(--sage)" : "var(--brick)" }}>
-                      {acc.tradePnl > 0 ? "+" : ""}{money(acc.tradePnl)}
-                    </div>
-                    {inDD && (
-                      <div className="mt-1"><Tag kind="drawdown">drawdown</Tag></div>
-                    )}
-                  </div>
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -308,9 +332,35 @@ export function OatView({ derived, setBatch }) {
 
       {/* Allocation */}
       <div className="rounded-lg" style={{ background: "var(--ledger)", border: "1px solid var(--line)", padding: 16 }}>
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between gap-3 mb-4">
           <div className="pd-label">Allocation</div>
-          <span className="pd-mono text-xs" style={{ color: "var(--slate)" }}>{activeShare}% / {reserveShare}%</span>
+          <div className="flex items-center gap-3">
+            {oat.poolCount > 0 && (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    className="pd-btn-icon"
+                    onClick={() => rotate("prev")}
+                    disabled={!setBatch || oat.poolCount < 2}
+                    title="Previous batch — swap the newest active account with the newest reserve"
+                    aria-label="Previous batch"
+                  >
+                    <ArrowLeft size={14} />
+                  </button>
+                  <button
+                    className="pd-btn-icon"
+                    onClick={() => rotate("next")}
+                    disabled={!setBatch || oat.poolCount < 2}
+                    title="Next batch — oldest active account to reserve, oldest reserve into the active slot"
+                    aria-label="Next batch"
+                  >
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+                <div className="pd-mono text-xs" style={{ color: "var(--slate)" }}>{activeShare}% / {reserveShare}%</div>
+              </>
+            )}
+          </div>
         </div>
         {oat.poolCount === 0 ? (
           <Link to="/accounts" className="block rounded-lg p-8 text-center text-sm no-underline" style={{ border: "1px dashed var(--line)", color: "var(--slate)", textDecoration: "none" }}>
@@ -318,27 +368,15 @@ export function OatView({ derived, setBatch }) {
           </Link>
         ) : (
           <>
-            <div className="flex h-2 rounded overflow-hidden" style={{ gap: 2, marginBottom: oat.poolCount < 3 ? 8 : 20 }}>
+            <div className="flex h-2 rounded overflow-hidden" style={{ gap: 2, marginBottom: 16 }}>
               <div style={{ width: `${activeShare}%`, background: "var(--brass)", minWidth: activeShare > 0 ? 8 : 0, flexShrink: 0 }} />
               <div style={{ width: `${reserveShare}%`, background: "var(--line)" }} />
             </div>
             {oat.poolCount < 3 && (
-              <div className="text-xs mb-5" style={{ color: "var(--slate)" }}>
+              <div className="text-xs mb-4" style={{ color: "var(--slate)" }}>
                 The 30/70 split fully engages at 3 funded accounts. You are in the build-up ladder above.
               </div>
             )}
-
-            <div className="flex items-center gap-2 mb-3" style={oat.poolCount < 2 ? { opacity: 0.5, pointerEvents: "none" } : undefined}>
-              <button className="pd-btn" onClick={() => rotate("prev")} disabled={!setBatch} title="Previous batch — swap the newest active account with the newest reserve" aria-label="Previous batch">
-                <ArrowLeft size={13} /> Previous
-              </button>
-              <span className="text-xs" style={{ color: "var(--slate)" }}>
-                rotate the active batch, or drag accounts between batches
-              </span>
-              <button className="pd-btn" onClick={() => rotate("next")} disabled={!setBatch} title="Next batch — oldest active account to reserve, oldest reserve into the active slot" aria-label="Next batch">
-                Next <ArrowRight size={13} />
-              </button>
-            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
               <AccountList
@@ -362,8 +400,8 @@ export function OatView({ derived, setBatch }) {
                 onDraggingChange={setDraggingId}
               />
             </div>
-            <div className="mt-2 text-xs" style={{ color: "var(--sand-dim)" }}>
-              Pinned accounts keep their batch until you drag them back; unassigned ones follow the automatic rotation.
+            <div className="flex items-center gap-2 mt-4 pt-3 text-xs" style={{ color: "var(--sand-dim)", borderTop: "1px solid var(--line-soft)" }}>
+              Drag accounts between batches, or use the arrows to rotate. Pinned accounts keep their batch until dragged back; unassigned ones follow the automatic rotation.
             </div>
           </>
         )}

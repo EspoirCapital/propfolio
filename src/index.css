@@ -377,6 +377,28 @@ body {
   .pd-btn svg { transition: none; }
   .pd-btn-primary:hover svg, .pd-btn-back:hover svg { transform: none; }
 }
+.pd-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--ledger-raised);
+  color: var(--slate);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.pd-btn-icon:hover {
+  border-color: var(--brass);
+  color: var(--brass);
+}
+.pd-btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 .pd-input {
   background: var(--ink-2);
   border: 1px solid var(--line);
