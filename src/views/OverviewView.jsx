@@ -219,9 +219,9 @@ export function OverviewView({ derived, trades, payouts, settings }) {
           )}
         </div>
         {totalTrades > 0 && (
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            <DayOfWeekChart days={dayProfile} plotHeight={170} />
-            <EntryTimeChart profile={entryProfile} plotHeight={170} />
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <DayOfWeekChart days={dayProfile} plotHeight={190} />
+            <EntryTimeChart profile={entryProfile} plotHeight={190} />
           </div>
         )}
       </div>
