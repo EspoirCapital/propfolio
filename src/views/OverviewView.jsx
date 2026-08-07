@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { money, formatDateUK, computeOutcome, formatDisplay, getAccountLabel, OUTCOME_META, RATING_META, computeMfeMaeStats, computeEv, formatEv, computeDayProfile, computeDayEdge } from "../utils";
+import { money, formatDateUK, computeOutcome, formatDisplay, getAccountLabel, OUTCOME_META, RATING_META, computeMfeMaeStats, computeEv, formatEv, computeDayProfile, computeDayEdge, computeEntryTimeProfile } from "../utils";
 import { STATUS_META } from "../constants";
 import { KpiTile } from "../components/KpiTile";
 import { DayEdgeTile } from "../components/DayEdgeTile";
 import { DayOfWeekChart } from "../components/DayOfWeekChart";
+import { EntryTimeChart } from "../components/EntryTimeChart";
 import { StatusPill } from "../components/StatusPill";
 import { EquityCurve } from "../components/EquityCurve";
 import { TradeCalendar } from "../components/TradeCalendar";
@@ -44,6 +45,8 @@ export function OverviewView({ derived, trades, payouts, settings }) {
   const dayEdge = useMemo(() => computeDayEdge(allTrades), [allTrades]);
 
   const dayProfile = useMemo(() => computeDayProfile(allTrades), [allTrades]);
+
+  const entryProfile = useMemo(() => computeEntryTimeProfile(allTrades), [allTrades]);
 
   const avgRR = useMemo(() => {
     const winTrades = allTrades.filter((t) => t.outcome === "W" && t.risk > 0);
@@ -216,8 +219,9 @@ export function OverviewView({ derived, trades, payouts, settings }) {
           )}
         </div>
         {totalTrades > 0 && (
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 flex flex-col gap-6">
             <DayOfWeekChart days={dayProfile} plotHeight={170} />
+            <EntryTimeChart profile={entryProfile} plotHeight={170} />
           </div>
         )}
       </div>

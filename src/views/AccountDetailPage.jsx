@@ -2,11 +2,12 @@ import { useState } from "react";
 import { ArrowLeft, ExternalLink, Award, Pencil, X, ArrowRight, AlertTriangle, PenLine, Archive, ArchiveRestore, Link2, Unlink } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useApp } from "../context";
-import { computeOutcome, money, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError, computeMfeMaeStats, computeEv, formatEv, computeHealth, healthAccent, computeDayProfile, computeDayEdge } from "../utils";
+import { computeOutcome, money, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, nextStatus, nextStatusLabel, friendlyError, computeMfeMaeStats, computeEv, formatEv, computeHealth, healthAccent, computeDayProfile, computeDayEdge, computeEntryTimeProfile } from "../utils";
 import { StatusPill } from "../components/StatusPill";
 import { KpiTile } from "../components/KpiTile";
 import { DayEdgeTile } from "../components/DayEdgeTile";
 import { DayOfWeekChart } from "../components/DayOfWeekChart";
+import { EntryTimeChart } from "../components/EntryTimeChart";
 import { ProgressionStepper } from "../components/ProgressionStepper";
 import { CredentialReveal } from "../components/CredentialReveal";
 import { EquityCurve } from "../components/EquityCurve";
@@ -60,6 +61,7 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
   const ev = computeEv(enrichedTrades);
 
   const dayProfile = computeDayProfile(enrichedTrades);
+  const entryProfile = computeEntryTimeProfile(enrichedTrades);
   const dayEdge = computeDayEdge(enrichedTrades);
 
   const chain = account.chainId
@@ -403,6 +405,8 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
           <AccountPerformanceSummary trades={accTrades} accountSize={account.size} refund={account.refund} refundDate={account.refundDate} beThreshold={settings.beThreshold} />
 
           <DayOfWeekChart days={dayProfile} />
+
+          <EntryTimeChart profile={entryProfile} />
 
           <div className="rounded-lg p-4" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
             <div className="flex items-center justify-between mb-2">

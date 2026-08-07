@@ -197,6 +197,31 @@ export function computeDayEdge(trades) {
   return { best, worst };
 }
 
+const HOUR_BUCKETS = Array.from({ length: 24 }, (_, hour) => ({ hour, label: `${String(hour).padStart(2, "0")}:00`, n: 0 }));
+
+// Hour-of-day trade frequency, from `entryTime` ("HH:MM") strings. Counts how
+// many trades opened inside each full hour (09:00 covers 09:00-09:59). Trades
+// without an entryTime are excluded from the buckets. Returns
+// { hours, peak, withTime, total } where peak is the busiest hour bucket or
+// null when no trade has an entry time.
+export function computeEntryTimeProfile(trades) {
+  const hours = HOUR_BUCKETS.map((h) => ({ ...h }));
+  let withTime = 0;
+  trades.forEach((t) => {
+    const m = /^(\d{1,2}):\d{2}$/.exec(String(t.entryTime || "").trim());
+    if (!m) return;
+    const hour = Number(m[1]);
+    if (hour < 0 || hour > 23) return;
+    withTime++;
+    hours[hour].n++;
+  });
+  let peak = null;
+  hours.forEach((h) => {
+    if (h.n > 0 && (!peak || h.n > peak.n)) peak = h;
+  });
+  return { hours, peak, withTime, total: trades.length };
+}
+
 export function nextStatus(status, phaseCount) {
   if (phaseCount <= 0) return null;
   if (status === "phase_1") return phaseCount >= 2 ? "phase_2" : "funded";
