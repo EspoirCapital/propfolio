@@ -2,10 +2,12 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import { money, getAccountLabel, computeOutcome } from "../utils";
 import { Select } from "../components/Select";
+import { DistributionReport } from "../components/DistributionReport";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export function ReportView({ accounts, trades, payouts, settings }) {
+  const [tab, setTab] = useState("performance");
   const [filterAccount, setFilterAccount] = useState("All");
   const [year, setYear] = useState(new Date().getFullYear());
   const currentYear = new Date().getFullYear();
@@ -126,35 +128,66 @@ export function ReportView({ accounts, trades, payouts, settings }) {
         {selectedAcc && <div style={{ fontSize: 11, color: "#555", marginBottom: 8 }}>Account: {getAccountLabel(selectedAcc)}</div>}
       </div>
 
-      {/* On-screen controls */}
+      {/* On-screen tab switcher */}
       <div className="flex items-center justify-between mb-4 no-print">
-        <div className="flex items-center gap-3">
-          <div>
-            <div className="pd-label mb-1">Account</div>
-            <Select value={filterAccount} onChange={(e) => setFilterAccount(e.target.value)} style={{ width: 200 }}>
-              <option value="All">All Accounts</option>
-              {accounts.map((a) => <option key={a.id} value={a.id}>{getAccountLabel(a)}</option>)}
-            </Select>
-          </div>
+        <div className="flex items-center gap-1">
+          {["performance", "distribution"].map((t) => {
+            const active = tab === t;
+            return (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className="pd-mono"
+                style={{
+                  fontSize: 12,
+                  padding: "6px 14px",
+                  borderRadius: 6,
+                  border: `1px solid ${active ? "var(--brass)" : "var(--line)"}`,
+                  color: active ? "var(--brass)" : "var(--slate)",
+                  background: active ? "rgba(206,159,82,0.08)" : "transparent",
+                  fontWeight: 600,
+                }}
+              >
+                {t === "performance" ? "Performance" : "Distribution"}
+              </button>
+            );
+          })}
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <button onClick={() => setYear((y) => y - 1)} className="pd-btn" style={{ padding: "4px 8px" }}>
-              <ChevronLeft size={14} />
-            </button>
-            <span className="pd-mono" style={{ fontSize: 14, color: "var(--brass)", fontWeight: 600, minWidth: 40, textAlign: "center" }}>{year}</span>
-            <button onClick={() => setYear((y) => y + 1)} className="pd-btn" style={{ padding: "4px 8px", opacity: year >= currentYear ? 0.3 : 1, pointerEvents: year >= currentYear ? "none" : "auto" }}>
-              <ChevronRight size={14} />
-            </button>
-          </div>
-          <button onClick={() => window.print()} className="pd-btn pd-btn-primary flex items-center gap-1.5">
-            <Printer size={14} /> Print
-          </button>
-        </div>
+        <button onClick={() => window.print()} className="pd-btn pd-btn-primary flex items-center gap-1.5">
+          <Printer size={14} /> Print
+        </button>
       </div>
 
-      {/* Firm-level table */}
-      {filterAccount === "All" && firmData && (
+      {/* On-screen controls */}
+      {tab === "performance" && (
+        <div className="flex items-center justify-between mb-4 no-print">
+          <div className="flex items-center gap-3">
+            <div>
+              <div className="pd-label mb-1">Account</div>
+              <Select value={filterAccount} onChange={(e) => setFilterAccount(e.target.value)} style={{ width: 200 }}>
+                <option value="All">All Accounts</option>
+                {accounts.map((a) => <option key={a.id} value={a.id}>{getAccountLabel(a)}</option>)}
+              </Select>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <button onClick={() => setYear((y) => y - 1)} className="pd-btn" style={{ padding: "4px 8px" }}>
+                <ChevronLeft size={14} />
+              </button>
+              <span className="pd-mono" style={{ fontSize: 14, color: "var(--brass)", fontWeight: 600, minWidth: 40, textAlign: "center" }}>{year}</span>
+              <button onClick={() => setYear((y) => y + 1)} className="pd-btn" style={{ padding: "4px 8px", opacity: year >= currentYear ? 0.3 : 1, pointerEvents: year >= currentYear ? "none" : "auto" }}>
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "performance" ? (
+        <>
+          {/* Firm-level table */}
+          {filterAccount === "All" && firmData && (
         <div className="rounded-lg p-4" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
           <div className="grid items-center" style={{ gridTemplateColumns: "50px repeat(4, 1fr)", borderBottom: "1px solid var(--line)", paddingBottom: 6 }}>
             <span style={s}>MONTH</span>
@@ -190,10 +223,9 @@ export function ReportView({ accounts, trades, payouts, settings }) {
         </div>
       )}
 
-      {/* Account-level table */}
-      {filterAccount !== "All" && accData && (
-        <div className="rounded-lg p-4" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
-          <div className="grid items-center" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr 1fr 1fr", borderBottom: "1px solid var(--line)", paddingBottom: 6 }}>
+          {filterAccount !== "All" && accData && (
+            <div className="rounded-lg p-4" style={{ background: "var(--ledger)", border: "1px solid var(--line)" }}>
+              <div className="grid items-center" style={{ gridTemplateColumns: "50px 1fr 1fr 1fr 1fr 1fr 1fr", borderBottom: "1px solid var(--line)", paddingBottom: 6 }}>
             <span style={s}>MONTH</span>
             <span className="pd-mono" style={s}>P&L</span>
             <span className="pd-mono" style={s}>MFE</span>
@@ -231,7 +263,11 @@ export function ReportView({ accounts, trades, payouts, settings }) {
           {accData.rows.length === 0 && (
             <div className="text-xs py-6 text-center" style={{ color: "var(--slate)" }}>No data for {year}.</div>
           )}
-        </div>
+          </div>
+        )}
+        </>
+      ) : (
+        <DistributionReport accounts={accounts} trades={trades} settings={settings} />
       )}
 
       {/* Print-only branded footer */}
