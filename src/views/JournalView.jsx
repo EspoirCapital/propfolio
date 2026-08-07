@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Plus, X, ExternalLink, ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { computeOutcome, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, friendlyError } from "../utils";
+import { computeOutcome, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, friendlyError, getOpenDate, getCloseDate, getTradeTime } from "../utils";
 import { RatingPicker } from "../components/RatingPicker";
 import { SymbolPicker } from "../components/SymbolPicker";
 import { ConfirmModal } from "../components/ConfirmModal";
@@ -61,7 +61,7 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
       lots: String(t.lots), risk: String(t.risk), pnl: String(t.pnl),
       session: t.session, tag: t.tag, tvLink: t.tvLink, rating: t.rating, notes: t.notes,
       mfeR: t.mfeR != null ? String(t.mfeR) : "", maeR: t.maeR != null ? String(t.maeR) : "",
-      entryTime: t.entryTime || "", exitTime: t.exitTime || "",
+      entryTime: getTradeTime(getOpenDate(t)) || "", exitTime: getTradeTime(getCloseDate(t)) || "",
     });
     setShowForm(true);
     setFormError("");
@@ -90,8 +90,8 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
       lots: parseFloat(form.lots) || 0,
       mfeR: form.mfeR !== "" ? parseFloat(form.mfeR) || 0 : null,
       maeR: form.maeR !== "" ? parseFloat(form.maeR) || 0 : null,
-      entryTime,
-      exitTime,
+      openDate: `${form.date}T${entryTime || "00:00"}`,
+      closeDate: `${form.date}T${exitTime || "00:00"}`,
     };
     setSaving(true);
     setFormError("");
@@ -251,7 +251,9 @@ export function JournalView({ accounts, trades, createTrade, updateTrade, delete
           <div key={t.id} className={`pd-row grid items-center text-sm pd-mono ${t.id === justAdded ? "pd-row-new" : ""}`} style={{ gridTemplateColumns: "30px 100px 92px 88px 42px 52px 82px 82px 62px 62px 38px 72px 110px 1fr 28px 28px", gap: "0 12px", padding: "10px 16px", borderBottom: "1px solid var(--line)", cursor: "pointer" }} onClick={() => openEdit(t)}>
             <span className="flex items-center justify-center"><span style={{ width: 12, height: 12, borderRadius: "50%", background: RATING_META[t.rating]?.color || "var(--slate)", flexShrink: 0 }} title={RATING_META[t.rating]?.label} /></span>
             <span className="whitespace-nowrap" style={{ color: "var(--slate)" }}>{formatDateUK(t.date)}</span>
-            <span className="whitespace-nowrap" style={{ color: "var(--slate)" }}>{t.entryTime ? `${t.entryTime}→${t.exitTime || "—"}` : "—"}</span>
+            <span className="whitespace-nowrap" style={{ color: "var(--slate)" }}>
+              {(() => { const inT = getTradeTime(getOpenDate(t)); const outT = getTradeTime(getCloseDate(t)); return inT ? `${inT}→${outT || "—"}` : "—"; })()}
+            </span>
             <span className="whitespace-nowrap">{t.symbol}</span>
             <span className="whitespace-nowrap" style={{ color: t.side === "Long" ? "var(--sage)" : "var(--brick)" }}>{t.side.slice(0, 1)}</span>
             <span className="whitespace-nowrap">{t.lots}</span>

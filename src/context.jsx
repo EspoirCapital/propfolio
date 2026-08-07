@@ -8,7 +8,7 @@ import { DEFAULT_SETTINGS } from "./utils";
 const AppContext = createContext(null);
 
 const ACCOUNT_FIELDS = ["firmId", "templateId", "size", "platform", "creationDate", "terminationDate", "status", "drawdown", "maxLoss", "dailyLoss", "costs", "platformLogin", "platformPassword", "platformInvestorPassword"];
-const TRADE_FIELDS = ["accountId", "date", "symbol", "side", "lots", "risk", "pnl", "session", "tag", "tvLink", "rating", "notes", "mfeR", "maeR", "entryTime", "exitTime"];
+const TRADE_FIELDS = ["accountId", "date", "symbol", "side", "lots", "risk", "pnl", "session", "tag", "tvLink", "rating", "notes", "mfeR", "maeR", "openDate", "closeDate"];
 const PAYOUT_FIELDS = ["accountId", "requestedDate", "amount", "split", "method", "proofLink"];
 const CERT_FIELDS = ["accountId", "type", "date", "link", "label"];
 const TEMPLATE_FIELDS = ["firmId", "name", "phases", "target", "dailyLoss", "maxLoss", "drawdown", "consistency", "feeRefund", "platforms"];

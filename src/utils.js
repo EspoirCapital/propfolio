@@ -199,19 +199,39 @@ export function computeDayEdge(trades) {
 
 const HOUR_BUCKETS = Array.from({ length: 24 }, (_, hour) => ({ hour, label: `${String(hour).padStart(2, "0")}:00`, n: 0 }));
 
-// Hour-of-day trade frequency, from `entryTime` ("HH:MM") strings. Counts how
+// Full open datetime for a trade: `openDate` ("YYYY-MM-DDTHH:mm") when recorded,
+// else the trade's own date at midnight ("YYYY-MM-DDT00:00").
+export function getOpenDate(t) {
+  return t.openDate || `${t.date || ""}T00:00`;
+}
+
+// Same for close: `closeDate` when recorded, else falls back to open date at
+// midnight (so a trade with only an entry time still yields a comparable value).
+export function getCloseDate(t) {
+  return t.closeDate || getOpenDate(t).slice(0, 10) + "T00:00";
+}
+
+// Time-of-day ("HH:MM") from a full datetime, or null when the time is
+// missing or midnight (00:00) — midnight means "no time recorded" and is
+// excluded from time-of-day calculations.
+export function getTradeTime(datetime) {
+  const m = /T(\d{2}:\d{2})$/.exec(String(datetime || ""));
+  if (!m) return null;
+  return m[1] === "00:00" ? null : m[1];
+}
+
+// Hour-of-day trade frequency, from the open datetime's time part. Counts how
 // many trades opened inside each full hour (09:00 covers 09:00-09:59). Trades
-// without an entryTime are excluded from the buckets. Returns
+// without a recorded time (midnight) are excluded from the buckets. Returns
 // { hours, peak, withTime, total } where peak is the busiest hour bucket or
-// null when no trade has an entry time.
+// null when no trade has a recorded open time.
 export function computeEntryTimeProfile(trades) {
   const hours = HOUR_BUCKETS.map((h) => ({ ...h }));
   let withTime = 0;
   trades.forEach((t) => {
-    const m = /^(\d{1,2}):\d{2}$/.exec(String(t.entryTime || "").trim());
-    if (!m) return;
-    const hour = Number(m[1]);
-    if (hour < 0 || hour > 23) return;
+    const time = getTradeTime(getOpenDate(t));
+    if (!time) return;
+    const hour = Number(time.slice(0, 2));
     withTime++;
     hours[hour].n++;
   });

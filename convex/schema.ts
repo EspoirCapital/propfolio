@@ -93,8 +93,8 @@ export default defineSchema({
     notes: v.string(),
     mfeR: v.optional(v.union(v.number(), v.null())),
     maeR: v.optional(v.union(v.number(), v.null())),
-    entryTime: v.optional(v.union(v.string(), v.null())),
-    exitTime: v.optional(v.union(v.string(), v.null())),
+    openDate: v.optional(v.union(v.string(), v.null())),
+    closeDate: v.optional(v.union(v.string(), v.null())),
     archived: v.boolean(),
     riskAcked: v.optional(v.boolean()),
   })

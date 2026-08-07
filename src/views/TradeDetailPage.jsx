@@ -1,6 +1,6 @@
 import { ArrowLeft, ExternalLink, Link as LinkIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { computeOutcome, money, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META } from "../utils";
+import { computeOutcome, money, formatDisplay, formatDateUK, getAccountLabel, OUTCOME_META, RATING_META, getOpenDate, getCloseDate, getTradeTime } from "../utils";
 import { StatusPill } from "../components/StatusPill";
 import { KpiTile } from "../components/KpiTile";
 
@@ -94,8 +94,8 @@ export function TradeDetailPage({ tradeId, trades, derived, settings, onBack }) 
                 { label: "Session", value: trade.session },
                 { label: "Strategy", value: trade.tag || "—" },
                 { label: "Date", value: formatDateUK(trade.date) },
-                { label: "Entry", value: trade.entryTime || "—" },
-                { label: "Exit", value: trade.exitTime || "—" },
+                { label: "Entry", value: getTradeTime(getOpenDate(trade)) || "—" },
+                { label: "Exit", value: getTradeTime(getCloseDate(trade)) || "—" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between">
                   <span className="pd-label">{item.label}</span>
