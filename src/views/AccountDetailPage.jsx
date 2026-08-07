@@ -247,7 +247,12 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
                 <KpiTile label="Total P&L" value={money(totalPnl)} accent={totalPnl >= 0 ? "var(--sage)" : "var(--brick)"} />
                 <KpiTile label="Win Rate" value={`${winRate}%`} accent="var(--sage)" sub={`${wins}W / ${losses}L`} />
                 <KpiTile label="Avg R:R" value={avgRR} accent="var(--brass)" />
-                <KpiTile label="EV" value={formatEv(ev)} accent={ev !== null && ev < 0 ? "var(--brick)" : "var(--brass)"} sub="R per trade" />
+                <KpiTile
+                  label="EV"
+                  value={formatEv(ev)}
+                  accent={ev !== null && ev < 0 ? "var(--brick)" : ev !== null && ev >= 0.2 ? "var(--sage)" : "var(--brass)"}
+                  sub={<span style={{ color: ev !== null && ev >= 0.2 ? "var(--sage)" : "var(--brass)" }}>R per trade · optimal ≥ 0.2R</span>}
+                />
                 <KpiTile
                   label="Health"
                   value={health.score !== null ? `${health.score}%` : "—"}

@@ -160,7 +160,12 @@ export function OverviewView({ derived, trades, payouts, settings }) {
 
       {/* Row 1b — MFE/MAE stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6">
-        <KpiTile label="EV" value={formatEv(ev)} accent={ev !== null && ev < 0 ? "var(--brick)" : "var(--brass)"} sub="R per trade" />
+        <KpiTile
+          label="EV"
+          value={formatEv(ev)}
+          accent={ev !== null && ev < 0 ? "var(--brick)" : ev !== null && ev >= 0.2 ? "var(--sage)" : "var(--brass)"}
+          sub={<span style={{ color: ev !== null && ev >= 0.2 ? "var(--sage)" : "var(--brass)" }}>R per trade · optimal ≥ 0.2R</span>}
+        />
         <KpiTile label="Avg MAE" value={mfeStats.avgMae} accent="var(--brick)" sub="R" />
         <KpiTile label="Avg MFE" value={mfeStats.avgMfe} accent="var(--sage)" sub="R" />
         <KpiTile label="WR w/ limit @ avg MAE" value={mfeStats.limitWr} accent="var(--sand)" sub={mfeStats.limitSub} />
