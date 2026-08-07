@@ -94,6 +94,8 @@ export function TradeDetailPage({ tradeId, trades, derived, settings, onBack }) 
                 { label: "Session", value: trade.session },
                 { label: "Strategy", value: trade.tag || "—" },
                 { label: "Date", value: formatDateUK(trade.date) },
+                { label: "Entry", value: trade.entryTime || "—" },
+                { label: "Exit", value: trade.exitTime || "—" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between">
                   <span className="pd-label">{item.label}</span>

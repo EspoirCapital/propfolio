@@ -97,6 +97,8 @@ export const copyTrades = mutation({
           notes: trade.notes,
           mfeR: trade.mfeR ?? null,
           maeR: trade.maeR ?? null,
+          entryTime: trade.entryTime ?? undefined,
+          exitTime: trade.exitTime ?? undefined,
           archived: false,
         });
         copied++;

@@ -340,15 +340,16 @@ export function AccountDetailPage({ accountId, derived, trades, payouts, certifi
               </div>
             ) : (
               <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)" }}>
-                <div className="grid pd-label items-center" style={{ gridTemplateColumns: "30px 90px 80px 38px 50px 80px 80px 58px 58px 36px 70px 100px 1fr 28px", gap: "0 12px", background: "var(--ledger)", borderBottom: "1px solid var(--line)", padding: "8px 14px" }}>
-                  <span></span><span>Date</span><span>Symbol</span><span>Side</span><span>Lots</span><span>Risk</span><span>P&L</span><span>MFE</span><span>MAE</span><span>Out</span><span>Session</span><span>Tag</span><span>Notes</span><span></span>
+                <div className="grid pd-label items-center" style={{ gridTemplateColumns: "30px 90px 84px 80px 38px 50px 80px 80px 58px 58px 36px 70px 100px 1fr 28px", gap: "0 12px", background: "var(--ledger)", borderBottom: "1px solid var(--line)", padding: "8px 14px" }}>
+                  <span></span><span>Date</span><span>In/Out</span><span>Symbol</span><span>Side</span><span>Lots</span><span>Risk</span><span>P&L</span><span>MFE</span><span>MAE</span><span>Out</span><span>Session</span><span>Tag</span><span>Notes</span><span></span>
                 </div>
                 {enrichedTrades.map((t) => (
                   <Link key={t.id} to="/journal" search={{ account: account.id }}
                     className="pd-row grid items-center text-sm pd-mono no-underline"
-                    style={{ gridTemplateColumns: "30px 90px 80px 38px 50px 80px 80px 58px 58px 36px 70px 100px 1fr 28px", gap: "0 12px", padding: "8px 14px", borderBottom: "1px solid var(--line)", color: "var(--sand)", textDecoration: "none" }}>
+                    style={{ gridTemplateColumns: "30px 90px 84px 80px 38px 50px 80px 80px 58px 58px 36px 70px 100px 1fr 28px", gap: "0 12px", padding: "8px 14px", borderBottom: "1px solid var(--line)", color: "var(--sand)", textDecoration: "none" }}>
                     <span className="flex items-center justify-center"><span style={{ width: 10, height: 10, borderRadius: "50%", background: RATING_META[t.rating]?.color || "var(--slate)", flexShrink: 0 }} /></span>
                     <span className="whitespace-nowrap" style={{ color: "var(--slate)" }}>{formatDateUK(t.date)}</span>
+                    <span className="whitespace-nowrap" style={{ color: "var(--slate)" }}>{t.entryTime ? `${t.entryTime}→${t.exitTime || "—"}` : "—"}</span>
                     <span className="whitespace-nowrap">{t.symbol}</span>
                     <span className="whitespace-nowrap" style={{ color: t.side === "Long" ? "var(--sage)" : "var(--brick)" }}>{t.side.slice(0, 1)}</span>
                     <span className="whitespace-nowrap">{t.lots}</span>
